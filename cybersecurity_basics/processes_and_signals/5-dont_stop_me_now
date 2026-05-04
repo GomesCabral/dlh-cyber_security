@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 # stops the 4-to_infinity_and_beyond scipt by PID
+# shellcheck disable=SC2046
 kill $(pgrep 4-to_infinity_and_beyond)
