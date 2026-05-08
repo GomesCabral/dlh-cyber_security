@@ -1,2 +1,2 @@
 #!/bin/bash
-usermod -aG sudo "$1"
+echo usermod -aG sudo "$1"
