@@ -1,2 +1,2 @@
 #!/bin/bash
-getsebool -a | grep http
+semanage boolean -l
