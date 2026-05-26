@@ -73,3 +73,10 @@ Finds all **SNMP configurations allowing public access** by searching for the de
 **file:** `8-smtp.sh`
 
 Checks the **Postfix SMTP server configuration** for TLS/STARTTLS settings. If none are found, warns that STARTTLS is not configured.
+
+---
+### 9 - TLS Version Testing
+
+**file:** `9-tls_version.txt` 
+
+Use OpenSSL to test which TLS versions are supported by a real website and understand why older TLS versions are deprecated.
