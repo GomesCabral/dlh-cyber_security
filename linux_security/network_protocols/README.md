@@ -52,3 +52,17 @@ PermitEmptyPasswords no
 PubkeyAuthentication yes
 X11Forwarding no
 Port 22
+
+---
+### 6 - Check for NFS Vulnerabilities
+
+**file:** 6-nfs.sh
+
+Scans a target host for **NFS shares accessible by anyone** on the network using `showmount`.
+
+---
+### 7 - Audit SNMP Configuration
+
+**file:** `7-snmp.sh`
+
+Finds all **SNMP configurations allowing public access** by searching for the default `public` community string in `/etc/snmp/`.
