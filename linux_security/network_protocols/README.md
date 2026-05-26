@@ -87,3 +87,10 @@ Use OpenSSL to test which TLS versions are supported by a real website and under
 **file:** `10-cipher.sh`
 
 Create a Bash script that uses Nmap to enumerate SSL/TLS ciphers on a remote server and identify weak or deprecated ciphers.
+
+---
+### 11 - HTTP vs HTTPS Comparison
+
+**file:** `11-http_https.txt`
+
+Compare HTTP and HTTPS websites to understand the security differences between encrypted and unencrypted web communication.
