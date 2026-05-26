@@ -66,3 +66,10 @@ Scans a target host for **NFS shares accessible by anyone** on the network using
 **file:** `7-snmp.sh`
 
 Finds all **SNMP configurations allowing public access** by searching for the default `public` community string in `/etc/snmp/`.
+
+---
+### 8 - Examine SMTP Server Settings
+
+**file:** `8-smtp.sh`
+
+Checks the **Postfix SMTP server configuration** for TLS/STARTTLS settings. If none are found, warns that STARTTLS is not configured.
