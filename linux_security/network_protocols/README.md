@@ -80,3 +80,10 @@ Checks the **Postfix SMTP server configuration** for TLS/STARTTLS settings. If n
 **file:** `9-tls_version.txt` 
 
 Use OpenSSL to test which TLS versions are supported by a real website and understand why older TLS versions are deprecated.
+
+---
+### 10 - Weak SSL/TLS Cipher Detection with Nmap
+
+**file:** `10-cipher.sh`
+
+Create a Bash script that uses Nmap to enumerate SSL/TLS ciphers on a remote server and identify weak or deprecated ciphers.
