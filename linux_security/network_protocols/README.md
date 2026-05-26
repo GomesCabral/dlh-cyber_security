@@ -15,3 +15,9 @@ Displays **all current firewall rules** in a redables format, with line numbers 
 **file:** `1-firewall.sh`
 
 Sets up basic iptables rules that block all incoming traffic except SSH.
+
+### 2 - Harden Linux Server
+
+**file:** 2-harden.sh
+
+Finds all world-writable directories and removes write permission for others, hardening the system against unauthorised file modification.
