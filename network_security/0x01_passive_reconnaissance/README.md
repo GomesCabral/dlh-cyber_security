@@ -38,3 +38,9 @@ retrieve All record of a specified domain using dig command
 > **file:** `5-subfinder.sh`
 
 fetch subdomains of given domain using subfinder command
+
+### `6` - Search for us
+
+> **file:** holbertonschool_report.md
+
+gather as much information as possible about the holbertonschool.com domain using Shodan(holbertonschool.com)
