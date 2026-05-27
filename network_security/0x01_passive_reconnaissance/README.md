@@ -32,3 +32,9 @@ retrieve the TXT record of a specified domain using nslookup command
 > **file:** `4-dig_all.sh`
 
 retrieve All record of a specified domain using dig command
+
+### `5` - Find the sub
+
+> **file:** `5-subfinder.sh`
+
+fetch subdomains of given domain using subfinder command
