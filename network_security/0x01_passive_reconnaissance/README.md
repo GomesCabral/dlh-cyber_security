@@ -26,3 +26,9 @@ retrieve the MX record of a specified domain using nslookup command
 > **file:** `3-txt_record.sh`
 
 retrieve the TXT record of a specified domain using nslookup command
+
+### `4` - All Record
+
+> **file:** `4-dig_all.sh`
+
+retrieve All record of a specified domain using dig command
