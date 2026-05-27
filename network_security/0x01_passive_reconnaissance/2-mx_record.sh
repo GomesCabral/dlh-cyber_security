@@ -1,2 +1,2 @@
 #!/bin/bash
-nslookup -type=MX -debug $1
+nslookup -type=MX $1
