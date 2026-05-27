@@ -20,3 +20,9 @@ retrieve the A record of a specified domain using nslookup command
 > **file:** `2-mx_record.sh`
 
 retrieve the MX record of a specified domain using nslookup command
+
+### `3` - TXT Record
+
+> **file:** `3-txt_record.sh`
+
+retrieve the TXT record of a specified domain using nslookup command
