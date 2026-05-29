@@ -24,3 +24,21 @@ sudo ./0-arp_scan.sh <subnetwork>
 ```bash
 sudo ./0-arp_scan.sh 192.168.1.0/24
 ```
+### 1. ICMP Echo scan
+ 
+**File:** `1-icmp_echo_scan.sh`
+ 
+Scans a subnetwork to discover live hosts using an **ICMP Echo scan** (ping-based).
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PE` flag (ICMP Echo discovery)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+**Usage:**
+```bash
+sudo ./1-icmp_echo_scan.sh <subnetwork>
+```
+ 
+**Example:**
+```bash
+sudo ./1-icmp_echo_scan.sh 6.19.100.0/24
+```
