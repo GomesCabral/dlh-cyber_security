@@ -15,12 +15,15 @@ Scans a subnetwork to discover live hosts using an **ARP scan**.
 - Uses `nmap` with the `-sn` flag (no port scan) and `-PR` flag (ARP discovery)
 - Must be run as a privileged user
 - Accepts a subnetwork as argument `$1`
+
 **Usage:**
+
 ```bash
 sudo ./0-arp_scan.sh <subnetwork>
 ```
  
 **Example:**
+
 ```bash
 sudo ./0-arp_scan.sh 192.168.1.0/24
 ```
@@ -33,12 +36,35 @@ Scans a subnetwork to discover live hosts using an **ICMP Echo scan** (ping-base
 - Uses `nmap` with the `-sn` flag (no port scan) and `-PE` flag (ICMP Echo discovery)
 - Must be run as a privileged user
 - Accepts a subnetwork as argument `$1`
+
 **Usage:**
+
 ```bash
 sudo ./1-icmp_echo_scan.sh <subnetwork>
 ```
- 
-**Example:**
+ **Example:**
+
 ```bash
 sudo ./1-icmp_echo_scan.sh 6.19.100.0/24
+```
+### 2. ICMP Timestamp Scan
+
+**File:** `2-icmp_timestamp_scan.sh`
+
+Scans a subnetwork to discover live hosts using an **ICMP Timestamp scan**.
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PP` flag (ICMP Timestamp discovery)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+
+**Usage:**
+
+```bash
+sudo ./2-icmp_timestamp_scan.sh <subnetwork>
+```
+ 
+**Example:**
+
+```bash
+sudo ./2-icmp_timestamp_scan.sh 6.19.100.0/24
 ```
