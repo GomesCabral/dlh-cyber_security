@@ -107,3 +107,24 @@ sudo ./4-tcp_syn_ping.sh <subnetwork>
 ```bash
 sudo ./4-tcp_syn_ping.sh 6.19.100.0/24
 ```
+### 5. TCP ACK Ping scan
+ 
+**File:** `5-tcp_ack_ping.sh`
+ 
+Scans a subnetwork to discover live hosts using a **TCP ACK Ping scan** on ports 22, 80 and 443.
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PA22,80,443` flag (TCP ACK on common ports)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+
+**Usage:**
+
+```bash
+sudo ./5-tcp_ack_ping.sh <subnetwork>
+```
+ 
+**Example:**
+
+```bash
+sudo ./5-tcp_ack_ping.sh 6.19.100.0/24
+```
