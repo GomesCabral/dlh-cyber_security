@@ -128,3 +128,24 @@ sudo ./5-tcp_ack_ping.sh <subnetwork>
 ```bash
 sudo ./5-tcp_ack_ping.sh 6.19.100.0/24
 ```
+### 6. UDP Ping scan
+ 
+**File:** `6-udp_ping_scan.sh`
+ 
+Scans a subnetwork to discover live hosts using a **UDP Ping scan** on ports 53, 161 and 162.
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PU53,161,162` flag (UDP Ping on common UDP ports)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+
+**Usage:**
+
+```bash
+sudo ./6-udp_ping_scan.sh <subnetwork>
+```
+ 
+**Example:**
+
+```bash
+sudo ./6-udp_ping_scan.sh 6.19.100.0/24
+```
