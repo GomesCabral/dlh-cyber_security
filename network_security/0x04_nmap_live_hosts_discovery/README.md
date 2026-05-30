@@ -68,3 +68,21 @@ sudo ./2-icmp_timestamp_scan.sh <subnetwork>
 ```bash
 sudo ./2-icmp_timestamp_scan.sh 6.19.100.0/24
 ```
+**File:** `3-icmp_address_mask_scan.sh`
+ 
+Scans a subnetwork to discover live hosts using an **ICMP Address Mask scan**.
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PM` flag (ICMP Address Mask discovery)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+**Usage:**
+
+```bash
+sudo ./3-icmp_address_mask_scan.sh <subnetwork>
+```
+ 
+**Example:**
+
+```bash
+sudo ./3-icmp_address_mask_scan.sh 6.19.100.0/24
+```
