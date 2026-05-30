@@ -86,3 +86,24 @@ sudo ./3-icmp_address_mask_scan.sh <subnetwork>
 ```bash
 sudo ./3-icmp_address_mask_scan.sh 6.19.100.0/24
 ```
+### 4. TCP SYN Ping scan
+ 
+**File:** `4-tcp_syn_ping.sh`
+ 
+Scans a subnetwork to discover live hosts using a **TCP SYN Ping scan** on ports 22, 80 and 443.
+ 
+- Uses `nmap` with the `-sn` flag (no port scan) and `-PS22,80,443` flag (TCP SYN on common ports)
+- Must be run as a privileged user
+- Accepts a subnetwork as argument `$1`
+
+**Usage:**
+
+```bash
+sudo ./4-tcp_syn_ping.sh <subnetwork>
+```
+ 
+**Example:**
+
+```bash
+sudo ./4-tcp_syn_ping.sh 6.19.100.0/24
+```
