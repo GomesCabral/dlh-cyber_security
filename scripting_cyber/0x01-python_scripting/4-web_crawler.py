@@ -3,31 +3,31 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
-def crawl_website(start_url, max_depth=2, visited=None):
+def crawl_website(start_url, max_depth=2):
 
-	if visited is None:
-		visited = set()
+	visited = set()
 
-	if max_depth < 0 or start_url in visited:
-		return visited
+	def _crawl(url, depth):
+		if depth < 0 or url in visited:
+			return
+		base_domain = urlparse(start_url).netloc
 
-	base_domain = urlparse(start_url).netloc
+		try:
+			print(f"Crawling: {url}")
+			response = requests.get(url, timeout=5)
+			visited.add(url)
 
-	try:
-		print(f"Crawling: {start_url}")
-		response = requests.get(start_url, timeout=5)
-		visited.add(start_url)
+			soup = BeautifulSoup(response.text, 'html.parser')
 
-		soup = BeautifulSoup(response.text, 'html.parser')
+			for tag in soup.find_all('a', href=True):
+				full_url = urljoin(url, tag['href'])
 
-		for tag in soup.find_all('a', href=True):
-			full_url = urljoin(start_url, tag['href'])
-
-		if urlparse(full_url).netloc == base_domain:
-			if full_url not in visited:
-				crawl_website(full_url, max_depth - 1, visited)
-	except Exception:
-		pass
+				if urlparse(full_url).netloc == base_domain:
+					if full_url not in visited:
+						_crawl(full_url, max_depth - 1, visited)
+		except Exception:
+			pass
+	_crawl(start_url, max_depth)
 	return visited
 
 if __name__ == "__main__":
