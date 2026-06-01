@@ -1,5 +1,6 @@
 #!/bin/env python3
 import requests
+import sys
 
 def get_http_headers(url):
 	my_dict = {}
@@ -20,19 +21,19 @@ if __name__=="__main__":
 		print("Usage: python3 3-main.py <url>")
 		sys.exit(1)
 
-url = sys.argv[1]
+	url = sys.argv[1]
 
-result = get_http_headers(url)
+	result = get_http_headers(url)
 
-if result is None:
-	print(f"Error: Could not retrieve headers from {url}")
-	sys.exit(1)
+	if result is None:
+		print(f"Error: Could not retrieve headers from {url}")
+		sys.exit(1)
 
-print(f"HTTP Headers for: {url}")
-print("=" * 50)
-print(f"Status Code: {result['status_code']}")
-print("Headers:")
-print()
+	print(f"HTTP Headers for: {url}")
+	print("=" * 50)
+	print(f"Status Code: {result['status_code']}")
+	print("Headers:")
+	print()
 
-for key, value in result['headers'].items():
-	print(f"  {key}: {value}")
+	for key, value in result['headers'].items():
+		print(f"  {key}: {value}")
