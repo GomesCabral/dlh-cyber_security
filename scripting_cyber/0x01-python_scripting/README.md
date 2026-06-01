@@ -124,6 +124,8 @@ Summary: Found 6 record types with 20 total records
  
 > **Note:** DNS records may vary over time as infrastructure changes.
 
+---
+
 ### 2. Download a Web Page
 
 **File:** `2-download_page.py`
@@ -176,3 +178,41 @@ Page content from http://example.com:
 ==================================================
 Content length: 638 characters
 ```
+---
+
+### 3. Get HTTP Headers
+ 
+**File:** `3-http_headers.py`
+ 
+Retrieves and displays HTTP response headers from a website using the `requests` library.
+
+**Returns:**
+
+- A dictionary `{'status_code': int, 'headers': dict}` if the request succeeds
+- `None` if the request fails (`requests.exceptions.RequestException`)
+**Usage:**
+
+```bash
+./3-main.py https://www.google.com
+```
+ 
+**Example output:**
+
+```
+HTTP Headers for: https://www.google.com
+==================================================
+Status Code: 200
+Headers:
+ 
+  Date: Tue, 02 Dec 2025 14:30:55 GMT
+  Expires: -1
+  Cache-Control: private, max-age=0
+  Content-Type: text/html; charset=ISO-8859-1
+  Server: gws
+  X-XSS-Protection: 0
+  X-Frame-Options: SAMEORIGIN
+  ...
+```
+---
+
+
