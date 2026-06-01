@@ -215,4 +215,36 @@ Headers:
 ```
 ---
 
+### 4. Check All Pages (Web Crawler)
 
+**File:** `4-web_crawler.py`
+
+Recursively crawls a website and discovers internal links up to a specified depth using `requests`, `BeautifulSoup`, and `urllib.parse`.
+
+**Returns:**
+
+- A set of URLs successfully visited within the same domain
+- Empty set if the starting URL is unreachable
+
+**Usage:**
+
+```bash
+./4-main.py https://www.google.com 2
+```
+ 
+**Example output:**
+
+```
+==================================================
+Starting crawl of https://google.com (max depth: 2)
+==================================================
+Crawling: https://google.com
+Crawling: https://google.com/preferences?hl=ar
+Crawling: https://google.com/advanced_search
+Crawling: https://google.com/intl/ar/ads/
+Crawling: https://google.com/intl/ar/about.html
+Crawling: https://google.com/intl/ar/policies/privacy/
+Crawling: https://google.com/intl/ar/policies/terms/
+ 
+Total pages crawled: 7
+```
