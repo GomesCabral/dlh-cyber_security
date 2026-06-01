@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 def download_page(url):
 	try:
 		response = requests.get(url)
-		soup = BeautifulSoup(response, 'html.parser')
+		soup = BeautifulSoup(response.txt, 'html.parser')
 		return soup.prettify()
 	except requests.exceptions.RequestException as e:
 		return f"Error Downloading the page: {str(e)}"
