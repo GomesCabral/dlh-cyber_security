@@ -123,3 +123,56 @@ Summary: Found 6 record types with 20 total records
 ```
  
 > **Note:** DNS records may vary over time as infrastructure changes.
+
+### 2. Download a Web Page
+
+**File:** `2-download_page.py`
+
+Downloads a web page and returns its formatted HTML content using the `requests` and `BeautifulSoup` libraries.
+
+**Returns:**
+
+- The formatted HTML content (string) if the page downloads successfully
+- An error message string if the download fails (`requests.exceptions.RequestException`)
+
+**Usage:**
+```bash
+./2-main.py http://example.com
+```
+ 
+**Example output:**
+
+```
+Page content from http://example.com:
+==================================================
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>
+   Example Domain
+  </title>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <style>
+   body{background:#eee;width:60vw;margin:15vh auto;font-family:system-ui,sans-serif}h1{font-size:1.5em}div{opacity:0.8}a:link,a:visited{color:#348}
+  </style>
+  <body>
+   <div>
+    <h1>
+     Example Domain
+    </h1>
+    <p>
+     This domain is for use in documentation examples without needing permission. Avoid use in operations.
+     <p>
+      <a href="https://iana.org/domains/example">
+       Learn more
+      </a>
+     </p>
+    </p>
+   </div>
+  </body>
+ </head>
+</html>
+
+==================================================
+Content length: 638 characters
+```
