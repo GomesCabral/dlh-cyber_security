@@ -248,3 +248,10 @@ Crawling: https://google.com/intl/ar/policies/terms/
  
 Total pages crawled: 7
 ```
+---
+
+### 5. Python Scripting - Port Scanner
+
+**File:** `5-port_scanner.py`
+
+The script checks if a specific port on a given host is open or closed by attempting to establish a TCP connection.
