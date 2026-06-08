@@ -19,4 +19,12 @@
 ## Step 2: Configuring Burp Suite with Client TLS Certificate
 ---
 ## Step 3: Reloading the Page to Reveal Hidden Content
+---
+# 2. Modifying Page Responses to Reveal Hidden Information
+---
+## Step 1: Intercepting the Download Request
+---
+## Step 2: Modifying the Server Response
+---
+## Step 3: Revealing the Flag
 
