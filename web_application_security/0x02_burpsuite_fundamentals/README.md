@@ -11,3 +11,12 @@
 ## Step 3: DNS Resolution Configuration
 ---
 ## Step 4: Discovering the `FLAG`
+---
+# Client-Side TLS Authentication with Burp Suite
+---
+## Step 1: Downloading the PKCS#12 Certificate
+---
+## Step 2: Configuring Burp Suite with Client TLS Certificate
+---
+## Step 3: Reloading the Page to Reveal Hidden Content
+
