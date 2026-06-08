@@ -50,3 +50,29 @@
 
 ## Step 4: Retrieving the Flag
 
+---
+# 5. Analyzing Session Tokens with the Sequencer Tool
+
+## Step 1: Capturing the Request
+
+## Step 2: Preparing for Sequencer Analysis
+
+## Step 3: Configuring and Starting Sequencer
+
+## Step 4: Analyzing Token Pattern and Hijacking Session
+
+## Step 5: Revealing the Flag
+
+---
+# 6. Bearer Token Manipulation
+
+## Step 1: Intercepting the Request
+
+## Step 2: Locating the Bearer Token
+
+## Step 3: Decoding and Editing the Token
+
+## Step 4: Replacing the Modified Token
+
+## Step 5: Revealing the Flag
+
