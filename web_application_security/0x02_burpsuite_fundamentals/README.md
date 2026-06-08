@@ -38,3 +38,15 @@
 ## Step 2: Guessing Credentials with Repeater
 
 ## Step 3: Uncovering the Flag
+
+---
+# 4. The Intruder's Path to Hidden Profiles
+
+## Step 1: Capturing the Request
+
+## Step 2: Setting Up and Executing an Intruder Attack
+
+## Step 3: Identifying the Correct Profile ID
+
+## Step 4: Retrieving the Flag
+
