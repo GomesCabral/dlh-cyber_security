@@ -30,3 +30,17 @@ Open discovered subdomains in the browser and look for upload...
 ```bash
 echo "<?php readfile('FLAG_1.txt') ?>" > flag.php
 ```
+---
+# Task 2
+
+## Bypass server-side file upload validation using special characters in the filename.
+
+```text
+http://[vuln-subdomain].web0x05.hbtn/task2
+```
+
+## Vulnerability
+
+Server-side filename validation bypass.
+
+
