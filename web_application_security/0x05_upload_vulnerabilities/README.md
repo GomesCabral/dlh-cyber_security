@@ -21,3 +21,12 @@ test-s3.web0x05.hbtn
 ---
 ### Manual Check
 Open discovered subdomains in the browser and look for upload...
+
+---
+# Task 1
+
+## Bypass a client-side file upload filter and upload a restricted PHP file.
+
+```bash
+echo "<?php readfile('FLAG_1.txt') ?>" > flag.php
+```
