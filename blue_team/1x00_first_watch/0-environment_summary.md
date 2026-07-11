@@ -1,8 +1,6 @@
-# Environment Summary
+# 1. Organization Overview
 
-## 1. Organization Overview
-
-### Sites
+## Sites
 
 | Site | Location Type | Primary Function | Approximate Headcount |
 |------|---------------|------------------|----------------------:|
@@ -12,9 +10,9 @@
 
 **Organization-wide employees:** Approximately **2,000**.
 
-### Departments
+## Departments
 
-#### MedDefense Central Hospital
+### MedDefense Central Hospital
 
 - Emergency
 - Surgery
@@ -27,7 +25,7 @@
 - Laboratory
 - Administration
 
-#### Westside Clinic
+### Westside Clinic
 
 - Primary Care
 - Diagnostic Imaging
@@ -35,7 +33,7 @@
 - Minor Procedures
 - Physical Therapy
 
-#### Corporate HQ
+### Corporate HQ
 
 - Finance
 - Human Resources
@@ -62,9 +60,9 @@ Sarah Park manages IT operations.
 
 James Chen and Sarah Park are peers, which creates separation between security governance and IT operations.
 
-## 2. IT Infrastructure Identified
+# 2. IT Infrastructure Identified
 
-### Servers
+## Servers
 
 | Asset | Type | Function | Location | Technical Details |
 |-------|------|----------|----------|-------------------|
@@ -81,7 +79,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | ws-srv-01 | File/Scheduling Server | Local file server and scheduling | Westside Clinic | Windows Server 2016 |
 | Unknown Server | Server | Unknown | Westside Clinic | Mentioned by staff but not confirmed |
 
-### Network Infrastructure
+## Network Infrastructure
 
 | Asset | Type | Function | Location | Technical Details |
 |-------|------|----------|----------|-------------------|
@@ -96,7 +94,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | IPSec VPN | VPN | Connectivity between Westside and Central | Westside / Central | Runs through Netgear router |
 | DMZ | Network Segment | Hosts public-facing services | MedDefense Central Hospital | Hosts web-srv-01 |
 
-### Endpoints
+## Endpoints
 
 | Category | Location | Quantity | Notes |
 |----------|----------|---------:|------|
@@ -107,7 +105,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | Laptops | Corporate HQ | ~30 | Remote-capable |
 | iPads | Organization-wide | ~25 | Used by physicians during rounds |
 
-### Medical Devices
+## Medical Devices
 
 | Device | Function | Location | Technical Details |
 |--------|----------|----------|-------------------|
@@ -118,7 +116,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | IP Nurse Call System | Patient communication | MedDefense Central Hospital | Integrated with phone system |
 | HID Global Access Control System | Physical access control | MedDefense Central Hospital | Connected to Active Directory for some doors |
 
-### Supporting IT Services
+## Supporting IT Services
 
 | Service | Function | Scope |
 |---------|----------|------|
@@ -129,9 +127,9 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | Greenfield Building Management | HQ network and Internet | Corporate HQ |
 | ClearView Security | Physical security services | Central Hospital |
 
-## 3. Data and Services
+# 3. Data and Services
 
-### Data Handled
+## Data Handled
 
 | Data Type | Description | Primary Users |
 |-----------|-------------|---------------|
@@ -148,7 +146,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | Department File Shares | Shared organizational documents | All departments |
 | Backup Data | Backup copies of organizational systems and data | IT department |
 
-### Critical Services
+## Critical Services
 
 | Service | Supporting Infrastructure | Primary Users |
 |---------|---------------------------|---------------|
@@ -165,9 +163,9 @@ James Chen and Sarah Park are peers, which creates separation between security g
 | Nurse Call System | IP Nurse Call System | Clinical staff |
 | Badge Access Control | HID Global Access System | Employees and Facilities staff |
 
-## 4. Known Unknowns
+# 4. Known Unknowns
 
-### Asset Inventory
+## Asset Inventory
 
 - The asset inventory is incomplete and was exported from the ticketing system.
 - The exact number of endpoints is unknown.
@@ -176,7 +174,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 - `print-srv-01` has not been physically verified for more than one year.
 - A possible second server at Westside Clinic has been mentioned but has not been confirmed.
 
-### Network Infrastructure
+## Network Infrastructure
 
 - The network diagram is incomplete.
 - The real network topology has not been fully documented.
@@ -188,7 +186,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 - Firewall rules are not documented.
 - The complete DMZ configuration is unknown.
 
-### Systems and Software
+## Systems and Software
 
 - The operating system of the GE Revolution CT scanner is unknown.
 - Additional documentation for the Siemens MAGNETOM MRI is missing.
@@ -196,7 +194,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 - A complete software inventory is not available.
 - A complete cloud services inventory is not available beyond Microsoft 365.
 
-### Security Controls
+## Security Controls
 
 - Sophos deployment status across all endpoints has not been verified.
 - No formal vulnerability assessment has been completed.
@@ -204,7 +202,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 - Backup restore testing has not been documented.
 - Multi-factor authentication is only confirmed for one user.
 
-### Governance and Compliance
+## Governance and Compliance
 
 - No Incident Response Plan has been documented.
 - No Business Continuity Plan has been documented.
@@ -212,7 +210,7 @@ James Chen and Sarah Park are peers, which creates separation between security g
 - HIPAA Security Rule compliance has never been formally assessed.
 - The CISO position is currently vacant.
 
-### Contradictory or Inconsistent Information
+## Contradictory or Inconsistent Information
 
 - The organization is described as having approximately 2,000 employees, while the documented site headcounts total approximately 1,800.
 - The HR documentation describes the Central Hospital as having six floors plus a basement, while the available network diagram only shows four floors.
