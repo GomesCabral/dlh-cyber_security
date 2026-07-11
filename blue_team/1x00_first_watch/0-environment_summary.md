@@ -4,15 +4,17 @@
 
 ### Sites
 
-| Site | Location Type | Function | Approximate Headcount |
-|------|---------------|----------|----------------------|
+| Site | Location Type | Primary Function | Approximate Headcount |
+|------|---------------|------------------|----------------------:|
 | MedDefense Central Hospital | Downtown acute-care hospital | Main hospital providing emergency, surgery, cardiology, radiology, oncology, pediatrics, maternity, pharmacy, laboratory and administration | ~1,400 |
-| Westside Clinic | Suburban outpatient clinic | Primary care, X-ray, ultrasound, blood work, minor procedures and physical therapy | ~180 |
-| Corporate HQ | Administrative office | Finance, HR, Legal, Marketing, Executive Leadership and IT | ~220 |
+| Westside Clinic | Suburban outpatient facility | Primary care, diagnostic imaging (X-ray and ultrasound), blood work, minor procedures and physical therapy | ~180 |
+| Corporate HQ | Administrative office | Finance, Human Resources, Legal, Marketing, Executive Leadership and Information Technology | ~220 |
 
-Total organization headcount: **approximately 2,000 employees.**
+**Organization-wide employees:** Approximately **2,000**.
 
-### Departments Relevant to Security
+### Departments
+
+#### MedDefense Central Hospital
 
 - Emergency
 - Surgery
@@ -24,6 +26,17 @@ Total organization headcount: **approximately 2,000 employees.**
 - Pharmacy
 - Laboratory
 - Administration
+
+#### Westside Clinic
+
+- Primary Care
+- Diagnostic Imaging
+- Blood Work
+- Minor Procedures
+- Physical Therapy
+
+#### Corporate HQ
+
 - Finance
 - Human Resources
 - Legal
@@ -43,212 +56,165 @@ Total organization headcount: **approximately 2,000 employees.**
 
 The Security Analyst reports to James Chen.
 
-James Chen is responsible for security policy but does not manage IT operations.
+James Chen is responsible for security policy.
 
-Sarah Park manages the IT department.
+Sarah Park manages IT operations.
 
-IT Department:
+James Chen and Sarah Park are peers, which creates separation between security governance and IT operations.
 
-- 3 System Administrators
-- 2 Network Technicians
-- 1 Database Administrator
-- 2 Helpdesk Analysts
-- 2 Desktop Support Technicians
-- 1 IT Intern (vacant)
+## 2. IT Infrastructure Identified
 
----
+### Servers
 
-# 2. IT Infrastructure Identified
+| Asset | Type | Function | Location | Technical Details |
+|-------|------|----------|----------|-------------------|
+| ehr-srv-01 | Application Server | Electronic Health Record (EHR) application | MedDefense Central Hospital | Ubuntu 20.04 LTS |
+| ehr-db-01 | Database Server | PostgreSQL database for the EHR system | MedDefense Central Hospital | Ubuntu 20.04 LTS |
+| pacs-srv-01 | Imaging Server | PACS medical imaging server | MedDefense Central Hospital | Windows Server 2016 |
+| billing-srv-01 | Application Server | Billing and claims processing | MedDefense Central Hospital | Ubuntu 18.04 LTS |
+| ad-dc-01 | Domain Controller | Primary Active Directory Domain Controller | MedDefense Central Hospital | Windows Server 2019 |
+| ad-dc-02 | Domain Controller | Secondary Active Directory Domain Controller | MedDefense Central Hospital | Windows Server 2019 |
+| file-srv-01 | File Server | Department file shares | MedDefense Central Hospital | Windows Server 2016 |
+| print-srv-01 | Print Server | Print services | MedDefense Central Hospital | Windows Server 2012 R2, marked as **Unverified** |
+| backup-srv-01 | Backup Server | Backup services | MedDefense Central Hospital | Ubuntu 22.04 LTS, Veeam agent |
+| web-srv-01 | Web Server | Public website and patient portal | MedDefense Central Hospital (DMZ) | Ubuntu 20.04 LTS |
+| ws-srv-01 | File/Scheduling Server | Local file server and scheduling | Westside Clinic | Windows Server 2016 |
+| Unknown Server | Server | Unknown | Westside Clinic | Mentioned by staff but not confirmed |
 
-## Central Hospital Servers
+### Network Infrastructure
 
-| Server | Operating System | Function |
-|---------|-----------------|----------|
-| ehr-srv-01 | Ubuntu 20.04 LTS | EHR Application Server |
-| ehr-db-01 | Ubuntu 20.04 LTS | PostgreSQL EHR Database |
-| pacs-srv-01 | Windows Server 2016 | PACS Imaging Server |
-| billing-srv-01 | Ubuntu 18.04 LTS | Billing and Claims Processing |
-| ad-dc-01 | Windows Server 2019 | Primary Domain Controller |
-| ad-dc-02 | Windows Server 2019 | Secondary Domain Controller |
-| file-srv-01 | Windows Server 2016 | File Server |
-| print-srv-01 | Windows Server 2012 R2 | Print Server (Unverified) |
-| backup-srv-01 | Ubuntu 22.04 LTS | Backup Server (Veeam) |
-| web-srv-01 | Ubuntu 20.04 LTS | Public Website and Patient Portal |
+| Asset | Type | Function | Location | Technical Details |
+|-------|------|----------|----------|-------------------|
+| Fortinet FortiGate 100F | Firewall | Perimeter firewall | MedDefense Central Hospital | Internet gateway |
+| Cisco Core Switch | Core Switch | Core network switching | MedDefense Central Hospital | Model unknown |
+| Cisco Access Switches | Access Switches | Floor network connectivity | MedDefense Central Hospital | Two per floor |
+| Ubiquiti UniFi Access Points | Wireless Access Points | Wireless connectivity | MedDefense Central Hospital | Approximately 12 units |
+| Guest Wi-Fi | Wireless Network | Visitor wireless access | MedDefense Central Hospital | Separate SSID |
+| Netgear Nighthawk | Router | Internet connectivity and IPSec VPN | Westside Clinic | Consumer-grade router |
+| Unmanaged Switch | Switch | Local wired connectivity | Westside Clinic | Brand unknown |
+| Site-to-Site VPN | VPN | Connectivity between HQ and Central | HQ / Central | VPN connection |
+| IPSec VPN | VPN | Connectivity between Westside and Central | Westside / Central | Runs through Netgear router |
+| DMZ | Network Segment | Hosts public-facing services | MedDefense Central Hospital | Hosts web-srv-01 |
 
-## Westside Clinic
+### Endpoints
 
-- ws-srv-01 (Windows Server 2016)
-- Possible second unknown server (not confirmed)
+| Category | Location | Quantity | Notes |
+|----------|----------|---------:|------|
+| Windows 10 Workstations | Central Hospital | ~320 | Clinical and administrative users |
+| Thin Clients | Central Hospital | ~60 | Clinical areas |
+| Windows 10 Workstations | Westside Clinic | ~45 | Staff workstations |
+| Windows 10/11 Workstations | Corporate HQ | ~120 | Administrative users |
+| Laptops | Corporate HQ | ~30 | Remote-capable |
+| iPads | Organization-wide | ~25 | Used by physicians during rounds |
 
-## Corporate HQ
+### Medical Devices
 
-- No on-premises servers
-- Uses cloud services
-- Connected to Central via Site-to-Site VPN
+| Device | Function | Location | Technical Details |
+|--------|----------|----------|-------------------|
+| Philips IntelliVue Patient Monitors | Patient monitoring | MedDefense Central Hospital | Approximately 80 units |
+| BD Alaris Infusion Pumps | Medication delivery | MedDefense Central Hospital | Approximately 120 units |
+| Siemens MAGNETOM MRI | Magnetic Resonance Imaging | Radiology, Central Hospital | Runs Windows XP |
+| GE Revolution CT Scanner | Computed Tomography | MedDefense Central Hospital | Operating system unknown |
+| IP Nurse Call System | Patient communication | MedDefense Central Hospital | Integrated with phone system |
+| HID Global Access Control System | Physical access control | MedDefense Central Hospital | Connected to Active Directory for some doors |
 
-## Network Infrastructure
+### Supporting IT Services
 
-- Fortinet FortiGate 100F Firewall
-- Cisco Core Switch
-- Cisco Access Switches
-- Ubiquiti UniFi Access Points (12)
-- Guest Wi-Fi
-- Site-to-Site VPN
-- IPSec VPN
-- DMZ
-- Netgear Nighthawk consumer router (Westside)
-- Unmanaged switch (Westside)
+| Service | Function | Scope |
+|---------|----------|------|
+| Microsoft 365 E3 | Email and productivity services | Organization-wide |
+| Sophos Endpoint Protection | Endpoint security | Organization-wide |
+| Veeam | Backup software | Central Hospital |
+| MedTech Solutions | EHR maintenance | Organization-wide |
+| Greenfield Building Management | HQ network and Internet | Corporate HQ |
+| ClearView Security | Physical security services | Central Hospital |
 
-## Endpoints
+## 3. Data and Services
 
-Central:
+### Data Handled
 
-- ~320 Windows 10 workstations
-- ~60 Thin Clients
+| Data Type | Description | Primary Users |
+|-----------|-------------|---------------|
+| Electronic Health Records (EHR) | Patient medical records stored in the EHR system | Physicians, nurses, clinical staff |
+| Medical Images | Diagnostic images managed by the PACS system | Radiologists, physicians, clinical staff |
+| Laboratory Data | Blood work and laboratory test results | Laboratory staff, physicians |
+| Pharmacy Data | Medication and pharmacy information | Pharmacy staff, physicians |
+| Billing and Claims Data | Patient billing and insurance claims | Billing department, Finance |
+| Patient Portal Data | Information accessed through the patient portal | Patients, clinical staff |
+| Employee Information | Human Resources records | HR staff, management |
+| Financial Records | Financial and accounting information | Finance department |
+| Legal Documents | Legal and compliance documentation | Legal department |
+| Active Directory Data | User accounts, authentication and directory services | All employees |
+| Department File Shares | Shared organizational documents | All departments |
+| Backup Data | Backup copies of organizational systems and data | IT department |
 
-Westside:
+### Critical Services
 
-- ~45 Windows 10 workstations
+| Service | Supporting Infrastructure | Primary Users |
+|---------|---------------------------|---------------|
+| Electronic Health Record (EHR) | ehr-srv-01, ehr-db-01 | Clinical staff |
+| PACS Imaging | pacs-srv-01 | Radiologists, physicians |
+| Patient Portal | web-srv-01 | Patients, clinical staff |
+| Billing and Claims Processing | billing-srv-01 | Billing department, Finance |
+| Active Directory | ad-dc-01, ad-dc-02 | All employees |
+| Department File Sharing | file-srv-01 | All departments |
+| Westside Scheduling | ws-srv-01 | Westside clinical and administrative staff |
+| Microsoft 365 | Cloud services | All employees |
+| Backup Services | backup-srv-01, Veeam | IT department |
+| VPN Connectivity | Site-to-Site VPN, IPSec VPN | Westside Clinic and Corporate HQ staff |
+| Nurse Call System | IP Nurse Call System | Clinical staff |
+| Badge Access Control | HID Global Access System | Employees and Facilities staff |
 
-Corporate HQ:
+## 4. Known Unknowns
 
-- ~120 Windows 10/11 workstations
-- ~30 laptops
+### Asset Inventory
 
-Mobile Devices:
+- The asset inventory is incomplete and was exported from the ticketing system.
+- The exact number of endpoints is unknown.
+- The exact number of printers is unknown.
+- The complete medical device inventory is not available.
+- `print-srv-01` has not been physically verified for more than one year.
+- A possible second server at Westside Clinic has been mentioned but has not been confirmed.
 
-- ~25 iPads
+### Network Infrastructure
 
-## Medical Devices
+- The network diagram is incomplete.
+- The real network topology has not been fully documented.
+- The Cisco Core Switch model is unknown.
+- The Westside Clinic switch model is unknown.
+- The wireless infrastructure at Westside Clinic is undocumented.
+- Guest Wi-Fi network isolation has not been verified.
+- VPN Access Control Lists (ACLs) have never been audited.
+- Firewall rules are not documented.
+- The complete DMZ configuration is unknown.
 
-- Philips IntelliVue patient monitors (~80)
-- BD Alaris infusion pumps (~120)
-- Siemens MAGNETOM MRI
-- GE Revolution CT Scanner
-- IP Nurse Call System
-- HID Global Badge/Access System
+### Systems and Software
 
----
+- The operating system of the GE Revolution CT scanner is unknown.
+- Additional documentation for the Siemens MAGNETOM MRI is missing.
+- The management status of the organizational iPads is unknown.
+- A complete software inventory is not available.
+- A complete cloud services inventory is not available beyond Microsoft 365.
 
-# 3. Data and Services
+### Security Controls
 
-## Data
+- Sophos deployment status across all endpoints has not been verified.
+- No formal vulnerability assessment has been completed.
+- The current logging and monitoring configuration is unknown.
+- Backup restore testing has not been documented.
+- Multi-factor authentication is only confirmed for one user.
 
-MedDefense handles:
+### Governance and Compliance
 
-- Electronic Health Records (EHR)
-- Patient medical records
-- Medical images
-- Laboratory information
-- Pharmacy information
-- Billing and insurance claims
-- Employee records
-- Financial data
-- Legal documents
-- Active Directory user accounts
-- Authentication information
-- Backup data
-- Patient portal information
+- No Incident Response Plan has been documented.
+- No Business Continuity Plan has been documented.
+- No Disaster Recovery Plan has been documented.
+- HIPAA Security Rule compliance has never been formally assessed.
+- The CISO position is currently vacant.
 
-## Critical Services
+### Contradictory or Inconsistent Information
 
-- Electronic Health Record (EHR)
-- PostgreSQL EHR Database
-- PACS Imaging System
-- Billing and Claims Processing
-- Patient Portal
-- Public Website
-- Active Directory
-- File Sharing
-- Scheduling System
-- Microsoft 365
-- VPN Connectivity
-- Backup Services
-- Nurse Call System
-- Badge/Access Control
+- The organization is described as having approximately 2,000 employees, while the documented site headcounts total approximately 1,800.
+- The HR documentation describes the Central Hospital as having six floors plus a basement, while the available network diagram only shows four floors.
+- The asset inventory and network documentation are incomplete.
 
-## Users
-
-Clinical Staff:
-
-- Doctors
-- Nurses
-- Radiology
-- Laboratory
-- Pharmacy
-
-Administrative Staff:
-
-- Finance
-- HR
-- Legal
-- Marketing
-- Executive Management
-
-IT Staff:
-
-- System Administrators
-- Network Technicians
-- Database Administrator
-- Helpdesk
-- Desktop Support
-- Security Team
-
-Patients:
-
-- Patient Portal users
-
----
-
-# 4. Known Unknowns
-
-## Asset Inventory
-
-- Asset inventory is incomplete.
-- print-srv-01 has not been physically verified.
-- Possible second server at Westside has not been confirmed.
-- Total endpoint inventory is unknown.
-- Printer inventory is unknown.
-- Medical device inventory is incomplete.
-
-## Network
-
-- Cisco Core Switch model is unknown.
-- Westside switch brand is unknown.
-- Westside Wi-Fi equipment is unknown.
-- Guest Wi-Fi isolation has not been verified.
-- HQ VPN ACLs have not been audited.
-- Firewall rules are undocumented.
-- DMZ configuration is incomplete.
-- Network topology is incomplete.
-
-## Systems
-
-- CT Scanner operating system is unknown.
-- MRI supporting documentation is missing.
-- iPad management status is unknown.
-- Cloud service inventory is incomplete.
-- Software inventory is incomplete.
-
-## Security
-
-- No formal vulnerability assessment.
-- Sophos deployment status is unknown.
-- MFA is implemented only for James Chen.
-- Shared accounts may exist beyond Radiology.
-- Logging and monitoring configuration is unknown.
-- Backup restore testing is unknown.
-
-## Governance
-
-- No Incident Response Plan.
-- No Business Continuity Plan.
-- No Disaster Recovery Plan.
-- HIPAA Security Rule has never been formally assessed.
-- CISO position is vacant.
-
-## Contradictions
-
-- Organization headcount is approximately 2,000 employees, but site totals add up to approximately 1,800.
-- Building description states six floors plus basement, while the network diagram shows only four floors.
-- The ServiceDesk asset list is explicitly described as incomplete and partially outdated.
