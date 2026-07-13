@@ -1,5 +1,17 @@
 # Risk Treatment Decisions
 
+## Selected High-Priority Gaps
+
+The following seven gaps were selected from the updated Gap Analysis (Tasks 12 and 13) because they present the highest risk to MedDefense's Critical assets, Restricted data and clinical operations.
+
+- GAP-001 – Legacy MRI Workstation Running Unsupported Windows XP
+- GAP-002 – Unattended EHR Sessions
+- GAP-003 – Unsupported Billing Server
+- GAP-004 – Flat Network Architecture
+- GAP-007 – No Centralized Security Monitoring
+- GAP-011 – No Automated Account Lifecycle Management
+- GAP-012 – Default Credentials on Medical Devices
+
 ---
 
 ## GAP-001
@@ -12,20 +24,20 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Replacing the MRI is not financially or operationally feasible. Network isolation significantly reduces the likelihood of compromise while preserving clinical operations.
+**Justification:** Replacing the MRI is not feasible. Isolating it greatly reduces risk while maintaining clinical operations.
 
 **Proposed Control(s):**
-- Technical Compensating: Dedicated VLAN
+- Technical Compensating: Network segmentation
 - Technical Preventive: Firewall ACLs
-- Physical Preventive: Restricted access to MRI workstation
+- Physical Preventive: Restricted physical access
 
 **Estimated Cost:** $10K–50K
 
 **Implementation Effort:** Short-term (< 1 month)
 
-**Expected Risk Reduction:** High. Limits lateral movement and reduces exposure of the legacy workstation.
+**Expected Risk Reduction:** High
 
-**Trade-offs:** Network redesign requires coordination with Radiology and temporary maintenance windows.
+**Trade-offs:** Requires network changes and scheduled maintenance.
 
 ---
 
@@ -39,20 +51,19 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Automatic session locking reduces unauthorized access without disrupting clinical workflows.
+**Justification:** Automatic session locking protects Restricted patient data with minimal operational impact.
 
 **Proposed Control(s):**
 - Technical Preventive: Automatic session timeout
-- Administrative Preventive: Updated workstation usage policy
-- Administrative Preventive: Staff awareness training
+- Administrative Preventive: Security awareness training
 
 **Estimated Cost:** $1K–10K
 
 **Implementation Effort:** Quick Win (< 1 week)
 
-**Expected Risk Reduction:** High. Reduces unauthorized access to Restricted patient information.
+**Expected Risk Reduction:** High
 
-**Trade-offs:** Staff may experience slightly more frequent logins.
+**Trade-offs:** Users must authenticate more frequently.
 
 ---
 
@@ -66,19 +77,19 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** The server has already suffered ransomware and cryptomining incidents. Upgrading and hardening the platform is essential.
+**Justification:** The server has already suffered ransomware and cryptomining attacks.
 
 **Proposed Control(s):**
 - Technical Preventive: Upgrade operating system
-- Technical Detective: Continuous vulnerability scanning
+- Technical Detective: Vulnerability scanning
 
 **Estimated Cost:** $10K–50K
 
 **Implementation Effort:** Long-term (> 1 month)
 
-**Expected Risk Reduction:** High. Removes known vulnerabilities and improves resilience.
+**Expected Risk Reduction:** High
 
-**Trade-offs:** Planned downtime and migration effort.
+**Trade-offs:** Requires migration planning and scheduled downtime.
 
 ---
 
@@ -92,19 +103,19 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Network segmentation prevents attackers from moving freely between workstations, servers and medical devices.
+**Justification:** Network segmentation prevents attackers from moving between workstations, servers and medical devices.
 
 **Proposed Control(s):**
-- Technical Compensating: VLAN Segmentation
-- Technical Preventive: Internal Firewall ACLs
+- Technical Compensating: VLAN segmentation
+- Technical Preventive: Internal firewall ACLs
 
 **Estimated Cost:** $10K–50K
 
 **Implementation Effort:** Long-term (> 1 month)
 
-**Expected Risk Reduction:** Very High. Limits lateral movement and protects critical assets.
+**Expected Risk Reduction:** Very High
 
-**Trade-offs:** Requires network redesign and testing.
+**Trade-offs:** Network redesign requires careful testing.
 
 ---
 
@@ -118,19 +129,19 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Without centralized monitoring, attacks may remain undetected for extended periods.
+**Justification:** Without centralized monitoring, attacks may remain undetected for long periods.
 
 **Proposed Control(s):**
-- Technical Detective: Cloud-based SIEM
-- Administrative Detective: Security monitoring procedures
+- Technical Detective: Cloud SIEM
+- Administrative Detective: Monitoring procedures
 
-**Estimated Cost:** $50K+
+**Estimated Cost:** $10K–50K
 
 **Implementation Effort:** Long-term (> 1 month)
 
-**Expected Risk Reduction:** High. Improves detection and incident response capabilities.
+**Expected Risk Reduction:** High
 
-**Trade-offs:** Requires ongoing licensing costs and analyst training.
+**Trade-offs:** Requires analyst training and recurring operational effort.
 
 ---
 
@@ -144,19 +155,19 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Automating account deactivation eliminates unnecessary access after employee termination.
+**Justification:** Automatically disabling accounts after employee termination prevents unauthorized access.
 
 **Proposed Control(s):**
-- Administrative Preventive: HR-IT offboarding workflow
+- Administrative Preventive: HR offboarding workflow
 - Technical Preventive: Automated account disablement
 
 **Estimated Cost:** $1K–10K
 
 **Implementation Effort:** Short-term (< 1 month)
 
-**Expected Risk Reduction:** High. Prevents former employees from accessing organizational systems.
+**Expected Risk Reduction:** High
 
-**Trade-offs:** Requires integration between HR and Active Directory.
+**Trade-offs:** Requires HR and IT process integration.
 
 ---
 
@@ -170,17 +181,17 @@
 
 **Treatment Strategy:** Mitigate
 
-**Justification:** Default credentials provide attackers with immediate privileged access.
+**Justification:** Default credentials are one of the most common attack vectors against medical devices.
 
 **Proposed Control(s):**
-- Technical Preventive: Replace vendor default passwords
-- Administrative Preventive: Medical device credential management process
+- Technical Preventive: Replace default passwords
+- Administrative Preventive: Credential management procedure
 
 **Estimated Cost:** $0–1K
 
 **Implementation Effort:** Quick Win (< 1 week)
 
-**Expected Risk Reduction:** High. Eliminates one of the most common attack vectors.
+**Expected Risk Reduction:** High
 
 **Trade-offs:** Requires coordination with Biomedical Engineering and device vendors.
 
@@ -188,16 +199,16 @@
 
 # Budget Summary
 
-| Mitigation Activity | Estimated Cost |
-|---------------------|----------------|
-| MRI Network Isolation | $20,000 |
-| Automatic EHR Session Locking | $5,000 |
-| Billing Server Upgrade | $20,000 |
-| Network Segmentation | $35,000 |
-| Cloud-Based SIEM | $25,000 |
-| Automated Offboarding | $10,000 |
-| Medical Device Credential Hardening | $5,000 |
+| Activity | Estimated Cost |
+|----------|----------------|
+| MRI network isolation | $20,000 |
+| Automatic EHR session locking | $5,000 |
+| Billing server upgrade | $20,000 |
+| Network segmentation | $35,000 |
+| Cloud SIEM deployment | $30,000 |
+| Automated offboarding | $5,000 |
+| Medical device credential update | $5,000 |
 
-**Total Estimated Cost:** **$120,000**
+**Estimated Total:** **$120,000**
 
-The proposed mitigation plan fits within the available annual security budget. Priority is given to controls that reduce the highest operational and patient safety risks. Larger infrastructure improvements, such as expanding SIEM capabilities or replacing legacy medical systems, should be considered in the next fiscal year after the highest-risk vulnerabilities have been addressed.
+The proposed mitigation plan remains within the available annual security budget. Immediate funding should prioritize controls that protect Critical assets and Restricted data. Lower-priority improvements not included in these seven gaps should be scheduled for the next fiscal year after the highest operational risks have been reduced.
