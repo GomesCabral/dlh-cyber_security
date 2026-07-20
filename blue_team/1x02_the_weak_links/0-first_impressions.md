@@ -45,19 +45,25 @@ Critical and High findings together represent 11 of 31 findings, or approximatel
 
 ## 3. Asset Heat Map
 
-The counts below measure how many finding records explicitly name each host. A finding affecting a range of devices counts once for each named device in that range, because it represents one shared issue rather than several separate findings per device.
+The heat map links each repeatedly affected host to its technical and business role. This matters because six findings on a billing system do not carry the same business meaning as six findings on a disposable test machine.
 
-| Rank | Host | Finding count | Role |
-|---:|---|---:|---|
-| 1 | `10.10.2.15` — `billing-srv-01` | 6 | Billing application server; also hosts MySQL and financial/billing records |
-| 2 | `10.10.2.10` — `ehr-srv-01` | 4 | Electronic Health Record application server |
-| 2 | `10.10.2.50` — `web-srv-01` | 4 | Patient portal web server |
-| 4 | `10.10.2.20` — `ad-dc-01` | 3 | Primary Active Directory domain controller and DNS server |
-| 5 | `10.10.1.70` — `WS-RAD-01` | 1 | MRI scanner control workstation |
+| Rank | Host | Finding count | Asset role | Why the role matters |
+|---:|---|---:|---|---|
+| 1 | `10.10.2.15` — `billing-srv-01` | 6 | **Billing application and MySQL database server** holding financial and billing records | A compromise could disrupt revenue-cycle operations, expose financial data and provide a route from the web application to the database and underlying operating system. |
+| 2 | `10.10.2.10` — `ehr-srv-01` | 4 | **Electronic Health Record application server** | This server supports access to clinical records. Its Tomcat/AJP exposure could reveal configuration files or database credentials and affect patient-data confidentiality. |
+| 2 | `10.10.2.50` — `web-srv-01` | 4 | **Patient portal web server** | This is the patient-facing portal that transmits protected health information. Weak TLS, missing headers and certificate-management issues affect both patient trust and secure access. |
+| 4 | `10.10.2.20` — `ad-dc-01` | 3 | **Primary Active Directory domain controller and DNS server** | This host provides centralized identity, authentication and name resolution. Weaknesses here can support credential attacks, directory manipulation and internal reconnaissance across the organization. |
+| 5 (tie) | `10.10.1.70` — `WS-RAD-01` | 1 | **MRI scanner control workstation** | Although it appears in only one finding record, it is a clinically critical medical-device workstation. Compromise could affect imaging availability and create patient-safety or operational impact. |
 
-**Tie note:** There is no unique fifth-place host. Many systems appear in exactly one finding, including `ad-dc-02`, `print-srv-01`, `pacs-srv-01`, `backup-srv-01`, `NAS-01`, the two unknown Linux devices and each device included in the multi-host findings. `WS-RAD-01` is shown as a representative tied host because it is a clinically significant asset.
+### Host-frequency and role linkage
 
-**Asset Registry cross-reference note:** The separate Asset Registry from `1x00 T7` was not included with this task. The roles above are taken only from the scan report. They should be checked against the registry before the final organizational assessment; inventing missing registry data would create an unsupported conclusion.
+The most affected host is therefore `billing-srv-01`, a billing application/MySQL system, with six findings. The next most affected are `ehr-srv-01`, the EHR application server, and `web-srv-01`, the patient portal, with four findings each. `ad-dc-01`, the organization’s domain controller/DNS server, has three. For the fifth position, several hosts are tied at one finding; `WS-RAD-01`, the MRI workstation, is shown because its clinical role makes the single finding especially significant.
+
+This frequency-to-role comparison shows that the repeated findings are concentrated on systems supporting **billing, electronic health records, patient access and enterprise identity**. These are core business and clinical functions, not low-value test assets.
+
+**Tie note:** There is no unique fifth-place host. Other hosts with one finding include `ad-dc-02`, `print-srv-01`, `pacs-srv-01`, `backup-srv-01`, `NAS-01` and the two unidentified Linux systems. Multi-host findings also affect groups of pumps, patient monitors and workstations, but each group is represented by a shared finding rather than separate finding records for every device.
+
+**Asset Registry cross-reference note:** The `1x00 T7` Asset Registry was not supplied with the available files. The roles above are therefore cross-referenced from the explicit hostnames, descriptions and data-purpose notes in the scan report: billing server, EHR server, patient portal, domain controller/DNS and MRI workstation. They should be verified against the registry when it becomes available.
 
 ## 4. First Observations
 
