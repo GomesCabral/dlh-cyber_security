@@ -2,7 +2,7 @@
 
 ## Part 1 – RACI Matrix
 
-| Security Activity | CEO | Deputy CISO (James) | IT Director (Sarah) | Department Heads | Security Analyst (You) |
+| Security Activity | CEO | Deputy CISO (James) | IT Director (Sarah) | Dept Heads | Security Analyst (You) |
 |-------------------|:---:|:-------------------:|:-------------------:|:----------------:|:----------------------:|
 | Security budget approval | **A** | C | C | I | I |
 | Vulnerability remediation | I | **A** | **R** | C | **R** |
@@ -26,7 +26,7 @@
 
 ## Data Owner
 
-**Assigned Role:** Department Heads (e.g., Dr. Patel for Cardiology, Finance Director for billing data)
+**Assigned Role:** Dept Heads (e.g., Dr. Patel for Cardiology, Finance Director for billing data)
 
 **Definition:**
 
