@@ -5,13 +5,13 @@
 | Security Activity | CEO | Deputy CISO (James) | IT Director (Sarah) | Dept Heads | Security Analyst (You) |
 |-------------------|:---:|:-------------------:|:-------------------:|:----------------:|:----------------------:|
 | Security budget approval | **A** | C | C | I | I |
-| Vulnerability remediation | I | **A** | **R** | C | **R** |
-| Incident response execution | I | **A** | **R** | I | **R** |
+| Vulnerability remediation | I | **C** | **A/R** | C | **R** |
+| Incident response execution | I | **C** | **A** | I | **R** |
 | Security policy approval | **A** | **R** | C | C | C |
-| Risk acceptance decisions | **A** | **R** | C | C | I |
+| Risk acceptance decisions | **A** | **c** | C | R/C | I |
 | Security awareness training | I | **A** | C | **R** | **R** |
-| Vendor risk assessment | I | **A** | C | I | **R** |
-| Audit coordination | I | **A** | C | I | **R** |
+| Vendor risk assessment | I | **A** | C | C | **R** |
+| Audit coordination | I | **A** | C | C | **R** |
 
 ### RACI Legend
 
