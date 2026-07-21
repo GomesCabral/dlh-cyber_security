@@ -93,7 +93,7 @@ The IT department manages the infrastructure where organizational data is stored
 
 ## Current Situation
 
-MedDefense currently has no Chief Information Security Officer (CISO). James Chen is serving as Deputy CISO but does not have full executive authority.
+The **CISO position is currently vacant** at MedDefense Health Systems. James Chen is serving as **Deputy CISO**, but he does not have the executive authority or organizational mandate of a permanent Chief Information Security Officer.
 
 ### Consequences
 
@@ -103,9 +103,14 @@ MedDefense currently has no Chief Information Security Officer (CISO). James Che
 - Long-term cybersecurity strategy depends heavily on operational priorities instead of business governance.
 - Regulatory and Board reporting are more difficult without a senior security executive.
 
-## Recommendation
+### Recommendation
 
-MedDefense should initially adopt a **virtual Chief Information Security Officer (vCISO)** rather than hiring a full-time CISO.
+Two options are available:
+
+- **Option 1:** Hire a full-time CISO.
+- **Option 2:** Outsource the function to a virtual CISO (vCISO).
+
+**Recommendation:** MedDefense should initially adopt a **virtual CISO (vCISO)** rather than hiring a full-time CISO.
 
 With an annual security budget of **$120,000**, employing an experienced full-time CISO would consume a significant portion of the available budget, leaving fewer resources for critical improvements such as network segmentation, vulnerability remediation, centralized monitoring and staff training. A vCISO can provide strategic leadership, governance, policy development, Board reporting and regulatory guidance at a much lower cost while James Chen continues managing day-to-day security operations. As the organization's cybersecurity maturity increases and additional funding becomes available, MedDefense can transition to a permanent full-time CISO.
 
