@@ -1,24 +1,24 @@
 # 4. Governance Architecture – MedDefense Health Systems
 
-## Part 1 – RACI Matrix
+# Part 1 – RACI Matrix
 
 | Security Activity | CEO | Deputy CISO (James) | IT Director (Sarah) | Dept Heads | Security Analyst (You) |
-|-------------------|:---:|:-------------------:|:-------------------:|:----------------:|:----------------------:|
-| Security budget approval | **A** | C | C | I | I |
-| Vulnerability remediation | I | **C** | **A/R** | C | **R** |
-| Incident response execution | I | **C** | **A** | I | **R** |
+|-------------------|:---:|:-------------------:|:-------------------:|:----------:|:----------------------:|
+| Security budget approval | **A** | **R** | C | I | I |
+| Vulnerability remediation | I | **A** | **R** | C | R |
+| Incident response execution | I | **A** | **R** | C | R |
 | Security policy approval | **A** | **R** | C | C | C |
-| Risk acceptance decisions | **A** | **c** | C | R/C | I |
-| Security awareness training | I | **A** | C | **R** | **R** |
+| Risk acceptance decisions | **A** | C | C | C | I |
+| Security awareness training | I | **A** | C | **R** | R |
 | Vendor risk assessment | I | **A** | C | C | **R** |
 | Audit coordination | I | **A** | C | C | **R** |
 
-### RACI Legend
+## RACI Legend
 
 - **R – Responsible:** Performs the work.
-- **A – Accountable:** Ultimately owns the outcome and approves decisions.
-- **C – Consulted:** Provides expertise before decisions are made.
-- **I – Informed:** Kept informed of progress and outcomes.
+- **A – Accountable:** Final decision maker and owner.
+- **C – Consulted:** Provides advice before decisions.
+- **I – Informed:** Receives updates.
 
 ---
 
@@ -26,66 +26,73 @@
 
 ## Data Owner
 
-**Assigned Role:** Dept Heads (e.g., Dr. Patel for Cardiology, Finance Director for billing data)
+**Assigned Role:** Dept Heads (for example Dr. Patel for Cardiology and the Finance Director for Billing).
 
-**Definition:**
+### Definition
 
-The Data Owner is responsible for determining how data should be classified, who may access it and how it supports business operations.
+The Data Owner decides how business data is classified, who should have access to it and how it supports clinical or business operations.
 
-**Why**
+### Why
 
-Department Heads understand the business value and sensitivity of the information generated within their departments and therefore decide how it should be protected.
+Department Heads understand the value and sensitivity of their own information and therefore own the business risk associated with that data.
 
 ---
 
 ## Data Controller
 
-**Assigned Role:** MedDefense Health Systems (represented by Executive Management)
+**Assigned Role:** MedDefense Health Systems (Executive Management).
 
-**Definition:**
+### Definition
 
-The Data Controller determines why and how personal information is processed and is legally responsible for compliance with regulations such as GDPR and healthcare privacy laws.
+The Data Controller determines why and how personal information is processed and is legally responsible for compliance with GDPR and healthcare privacy regulations.
 
-**Why**
+### Why
 
-The organization—not an individual employee—determines the purpose and lawful processing of patient and employee data.
+Only the organization can legally determine the purpose for processing patient and employee information.
 
 ---
 
 ## Data Processor
 
-**Assigned Role:** Third-party service providers (e.g., SecurePoint Consulting, cloud service providers, external payroll providers)
+**Assigned Role:** Third-party providers such as SecurePoint Consulting, Microsoft 365 and other contracted service providers.
 
-**Definition:**
+### Definition
 
-A Data Processor processes personal information on behalf of the Data Controller according to contractual instructions.
+A Data Processor handles personal data on behalf of the Data Controller following contractual instructions.
 
-**Why**
+### Why
 
-External vendors provide services using MedDefense data but do not determine how or why that data is processed.
+These providers process MedDefense information but never determine its purpose.
 
 ---
 
 ## Data Custodian (Data Steward)
 
-**Assigned Role:** IT Director (Sarah Park) and the IT Infrastructure Team
+**Assigned Role:** Sarah Park (IT Director) and the Infrastructure Team.
 
-**Definition:**
+### Definition
 
-The Data Custodian is responsible for implementing the technical controls required to protect organizational data.
+The Data Custodian is responsible for implementing and maintaining the technical controls that protect organizational data.
 
-**Responsibilities include:**
+### Responsibilities
 
-- Backup management
-- Storage administration
-- Access control implementation
+- Backup administration
+- Storage management
 - Patch management
+- Access control implementation
 - Encryption
-- System maintenance
+- Server maintenance
+- Disaster recovery support
 
-**Why**
+### Why
 
-The IT department manages the infrastructure where organizational data is stored and processed but does not own the data itself.
+IT manages the systems that store and process information but does not own the data itself.
+
+---
+
+# Governance Ownership vs Technical Custody
+
+Business ownership of data belongs to the **Data Owner** (Dept Heads), who decides how information should be used and protected. Technical custody belongs to the **Data Custodian** (IT Director and Infrastructure Team), who implements the security controls that protect the systems where the data resides. This separation ensures that business decisions remain with the departments while technical implementation remains with IT.
 
 ---
 
@@ -93,37 +100,35 @@ The IT department manages the infrastructure where organizational data is stored
 
 ## Current Situation
 
-The **CISO position is currently vacant** at MedDefense Health Systems. James Chen is serving as **Deputy CISO**, but he does not have the executive authority or organizational mandate of a permanent Chief Information Security Officer.
+The **CISO position is currently vacant** at MedDefense Health Systems.
 
-### Consequences
+James Chen currently serves as **Deputy CISO**, providing operational leadership for the security program, but he does not possess the executive authority or organizational independence normally associated with a permanent Chief Information Security Officer.
 
-- Cybersecurity lacks executive representation during strategic business decisions.
-- Security responsibilities are shared informally between IT and Security, creating ownership confusion.
-- Risk acceptance decisions may not receive independent security oversight.
-- Long-term cybersecurity strategy depends heavily on operational priorities instead of business governance.
-- Regulatory and Board reporting are more difficult without a senior security executive.
+## Consequences of the Vacant CISO Position
 
-### Recommendation
+- Cybersecurity lacks executive representation during strategic planning.
+- Security priorities may compete with operational IT priorities.
+- Risk acceptance decisions rely heavily on executive management instead of an independent security executive.
+- Long-term cybersecurity governance is weaker.
+- Board reporting and regulatory communication become more difficult.
+- Strategic security initiatives may be delayed because no dedicated executive owns the entire program.
 
-Two options are available:
+## Recommendation
 
-- **Option 1:** Hire a full-time CISO.
-- **Option 2:** Outsource the function to a virtual CISO (vCISO).
+MedDefense has two realistic options:
 
-**Recommendation:** MedDefense should initially adopt a **virtual CISO (vCISO)** rather than hiring a full-time CISO.
+**Option 1:** Hire a full-time Chief Information Security Officer (CISO).
 
-With an annual security budget of **$120,000**, employing an experienced full-time CISO would consume a significant portion of the available budget, leaving fewer resources for critical improvements such as network segmentation, vulnerability remediation, centralized monitoring and staff training. A vCISO can provide strategic leadership, governance, policy development, Board reporting and regulatory guidance at a much lower cost while James Chen continues managing day-to-day security operations. As the organization's cybersecurity maturity increases and additional funding becomes available, MedDefense can transition to a permanent full-time CISO.
+**Option 2:** Outsource the role to a virtual Chief Information Security Officer (vCISO).
+
+### Recommended Option
+
+MedDefense should adopt a **virtual CISO (vCISO)** during the next 12–24 months.
+
+With an annual cybersecurity budget of approximately **$120,000**, hiring an experienced full-time CISO would consume a large percentage of the available budget and reduce funding for higher-priority improvements such as vulnerability remediation, SIEM deployment, network segmentation and medical-device security. A vCISO provides strategic governance, Board reporting, regulatory guidance, policy development and risk management at a significantly lower cost while James Chen continues managing day-to-day security operations. As the cybersecurity program matures and the budget increases, MedDefense can later transition to a permanent full-time CISO.
 
 ---
 
-# Governance Summary
+# Overall Governance Assessment
 
-The proposed governance model clearly separates **business ownership**, **technical implementation** and **executive accountability**.
-
-- The **CEO** remains accountable for strategic decisions, budget approval and risk acceptance.
-- The **Deputy CISO** leads the cybersecurity program, defines policies and coordinates security activities.
-- The **IT Director** implements technical controls and maintains infrastructure.
-- **Department Heads** own the business data produced by their departments.
-- The **Security Analyst** performs operational security activities including vulnerability management, monitoring, assessments, training and audit support.
-
-This governance structure aligns with **NIST CSF 2.0 Govern (GV)**, **ISO/IEC 27001 leadership requirements** and **CIS Controls**, providing MedDefense with clear accountability and sustainable security governance.
+This governance architecture clearly separates executive decision-making, security leadership, IT operations and business ownership. Executive management owns business risk, James Chen coordinates the cybersecurity program, Sarah Park manages technical implementation, Department Heads own business data and operational impact, and the Security Analyst provides technical analysis and operational support. This structure aligns with NIST CSF 2.0 Govern (GV), CIS Controls v8 and ISO/IEC 27001 governance principles.
