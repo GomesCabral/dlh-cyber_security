@@ -26,23 +26,24 @@ The following controls are **funded** because they maximize total risk reduction
 
 ### Deferred Controls
 
-The following controls are **deferred** because the current budget does not allow every proposed control to be implemented.
-
 | Control | Annual Cost | Reason |
 |---|---:|---|
-| Sophos Intercept X (EDR Upgrade) | $32,000 | Valuable but lower priority than segmentation and SIEM. |
-| Medical Device Network Isolation | $28,000 | Initial segmentation already reduces part of the medical device risk. |
-| 24/7 Managed SOC | $150,000 | Exceeds the available annual budget. |
+| Sophos Intercept X (EDR Upgrade) | $32,000 | Deferred because higher-priority controls provide greater immediate risk reduction. |
+| Medical Device Network Isolation | $28,000 | Deferred because Network Segmentation already reduces part of this risk and the remaining exposure is acceptable until next fiscal year. |
 
 ---
 
 ### Rejected Controls
 
-The following controls are **rejected** for the current budget cycle.
+The following controls are **rejected** because they do not provide sufficient value for MedDefense at the current stage of its security program.
 
-**Reject decision:** No control is permanently rejected.
+| Control | Reason for Rejection |
+|---|---|
+| 24/7 Managed SOC | Rejected because the annual cost ($150,000) exceeds the entire cybersecurity budget ($120,000). MedDefense lacks the mature logging, detection and response capabilities required to fully benefit from a managed SOC. The organization will achieve greater risk reduction by first implementing Network Segmentation, MFA, SIEM and Immutable Backups. A Managed SOC should be reconsidered after those foundational controls are operational. |
 
-All proposed controls provide measurable security value. The controls above are only rejected for the current fiscal year because of budget limitations.
+**Reject decision:** Reject the outsourced 24/7 Managed SOC for the current security strategy.
+
+This is a strategic rejection based on poor cost-benefit value and implementation maturity, not because the control lacks security value.
 
 ---
 
