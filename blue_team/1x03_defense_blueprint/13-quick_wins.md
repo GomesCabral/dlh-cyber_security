@@ -110,31 +110,33 @@ Reduces known CVEs, removes publicly exploitable vulnerabilities and interrupts 
 
 ---
 
-# Quick Win #5: Centralize Security Logging with Wazuh
+# Quick Win #5: Remove Local Administrator Privileges
 
-**Risk Addressed:** RISK-005 – Delayed Threat Detection
+**Risk Addressed:** RISK-006 – Privilege Escalation and Lateral Movement
 
 **Action:**
-1. Deploy Wazuh Manager.
-2. Configure Windows and Linux log collection.
-3. Enable authentication and security event logging.
-4. Create alerts for failed logins, privilege escalation and malware.
-5. Test alert generation.
 
-**Owner:** Security Analyst
+1. Review membership of local Administrators groups on workstations.
+2. Remove unnecessary administrator privileges.
+3. Ensure users operate with standard user accounts.
+4. Verify only approved IT administrators retain privileged access.
+5. Document all privilege changes.
 
-**Timeline:** 7–10 days
+**Owner:** IT Director (Sarah Park)
 
-**Cost:** $0 (Open-source software)
+**Timeline:** 2–3 days
+
+**Cost:** $0 (performed using existing Active Directory and Group Policy)
 
 **Risk Reduction:**
-Improves visibility across the environment and shortens attacker dwell time during Kill Chains #1 and #2.
+
+Reduces privilege escalation and limits attacker lateral movement during Kill Chain #1 (Ransomware) and Kill Chain #2 (Credential Compromise).
 
 **Verification:**
-- Confirm endpoints are reporting.
-- Generate test security events.
-- Verify alerts appear in the Wazuh dashboard.
 
+- Review local Administrators group membership.
+- Confirm users no longer have unnecessary administrator rights.
+- Test that privileged actions require administrator credentials.
 ---
 
 # Why Quick Wins Matter
