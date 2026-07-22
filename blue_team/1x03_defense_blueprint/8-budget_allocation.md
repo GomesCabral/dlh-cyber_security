@@ -1,62 +1,72 @@
 # 8. Budget Allocation
 
-## Part 1 – The Selection
+## Part 1 - The Selection
 
 ### Funded Controls
 
-| Control | Cost | Reason |
+The following controls are **funded** because they provide the greatest reduction in Annualized Loss Expectancy (ALE) while remaining within MedDefense's annual security budget.
+
+| Control | Annual Cost | Reason |
 |---|---:|---|
-| MFA Deployment | $8,000 | Highest ROI, protects VPN and administrator accounts. |
-| Enterprise SIEM (Wazuh) | $25,000 | Improves detection and reduces attacker dwell time. |
-| Offsite Immutable Backups | $18,000 | Critical for ransomware recovery. |
-| Network Segmentation | $40,000 | Prevents lateral movement across the flat network. |
-| Dedicated Firewall for Westside Clinic | $15,000 | Eliminates an exposed branch-office weakness. |
+| MFA Deployment (VPN & Administrative Accounts) | $8,000 | Highest return on investment; significantly reduces credential theft and VPN compromise. |
+| Enterprise SIEM (Wazuh) | $25,000 | Provides centralized logging, detection and faster incident response. |
+| Offsite Immutable Backups | $18,000 | Minimizes ransomware recovery costs and ensures business continuity. |
+| Network Segmentation | $40,000 | Prevents lateral movement between critical servers, workstations and medical devices. |
+| Dedicated Firewall for Westside Clinic | $15,000 | Removes a major branch-office security weakness and protects remote connectivity. |
 
 **Total Spend:** **$106,000**
 
-**Budget:** **$120,000**
+**Budget Available:** **$120,000**
 
 **Budget Remaining:** **$14,000**
 
 ---
 
-### Deferred Controls (Next Fiscal Year)
+### Deferred Controls
 
-| Control | Cost | Reason |
+The following controls are **deferred** until the next fiscal year because the available budget is better invested in controls with a higher financial return.
+
+| Control | Annual Cost | Reason |
 |---|---:|---|
-| Sophos Intercept X (EDR Upgrade) | $32,000 | Valuable, but core prevention and detection controls provide greater ROI this year. |
-| Medical Device Network Isolation | $28,000 | Important for patient safety, but basic segmentation already reduces some of the risk. |
-| 24/7 Managed SOC | $150,000 | Exceeds the available annual budget and depends on stronger monitoring foundations first. |
+| Sophos Intercept X (EDR Upgrade) | $32,000 | Valuable improvement, but current budget is better spent on prevention and network controls. |
+| Medical Device Network Isolation | $28,000 | Important for patient safety, but initial network segmentation already reduces part of the risk. |
+| 24/7 Managed SOC | $150,000 | Provides excellent monitoring but exceeds the annual security budget. |
 
 ---
 
 ### Rejected Controls
 
-**None.**
+No controls are permanently **rejected**.
 
-All remaining controls provide security value and should be reconsidered as funding becomes available.
+**Reject Decision:** None.
 
----
-
-## Part 2 – Opportunity Cost
-
-### Sophos Intercept X (EDR)
-
-By deferring this control, MedDefense accepts approximately **$700,000** in additional annual risk exposure that could have been reduced through faster malware detection and response.
-
-### Medical Device Network Isolation
-
-By deferring this control, MedDefense accepts approximately **$90,000** in annual patient-safety and operational cyber risk.
-
-### 24/7 Managed SOC
-
-By deferring this control, MedDefense accepts approximately **$170,000** in annual risk exposure due to slower detection and response capabilities.
+All remaining controls provide measurable security value and should be reconsidered during the next budget cycle when additional funding becomes available.
 
 ---
 
-## Part 3 – Alternative Allocation
+# Part 2 - Opportunity Cost
 
-### Alternative Budget
+## Sophos Intercept X (EDR Upgrade)
+
+By **deferring** this control, MedDefense accepts approximately **$700,000** of annual risk exposure associated with malware, ransomware and endpoint compromise.
+
+---
+
+## Medical Device Network Isolation
+
+By **deferring** this control, MedDefense accepts approximately **$90,000** of annual patient-safety and operational cyber risk.
+
+---
+
+## 24/7 Managed SOC
+
+By **deferring** this control, MedDefense accepts approximately **$170,000** of annual risk exposure due to slower threat detection and incident response.
+
+---
+
+# Part 3 - Alternative Allocation
+
+## Alternative Budget Allocation
 
 | Control | Cost |
 |---|---:|
@@ -66,27 +76,33 @@ By deferring this control, MedDefense accepts approximately **$170,000** in annu
 | Network Segmentation | $40,000 |
 | Medical Device Network Isolation | $28,000 |
 
-**Total:** **$119,000**
+**Alternative Total Cost:** **$119,000**
 
-### Comparison
+---
 
-| Allocation | Total Cost | Estimated Risk Reduction |
+## Comparison
+
+| Allocation | Total Cost | Estimated ALE Reduction |
 |---|---:|---:|
 | Primary Recommendation | $106,000 | ~$7,180,000 |
-| Alternative Allocation | $119,000 | ~$7,105,000 |
+| Alternative Recommendation | $119,000 | ~$7,105,000 |
 
-The alternative spends almost the full budget and provides stronger protection for medical devices. However, the primary recommendation delivers a slightly higher overall reduction in Annualized Loss Expectancy (ALE) while leaving $14,000 available for contingency, emergency patching, or future EDR deployment.
+The alternative allocation spends almost the entire annual budget and provides additional protection for medical devices. However, the primary recommendation achieves a slightly greater reduction in overall Annualized Loss Expectancy (ALE) while leaving **$14,000** available for emergency remediation, unexpected vulnerability response or future EDR deployment.
 
 ---
 
 # Final Recommendation
 
-The recommended allocation is:
+The recommended security investment for MedDefense is:
 
 1. MFA Deployment
-2. Enterprise SIEM
+2. Enterprise SIEM (Wazuh)
 3. Offsite Immutable Backups
 4. Network Segmentation
 5. Dedicated Firewall for Westside Clinic
 
-This combination costs **$106,000**, stays within the **$120,000** budget, and delivers the highest overall reduction in financial risk based on the cost-benefit analysis from Task 7. The remaining budget should be reserved for unexpected remediation work or used to partially fund the EDR upgrade in the following fiscal year.
+These controls are **funded** because they maximize risk reduction while remaining within the available **$120,000** budget.
+
+The remaining controls are **deferred**, not **rejected**, because they continue to provide measurable security value and should be implemented during the following fiscal year as additional funding becomes available.
+
+No proposed security controls are **rejected** permanently since each contributes to reducing MedDefense's overall cyber risk.
