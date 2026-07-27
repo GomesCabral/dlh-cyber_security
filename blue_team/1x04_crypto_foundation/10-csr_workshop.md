@@ -2,11 +2,11 @@
 
 ## Goal
 
-This workshop demonstrates the complete process of generating, inspecting, and preparing a Certificate Signing Request (CSR) for the MedDefense patient portal.
+This workshop demonstrates the complete process of generating, inspecting, submitting, issuing, installing, verifying, replacing, and monitoring a Certificate Signing Request and certificate for the MedDefense patient portal.
 
-A Certificate Signing Request (CSR) is a PKCS#10 object that contains the identity of the server, its public key, and the requested X.509 certificate extensions. The CSR is digitally signed with the corresponding private key to prove ownership of that key before it is submitted to a Certificate Authority (CA).
+A Certificate Signing Request (CSR) is a PKCS#10 object containing the server identity, public key, and requested X.509 extensions. The CSR is signed with the corresponding private key to prove that MedDefense controls that key before the request is submitted to a Certificate Authority.
 
-> **Note:** The hostname `portal.meddefense.local` is an internal domain. A public CA such as Let's Encrypt cannot issue publicly trusted certificates for internal `.local` domains. Therefore, this CSR is intended for a MedDefense Internal Enterprise Certificate Authority. A public patient portal should instead use a public hostname such as `portal.meddefense.com`.
+> **Important:** The hostname `portal.meddefense.local` is an internal hostname. A public CA such as Let's Encrypt cannot issue a publicly trusted certificate for `.local`. Therefore, this laboratory CSR must be submitted to a MedDefense Internal Enterprise CA. A real Internet-facing portal should use a public DNS name such as `portal.meddefense.com`.
 
 ---
 
@@ -18,7 +18,7 @@ A Certificate Signing Request (CSR) is a PKCS#10 object that contains the identi
 ECC P-256
 ```
 
-ECC P-256 was selected because it provides approximately 128-bit security while using much smaller keys than RSA. Smaller keys reduce CPU usage, bandwidth consumption, and TLS handshake time, making it ideal for the MedDefense patient portal serving approximately 800 HTTPS connections per day. ECC is fully supported by modern browsers and operating systems while maintaining excellent security. RSA-2048 would only be preferred if legacy systems without ECC support had to be accommodated.
+ECC P-256 was selected because it provides approximately 128-bit classical security with a much smaller key than RSA. It reduces CPU use, certificate size, bandwidth consumption, and TLS handshake overhead, which is suitable for a portal handling approximately 800 patient connections per day. Modern browsers and operating systems support P-256 broadly. RSA-2048 would remain the compatibility fallback if a required legacy client or integration did not support ECDSA certificates.
 
 ---
 
@@ -53,19 +53,20 @@ Output:
 
 ---
 
-## Why the Private Key Must Be Protected
+## Private-Key Protection
 
-The private key represents the identity of the MedDefense patient portal.
+The private key represents the cryptographic identity of the MedDefense patient portal.
 
 It must never be:
 
-- committed to GitHub;
-- emailed;
-- copied to unsecured systems;
-- shared with another administrator;
-- exposed through backups without encryption.
+- committed to Git;
+- sent by email;
+- copied into support tickets;
+- stored in plaintext backups;
+- shared with unauthorised administrators;
+- transferred through insecure channels.
 
-Anyone who obtains this key can impersonate the MedDefense patient portal.
+Anyone who obtains this private key may be able to impersonate the MedDefense portal.
 
 ---
 
@@ -74,13 +75,13 @@ Anyone who obtains this key can impersonate the MedDefense patient portal.
 ## Selected Subject Information
 
 | Field | Value | Justification |
-|-------|-------|---------------|
-| Country | LU | MedDefense operates in Luxembourg |
-| State | Wiltz | Scenario location |
-| Locality | Wiltz | Scenario location |
-| Organization | MedDefense Health Systems | Organization name |
-| Organizational Unit | Information Technology | Department responsible for the portal |
-| Common Name | portal.meddefense.local | Primary portal hostname |
+|---|---|---|
+| Country | `LU` | MedDefense operates in Luxembourg. |
+| State or Province | `Wiltz` | Scenario location. |
+| Locality | `Wiltz` | Scenario locality. |
+| Organisation | `MedDefense Health Systems` | Organisational identity. |
+| Organisational Unit | `Information Technology` | Team responsible for the portal. |
+| Common Name | `portal.meddefense.local` | Primary internal portal hostname required by the task. |
 
 ---
 
@@ -94,11 +95,19 @@ login.meddefense.local
 patient.meddefense.local
 ```
 
-Modern browsers validate the SAN extension instead of relying only on the Common Name.
+Modern hostname validation relies on the Subject Alternative Name extension. Every hostname used to access the service must therefore appear in the SAN list.
 
 ---
 
-## OpenSSL Configuration
+## OpenSSL Configuration File
+
+Create:
+
+```bash
+nano openssl.cnf
+```
+
+Content:
 
 ```ini
 [ req ]
@@ -176,7 +185,7 @@ Output:
 Certificate request self-signature verify OK
 ```
 
-The CSR signature verifies successfully, proving that the request was signed using the private key corresponding to the public key contained inside the CSR.
+This confirms that the CSR was signed by the private key corresponding to the public key contained in the request.
 
 ---
 
@@ -199,7 +208,7 @@ subject=C=LU, ST=Wiltz, L=Wiltz, O=MedDefense Health Systems, OU=Information Tec
 
 ---
 
-## Display the Requested Extensions
+## Display Requested Extensions
 
 Command:
 
@@ -216,16 +225,11 @@ Output:
 ```text
 Requested Extensions:
     X509v3 Subject Alternative Name:
-        DNS:portal.meddefense.local,
-        DNS:login.meddefense.local,
-        DNS:patient.meddefense.local
-
+        DNS:portal.meddefense.local, DNS:login.meddefense.local, DNS:patient.meddefense.local
     X509v3 Key Usage: critical
         Digital Signature
-
     X509v3 Extended Key Usage:
         TLS Web Server Authentication
-
 Signature Algorithm: ecdsa-with-SHA256
 ```
 
@@ -233,103 +237,185 @@ Signature Algorithm: ecdsa-with-SHA256
 
 ## CSR Validation Checklist
 
-| Validation | Result |
-|------------|--------|
-| CSR signature valid | ✅ Yes |
-| Country | ✅ LU |
-| State | ✅ Wiltz |
-| Locality | ✅ Wiltz |
-| Organization | ✅ MedDefense Health Systems |
-| Organizational Unit | ✅ Information Technology |
-| Common Name | ✅ portal.meddefense.local |
-| SAN entries present | ✅ Yes |
-| Key algorithm | ✅ ECC |
-| Curve | ✅ P-256 |
-| Signature algorithm | ✅ ECDSA with SHA-256 |
-| Extended Key Usage | ✅ TLS Web Server Authentication |
+| Validation Item | Result |
+|---|---|
+| CSR signature valid | Yes |
+| Country | `LU` |
+| State | `Wiltz` |
+| Locality | `Wiltz` |
+| Organisation | `MedDefense Health Systems` |
+| Organisational Unit | `Information Technology` |
+| Common Name | `portal.meddefense.local` |
+| SAN: `portal.meddefense.local` | Present |
+| SAN: `login.meddefense.local` | Present |
+| SAN: `patient.meddefense.local` | Present |
+| Key algorithm | ECC |
+| Curve | P-256 |
+| Key Usage | Digital Signature |
+| Extended Key Usage | TLS Web Server Authentication |
+| CSR signature algorithm | ECDSA with SHA-256 |
 
 ---
 
-# Part 4 - Certificate Lifecycle
+# Part 4 - The Full Certificate Lifecycle
 
-## Step 1 – Generate the CSR
+## Lifecycle Stage 1 - CSR Generated
 
-The administrator generates:
+The CSR generation stage is complete.
 
-- Private Key (`portal_key.pem`)
-- Configuration file (`openssl.cnf`)
-- Certificate Signing Request (`portal.csr`)
+Generated files:
 
-The private key always remains under MedDefense control.
+```text
+portal_key.pem
+portal.csr
+openssl.cnf
+```
+
+The private key remains under MedDefense control. Only the CSR is sent to the CA.
 
 ---
 
-## Step 2 – Submit the CSR
+## Lifecycle Stage 2 - Submission to CA
 
-Because the hostname ends with `.local`, the CSR should be submitted to the:
+### Submission to CA
+
+Because the requested hostname is:
+
+```text
+portal.meddefense.local
+```
+
+the CSR must be submitted to:
 
 ```text
 MedDefense Internal Enterprise Certificate Authority
 ```
 
-A public Certificate Authority such as Let's Encrypt cannot issue certificates for internal domains.
+The administrator submits:
 
-If the patient portal were publicly accessible, MedDefense should instead use:
+```text
+portal.csr
+```
+
+through the approved internal certificate-enrolment portal, CA API, or controlled PKI workflow.
+
+The following file must never be submitted:
+
+```text
+portal_key.pem
+```
+
+For a public portal using:
 
 ```text
 portal.meddefense.com
 ```
 
-which could then use Let's Encrypt (ACME) or another commercial CA.
+MedDefense could use Let's Encrypt through ACME or a commercial public CA.
 
 ---
 
-## Step 3 – CA Validation
+## Lifecycle Stage 3 - Validation Process
 
-The Certificate Authority verifies:
+### Validation Process
 
-- the administrator is authorized;
-- the requested hostname belongs to MedDefense;
-- the SAN entries are correct;
-- the CSR signature is valid;
-- the requested key meets security policy.
+The internal CA verifies:
 
-For a public certificate, the CA additionally verifies ownership of the public DNS name through HTTP or DNS validation.
+1. the requester is an authorised MedDefense administrator;
+2. the requested hostname belongs to an approved MedDefense service;
+3. the SAN entries match the approved service inventory;
+4. the CSR signature is valid;
+5. the requested key algorithm and size comply with policy;
+6. the requester is permitted to obtain a TLS server certificate;
+7. the certificate template permits `TLS Web Server Authentication`.
 
----
+For a public DV certificate, the CA would verify control of each public DNS name through an ACME challenge such as:
 
-## Step 4 – Certificate Issuance
+```text
+HTTP-01
+```
 
-The CA signs the public key contained in the CSR and returns:
+or:
 
-- the leaf certificate;
-- the intermediate certificate(s);
-- installation instructions.
+```text
+DNS-01
+```
 
-The private key never leaves MedDefense.
-
----
-
-## Step 5 – Install the Certificate
-
-Install:
-
-- portal certificate;
-- intermediate certificate chain;
-- portal private key.
-
-The web server configuration must reference the complete certificate chain.
+A public CA validates domain control, not the clinical safety or trustworthiness of the application.
 
 ---
 
-## Step 6 – Reload the Web Server
+## Lifecycle Stage 4 - Certificate Issuance
 
-Validate the configuration before reloading.
+### Certificate Issuance
+
+After successful validation, the CA signs the public key and requested identity from the CSR.
+
+The CA returns:
+
+- the portal leaf certificate;
+- one or more intermediate CA certificates;
+- installation instructions;
+- certificate serial number;
+- validity period;
+- revocation information.
+
+The CA does not need access to the private key.
+
+The issued certificate should contain:
+
+```text
+Subject:
+C=LU
+ST=Wiltz
+L=Wiltz
+O=MedDefense Health Systems
+OU=Information Technology
+CN=portal.meddefense.local
+```
+
+and the requested SAN entries.
+
+---
+
+## Lifecycle Stage 5 - Installation on the Web Server
+
+### Installation on the Web Server
+
+Install the following files on the portal web server or reverse proxy:
+
+```text
+portal certificate
+intermediate certificate chain
+portal_key.pem
+```
+
+The private key must remain protected with restrictive permissions.
+
+Example:
+
+```bash
+chmod 600 portal_key.pem
+```
+
+The web-server configuration must reference the complete certificate chain rather than only the leaf certificate.
+
+---
+
+## Lifecycle Stage 6 - Web-Server Configuration Validation
+
+Before activating the certificate, validate the server configuration.
 
 Apache example:
 
 ```bash
 sudo apachectl configtest
+```
+
+Expected output:
+
+```text
+Syntax OK
 ```
 
 Nginx example:
@@ -338,118 +424,286 @@ Nginx example:
 sudo nginx -t
 ```
 
-Reload the service after successful validation.
+Expected output:
+
+```text
+syntax is ok
+test is successful
+```
+
+Only reload the web server after the configuration test succeeds.
 
 ---
 
-## Step 7 – Verify the Deployment
+## Lifecycle Stage 7 - Certificate Activation
 
-Inspect the live certificate:
+Reload the applicable service.
+
+Apache example:
+
+```bash
+sudo systemctl reload apache2
+```
+
+Nginx example:
+
+```bash
+sudo systemctl reload nginx
+```
+
+A graceful reload reduces service disruption and allows active connections to complete where supported.
+
+---
+
+## Lifecycle Stage 8 - Verification That the New Certificate Is Serving Correctly
+
+### Verification That the New Certificate Is Serving Correctly
+
+Inspect the certificate presented by the live service:
 
 ```bash
 openssl s_client \
-    -connect portal.meddefense.local:443 \
-    -servername portal.meddefense.local \
-    -showcerts
+  -connect portal.meddefense.local:443 \
+  -servername portal.meddefense.local \
+  -showcerts </dev/null
 ```
 
-Verify:
+Check the live Subject, Issuer, serial number, and dates:
 
-- Subject;
-- SAN entries;
-- certificate chain;
-- validity period;
-- trusted issuer;
-- TLS Web Server Authentication.
+```bash
+echo | openssl s_client \
+  -connect portal.meddefense.local:443 \
+  -servername portal.meddefense.local 2>/dev/null \
+  | openssl x509 \
+      -noout \
+      -subject \
+      -issuer \
+      -serial \
+      -dates
+```
+
+Verify the hostname:
+
+```bash
+echo | openssl s_client \
+  -connect portal.meddefense.local:443 \
+  -servername portal.meddefense.local \
+  -verify_hostname portal.meddefense.local
+```
+
+Confirm:
+
+- the new certificate is presented;
+- the Subject is correct;
+- every required SAN is present;
+- the chain reaches a trusted root;
+- the validity period is correct;
+- the certificate permits TLS Web Server Authentication;
+- the public key matches the new private key;
+- there are no browser warnings;
+- the portal remains available.
 
 ---
 
-## Step 8 – Remove the Old Certificate
+## Lifecycle Stage 9 - Functional Testing
 
-Once the new certificate is confirmed:
+Test the main workflows after installation:
 
-- remove the previous certificate from the web server;
-- archive it if required;
-- revoke it immediately if the private key was compromised;
-- verify that no secondary server is still presenting the old certificate.
+- patient login;
+- appointment access;
+- account recovery;
+- mobile browser access;
+- portal redirects;
+- API integrations;
+- all SAN hostnames;
+- monitoring probes;
+- supported legacy clients.
+
+A certificate may be technically valid but still break access if the required hostname was omitted from the SAN extension.
 
 ---
 
-## Step 9 – Monitor Future Renewals
+## Lifecycle Stage 10 - Decommission of the Old Certificate
 
-Configure monitoring for:
+### Decommission of the Old Certificate
 
-- certificate expiration;
-- failed renewals;
-- invalid certificate chains;
-- expired certificates;
-- unexpected SAN changes.
+After the new certificate is confirmed as active:
 
-Recommended alerts:
+1. remove the old certificate from the active web-server configuration;
+2. remove old copies from deployment directories;
+3. confirm secondary nodes and load balancers no longer present it;
+4. archive it only where retention policy requires;
+5. record the replacement in the certificate inventory;
+6. revoke it if the old private key was exposed or compromised.
 
-| Time Before Expiry | Severity |
-|-------------------|----------|
-| 60 days | Information |
+A normal renewal does not always require revocation, but the old certificate must no longer be served by production systems.
+
+---
+
+## Lifecycle Stage 11 - Monitoring for the Next Renewal
+
+### Monitoring for the Next Renewal
+
+MedDefense must monitor:
+
+- expiration date;
+- failed renewal attempts;
+- failed deployment;
+- incorrect Subject or SAN entries;
+- unexpected issuer changes;
+- incomplete certificate chains;
+- revoked certificates;
+- private-key permission changes;
+- old certificates still presented by secondary nodes.
+
+Recommended warning thresholds:
+
+| Time Before Expiration | Severity |
+|---|---|
+| 60 days | Informational |
 | 30 days | Warning |
 | 14 days | High |
 | 7 days | Critical |
 
+For short-lived certificates renewed automatically, the thresholds should align with the normal ACME renewal window.
+
 ---
 
-# MedDefense Recommendation
+## Lifecycle Stage 12 - Renewal Process
 
-Although this exercise uses:
+At the next renewal:
+
+1. generate a new private key or follow the approved key-reuse policy;
+2. create a new CSR;
+3. submit the CSR to the CA;
+4. complete validation;
+5. receive the replacement certificate;
+6. install the new certificate and chain;
+7. test the configuration;
+8. reload the service;
+9. verify the live certificate;
+10. decommission the previous certificate;
+11. update the certificate inventory.
+
+The process should be automated where possible.
+
+---
+
+# Internal Versus Public Certificate Decision
+
+## Internal Portal
+
+For:
 
 ```text
 portal.meddefense.local
 ```
 
-a production patient portal should instead use:
+use:
+
+```text
+MedDefense Internal Enterprise CA
+```
+
+The internal CA root certificate must be installed in the trust stores of all authorised client systems.
+
+## Public Patient Portal
+
+For real patients accessing the portal over the Internet, use:
 
 ```text
 portal.meddefense.com
 ```
 
-Recommended configuration:
+Recommended public certificate approach:
 
 | Component | Recommendation |
-|------------|---------------|
-| Certificate Type | Domain Validation (DV) |
-| CA | Let's Encrypt (ACME) or Commercial CA |
-| Key Algorithm | ECC P-256 |
-| Signature Algorithm | ECDSA with SHA-256 |
-| SAN Entries | All public portal hostnames |
-| Renewal | Automatic (ACME) |
-| Monitoring | Certificate expiration monitoring |
+|---|---|
+| Certificate type | DV unless OV is required by policy |
+| CA | Publicly trusted CA |
+| Issuance method | ACME |
+| Key algorithm | ECC P-256 |
+| Signature | ECDSA with SHA-256 |
+| SANs | Only required public hostnames |
+| Renewal | Fully automated |
+| Monitoring | Expiration and deployment monitoring |
 
 ---
 
-# Companion Script
+# Companion Automation Script
 
-The accompanying script is:
+The companion script is:
 
 ```text
 10-generate_csr.sh
 ```
 
-The script automatically:
+It automates:
 
-1. Creates the OpenSSL configuration.
-2. Generates an ECC P-256 private key.
-3. Protects the private key.
-4. Generates the CSR.
-5. Verifies the CSR.
-6. Displays the Subject and SAN entries.
+1. creation of `openssl.cnf`;
+2. ECC P-256 private-key generation;
+3. private-key permission hardening;
+4. CSR generation;
+5. CSR signature verification;
+6. Subject display;
+7. SAN and requested-extension display.
+
+Run it:
+
+```bash
+chmod +x 10-generate_csr.sh
+```
+
+Validate the script:
+
+```bash
+bash -n 10-generate_csr.sh
+```
 
 Execute:
 
 ```bash
-chmod +x 10-generate_csr.sh
 ./10-generate_csr.sh
+```
+
+Output:
+
+```text
+Certificate request self-signature verify OK
+subject=C=LU, ST=Wiltz, L=Wiltz, O=MedDefense Health Systems, OU=Information Technology, CN=portal.meddefense.local
+
+Requested extensions:
+            Requested Extensions:
+                X509v3 Subject Alternative Name:
+                    DNS:portal.meddefense.local, DNS:login.meddefense.local, DNS:patient.meddefense.local
+                X509v3 Key Usage: critical
+                    Digital Signature
+                X509v3 Extended Key Usage:
+                    TLS Web Server Authentication
+    Signature Algorithm: ecdsa-with-SHA256
+
+-rw-rw-r--. 1 gomes gomes 472 Jul 27 16:13 openssl.cnf
+-rw-rw-r--. 1 gomes gomes 725 Jul 27 16:13 portal.csr
+-rw-------. 1 gomes gomes 241 Jul 27 16:13 portal_key.pem
 ```
 
 ---
 
-# Conclusion
+# Security Conclusions
 
-This laboratory demonstrated the complete Certificate Signing Request workflow. MedDefense selected ECC P-256 to balance strong security with high performance. The CSR was successfully generated, verified, and inspected, confirming the correct Subject information, Subject Alternative Names, and TLS server extensions. Finally, the complete certificate lifecycle—from key generation through issuance, deployment, verification, and renewal planning—was documented, providing a repeatable process for securely managing certificates within the MedDefense environment.
+The CSR was generated successfully using an ECC P-256 private key and signed with ECDSA and SHA-256. Its Subject and SAN entries were inspected and confirmed, and the CSR signature verified successfully.
+
+The certificate lifecycle does not end when the CSR is created. It includes:
+
+1. CSR generation;
+2. Submission to CA;
+3. Validation process;
+4. Certificate issuance;
+5. Installation on the web server;
+6. Verification that the new certificate is serving correctly;
+7. Decommission of the old certificate;
+8. Monitoring for the next renewal.
+
+The internal `.local` hostname requires an internal enterprise CA. A real public patient portal should use a registered public hostname and automated issuance from a publicly trusted CA.
+
+Strong certificate security depends on correct key generation, complete SAN coverage, trusted issuance, secure installation, chain verification, old-certificate removal, and continuous lifecycle monitoring.
