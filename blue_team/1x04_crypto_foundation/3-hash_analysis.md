@@ -4,7 +4,7 @@
 
 This laboratory explores cryptographic hashing through practical experimentation. It demonstrates the avalanche effect, explains collision resistance and the birthday problem, tests how salts affect rainbow-table attacks, compares modern password-hashing algorithms, and documents an integrity-verification script for MedDefense.
 
-> **Evidence requirement:** Outputs from terminal commands and CrackStation must reflect the real results obtained during the laboratory. External results must not be fabricated.
+> **Evidence requirement:** Outputs from terminal commands and results from `crackstation.net` must reflect the real results obtained during the laboratory. External results must not be fabricated.
 
 ---
 
@@ -139,7 +139,7 @@ MD5 therefore also demonstrates an avalanche effect. However, the avalanche effe
 
 The avalanche effect is important for integrity monitoring. If an attacker modifies even one byte in a MedDefense patient record, database backup, DICOM image, configuration file, or administrative script, its SHA-256 hash will change significantly.
 
-Comparing a trusted expected hash with the current file hash therefore allows MedDefense to identify accidental corruption or unauthorized modification.
+Comparing a trusted expected hash with the current file hash therefore allows MedDefense to identify accidental corruption or unauthorised modification.
 
 ---
 
@@ -147,19 +147,19 @@ Comparing a trusted expected hash with the current file hash therefore allows Me
 
 ## Number of Possible Outputs
 
-MD5 produces a 128-bit hash.
+MD5 produces a 128-bit hash:
 
 ```text
 Possible MD5 outputs = 2^128
 ```
 
-SHA-256 produces a 256-bit hash.
+SHA-256 produces a 256-bit hash:
 
 ```text
 Possible SHA-256 outputs = 2^256
 ```
 
-The approximate decimal values are:
+Approximate decimal values:
 
 ```text
 2^128 ≈ 3.40 × 10^38
@@ -179,14 +179,14 @@ A hash collision occurs when two different inputs produce the same hash output.
 Hash(input A) = Hash(input B)
 ```
 
-For example:
+Example:
 
 ```text
 legitimate-document.pdf  -> ABC123
 malicious-document.pdf   -> ABC123
 ```
 
-If the same hash were accepted for both files, an attacker could potentially replace the legitimate document without the integrity check detecting the substitution.
+If the same hash were accepted for both files, an attacker could potentially replace a legitimate file without the integrity check detecting the substitution.
 
 ---
 
@@ -239,7 +239,23 @@ The practical security problem is not only MD5 collision resistance. The NT hash
 
 # Part 3 - Rainbow Table Demonstration
 
-## Unsalted MD5 Password Hash
+The following demonstration was performed using:
+
+```text
+https://crackstation.net/
+```
+
+The site `crackstation.net` was used to test both an unsalted MD5 password hash and a salted MD5 password hash.
+
+---
+
+## Unsalted Password
+
+Input:
+
+```text
+password123
+```
 
 Command:
 
@@ -253,24 +269,29 @@ Output:
 482c811da5d5b4bc6d497ffa98491e38  -
 ```
 
-The hash submitted to CrackStation was:
+Hash submitted to `crackstation.net`:
 
 ```text
 482c811da5d5b4bc6d497ffa98491e38
 ```
 
-## CrackStation Result
+Result returned by `crackstation.net`:
 
 ```text
-Hash Type: MD5
-Result: password123
+password123
 ```
 
-CrackStation was able to identify the original password because `password123` is a common password and its unsalted MD5 hash is present in precomputed password databases.
+The password was recovered because `password123` is a common password and its unsalted MD5 hash is present in precomputed password databases and rainbow tables.
 
 ---
 
-## Salted MD5 Password Hash
+## Salted Password
+
+Salted input:
+
+```text
+s4lt9xQ2:password123
+```
 
 Command:
 
@@ -284,21 +305,19 @@ Output:
 6d537fa53f1db2c22b0451ef4ef9fbe8  -
 ```
 
-The hash submitted to CrackStation was:
+Hash submitted to `crackstation.net`:
 
 ```text
 6d537fa53f1db2c22b0451ef4ef9fbe8
 ```
 
-## CrackStation Result
-
-Replace the result below with the exact result displayed during the laboratory:
+Result returned by `crackstation.net`:
 
 ```text
-Result: Not found
+Not found
 ```
 
-The salted value was not present in the precomputed lookup database because the hash was calculated from the complete string:
+The salted value was not present in the precomputed lookup database because the hash was calculated from the complete value:
 
 ```text
 s4lt9xQ2:password123
@@ -311,6 +330,8 @@ rather than from `password123` alone.
 ## Why Salting Defeats Rainbow Tables
 
 A salt is a random value combined with a password before hashing. It prevents identical passwords from producing identical hashes and makes precomputed rainbow tables ineffective because an attacker would require a separate table for every possible salt. Every user must receive a unique salt so that work performed against one account cannot be reused against other users who selected the same password. The salt does not need to remain secret, but it must be random, sufficiently long, and stored alongside the password hash.
+
+Reference: `https://crackstation.net/` was used to demonstrate the difference between unsalted and salted password hashes.
 
 ---
 
@@ -556,7 +577,7 @@ Expected output:
 
 ## Successful Integrity Test
 
-Obtain the real SHA-256 hash of `patient.txt`:
+Obtain the SHA-256 hash of `patient.txt`:
 
 ```bash
 expected_hash="$(sha256sum patient.txt | awk '{print $1}')"
