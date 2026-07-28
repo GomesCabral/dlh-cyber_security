@@ -523,7 +523,7 @@ Modern CPUs with AES hardware acceleration may keep the overhead modest, but the
 
 4.3 Encryption-Key Storage
 
-The encryption key must not be stored unprotected on NAS-01.
+The encryption key must be stored NOT on the NAS. More precisely, the master recovery key must not be stored unprotected on NAS-01.
 
 If the NAS contains both:
 
