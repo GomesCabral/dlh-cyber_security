@@ -1,173 +1,133 @@
-# 12. The Disk Encryption Lab
+12. The Disk Encryption Lab
 
-## Goal
+Goal
 
-This laboratory demonstrates how to protect data at rest using Linux Unified Key Setup (LUKS). A 500 MB virtual disk was created, encrypted with LUKS2, formatted with an ext4 filesystem, mounted, populated with test data, unmounted, closed, and reopened to verify data integrity.
+This laboratory demonstrates how to protect data at rest using Linux Unified Key Setup (LUKS). A 500 MB virtual disk was created, encrypted with LUKS2, formatted with ext4, mounted, populated with test data, unmounted, closed, inspected as a raw encrypted file, reopened, and verified.
 
-This exercise addresses the MedDefense finding that **NAS-01 stores backups in plaintext**.
+This exercise addresses the MedDefense finding that NAS-01 stores backups in plaintext.
 
-**Finding:** NAS-01 stores backup data without encryption.
+Finding: NAS-01 stores backup data without encryption.
 
-**Risk:** If the NAS disks are stolen or an attacker gains offline access, all patient records, billing information, medical images, and system backups can be read.
+Risk: If the NAS disks are stolen or an attacker gains offline access, patient records, billing data, medical images, and system backups can be read.
 
-**Mitigation:** Encrypt backup storage using LUKS and store the encryption keys **NOT on the NAS**.
+Mitigation: Encrypt NAS-01 at rest, store encryption keys NOT on the NAS, and ensure that the cloud replica also remains encrypted.
 
----
+Part 1 - LUKS Setup
 
-# Part 1 - LUKS Setup
+Step 1 - Verify cryptsetup
 
-## Step 1 - Verify cryptsetup
+Command:
 
-### Command
-
-```bash
 cryptsetup --version
-```
 
-### Output
+Output:
 
-```text
 cryptsetup 2.8.6 flags: UDEV BLKID KEYRING KERNEL_CAPI HW_OPAL
-```
 
-This confirms that the required LUKS encryption utilities are installed.
+Step 2 - Create a 500 MB Virtual Disk
 
----
+Required command:
 
-## Step 2 - Create a 500 MB Virtual Disk
-
-### Required command
-
-```bash
 dd if=/dev/zero of=encrypted_volume.img bs=1M count=500
-```
 
-### Command used
+Command used:
 
-```bash
 dd if=/dev/zero of=encrypted_volume.img bs=1M count=500 status=progress
-```
 
-### Output
+Output:
 
-```text
 204472320 bytes (204 MB, 195 MiB) copied, 1 s, 203 MB/s
 500+0 records in
 500+0 records out
 524288000 bytes (524 MB, 500 MiB) copied, 2.96641 s, 177 MB/s
-```
 
-### Verify the image
+Verify the image:
 
-```bash
 ls -lh encrypted_volume.img
-```
 
-### Output
+Output:
 
-```text
 -rw-rw-r--. 1 gomes gomes 500M Jul 28 11:11 encrypted_volume.img
-```
 
-### Explanation
+The file acts as a virtual block device for the laboratory.
 
-The file `encrypted_volume.img` acts as a virtual hard disk that can safely be used to practise LUKS without modifying a physical storage device.
+Step 3 - Format the Image with LUKS2
 
----
+Required command:
 
-## Step 3 - Format the Image with LUKS2
-
-### Required command
-
-```bash
 sudo cryptsetup luksFormat encrypted_volume.img
-```
 
-### Command used
+Command used:
 
-```bash
 sudo cryptsetup luksFormat --type luks2 encrypted_volume.img
-```
 
-During execution, cryptsetup requested confirmation:
+The confirmation YES was entered and a strong passphrase was configured.
 
-```text
-WARNING!
-========
-This will overwrite data on encrypted_volume.img irrevocably.
+luksFormat created the LUKS2 header and protected the internal volume key with the passphrase.
 
-Are you sure? (Type 'yes' in capital letters): YES
-```
+Step 4 - Inspect the LUKS Header
 
-A strong passphrase was then entered.
+Command:
 
-### Explanation
-
-This command writes the LUKS2 header, generates a random master encryption key, and protects that key using the supplied passphrase.
-
-The passphrase is **not** used to encrypt the data directly.
-
----
-
-## Step 4 - Inspect the LUKS Header
-
-### Command
-
-```bash
 sudo cryptsetup luksDump encrypted_volume.img
-```
 
-### Output (excerpt)
+Output:
 
-```text
+LUKS header information
 Version:        2
+Epoch:          3
+Metadata area:  16384 [bytes]
+Keyslots area:  16744448 [bytes]
 UUID:           8ff06c4c-e1d2-4427-bb66-b86166485e66
+Label:          (no label)
+Subsystem:      (no subsystem)
+Flags:          (no flags)
 
 Data segments:
+  0: crypt
+  offset: 16777216 [bytes]
+  length: (whole device)
   cipher: aes-xts-plain64
+  sector: 4096 [bytes]
 
 Keyslots:
+  0: luks2
   Key:        512 bits
+  Priority:   normal
   Cipher:     aes-xts-plain64
+  Cipher key: 512 bits
   PBKDF:      argon2id
+  Time cost:  4
+  Memory:     529866
+  Threads:    2
+  AF stripes: 4000
+  AF hash:    sha256
 
 Digests:
+  0: pbkdf2
   Hash:       sha256
-```
+  Iterations: 151528
 
-### Explanation
+The volume uses:
 
-The LUKS header contains metadata only.
+LUKS2
+AES-XTS
+512-bit XTS key material
+Argon2id
+SHA-256
 
-It stores:
+Step 5 - Open the Encrypted Volume
 
-- UUID
-- encryption algorithm
-- key derivation function
-- keyslots
-- integrity information
+Required command:
 
-It **does not** contain any plaintext user data.
-
----
-
-## Step 5 - Open the Encrypted Volume
-
-### Required command
-
-```bash
 sudo cryptsetup luksOpen encrypted_volume.img secure_vol
-```
 
-### Verify the mapping
+Verify the mapping:
 
-```bash
 sudo cryptsetup status secure_vol
-```
 
-### Output
+Output:
 
-```text
 /dev/mapper/secure_vol is active.
   type:    LUKS2
   cipher:  aes-xts-plain64
@@ -175,429 +135,537 @@ sudo cryptsetup status secure_vol
   key location: keyring
   device:  /dev/loop0
   loop:    /home/gomes/dlh-cyber_security/blue_team/1x04_crypto_foundation/encrypted_volume.img
-  sector size: 4096 [bytes]
-  mode: read/write
-```
+  sector size:  4096 [bytes]
+  offset:  32768 [512-byte units] (16777216 [bytes])
+  size:    991232 [512-byte units] (507510784 [bytes])
+  mode:    read/write
 
-### Explanation
+The decrypted mapper device became available at:
 
-`luksOpen` decrypts the master key using the passphrase and creates the temporary decrypted block device:
-
-```text
 /dev/mapper/secure_vol
-```
 
-Applications access this mapper device as if it were a normal disk.
+Step 6 - Create the ext4 Filesystem
 
----
+Command:
 
-## Step 6 - Create the Filesystem
-
-### Command
-
-```bash
 sudo mkfs.ext4 /dev/mapper/secure_vol
-```
 
-### Output
+Output:
 
-```text
+mke2fs 1.47.4 (6-Mar-2025)
+/dev/mapper/secure_vol contains a ext4 file system
+  last mounted on /mnt/secure_vol on Tue Jul 28 11:19:08 2026
+Proceed anyway? (y,N) y
 Creating filesystem with 123904 4k blocks and 123904 inodes
 Filesystem UUID: 2dd2a589-ba7b-46e9-be39-d7730a186ac9
 Superblock backups stored on blocks:
-32768, 98304
+  32768, 98304
 
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
 Writing superblocks and filesystem accounting information: done
-```
 
-### Explanation
+Step 7 - Mount the Filesystem
 
-LUKS encrypts raw disk blocks only.
+Commands:
 
-An ext4 filesystem must still be created before files can be stored.
-
----
-
-## Step 7 - Mount the Filesystem
-
-### Create the mount point
-
-```bash
 sudo mkdir -p /mnt/secure_vol
-```
-
-### Mount
-
-```bash
 sudo mount /dev/mapper/secure_vol /mnt/secure_vol
-```
 
-### Verify
+Verify:
 
-```bash
 findmnt /mnt/secure_vol
-```
 
-### Output
+Output:
 
-```text
-TARGET              SOURCE                   FSTYPE OPTIONS
-/mnt/secure_vol     /dev/mapper/secure_vol   ext4   rw,relatime,seclabel
-```
+TARGET          SOURCE                 FSTYPE OPTIONS
+/mnt/secure_vol /dev/mapper/secure_vol ext4   rw,relatime,seclabel
 
-### Explanation
+Step 8 - Write Test Data
 
-Once mounted, the encrypted volume behaves exactly like a normal Linux filesystem.
+Create the confidential file:
 
----
-
-## Step 8 - Write Test Data
-
-### Create the confidential file
-
-```bash
 echo "MedDefense confidential backup test - Patient MRN MED-50421" | sudo tee /mnt/secure_vol/backup_test.txt
-```
 
-### Output
+Output:
 
-```text
 MedDefense confidential backup test - Patient MRN MED-50421
-```
 
-### Copy another file
+Create a second file:
 
-```bash
 sudo cp /etc/hosts /mnt/secure_vol/hosts-backup.txt
-```
 
-### Verify
+List the volume:
 
-```bash
 sudo ls -lh /mnt/secure_vol
-```
 
-### Output
+Output:
 
-```text
 total 24K
--rw-r--r--. 1 root root   60 Jul 28 11:23 backup_test.txt
--rw-r--r--. 1 root root  649 Jul 28 11:23 hosts-backup.txt
+-rw-r--r--. 1 root root  60 Jul 28 11:23 backup_test.txt
+-rw-r--r--. 1 root root 649 Jul 28 11:23 hosts-backup.txt
 drwx------  2 root root 16K Jul 28 11:22 lost+found
-```
 
-### Read the file
+Read the test file:
 
-```bash
 sudo cat /mnt/secure_vol/backup_test.txt
-```
 
-### Output
+Output:
 
-```text
 MedDefense confidential backup test - Patient MRN MED-50421
-```
 
----
+Calculate the original hash:
 
-## Step 9 - Calculate the SHA-256 Hash
-
-### Command
-
-```bash
 sudo sha256sum /mnt/secure_vol/backup_test.txt
-```
 
-### Output
+Output:
 
-```text
 28801c60a374ab42d5d46e432449f7572c617dd91deebe518d4d83ee3cd4d419  /mnt/secure_vol/backup_test.txt
-```
 
-This hash will later be compared after reopening the encrypted volume.
+Step 9 - Unmount and Close
 
----
+Commands:
 
-## Step 10 - Unmount and Close
-
-### Commands
-
-```bash
 sync
 sudo umount /mnt/secure_vol
 sudo cryptsetup luksClose secure_vol
-```
 
-### Verify
+Verify:
 
-```bash
 sudo cryptsetup status secure_vol
-```
 
-### Output
+Output:
 
-```text
 /dev/mapper/secure_vol is inactive.
-```
 
-The decrypted device has been removed from the system and the encrypted volume is now protected.
+The correct operational order is:
 
----
+write data
+sync
+umount
+cryptsetup luksClose
 
-# Part 2 - Verification
+The filesystem must be unmounted before the LUKS mapping is closed.
 
-## Attempt to Read the Raw Encrypted File
+Part 2 - Raw-File Verification
 
-After closing the encrypted volume, the raw image was inspected using the `strings` utility.
+Step 1 - Inspect the Raw Encrypted Image
 
-### Command
+Required command:
 
-```bash
-strings encrypted_volume.img | head -20
-```
+strings encrypted_volume.img | head -50
 
-### Output
+Observed output began with LUKS metadata:
 
-```text
 LUKS
 sha256
 8ff06c4c-e1d2-4427-bb66-b86166485e66
-{"keyslots":{"0":{"type":"luks2","key_size":64...
-```
+{"keyslots":{"0":{"type":"luks2","key_size":64,"af":{"type":"luks1","stripes":4000,"hash":"sha256"},"area":{"type":"raw","offset":"32768","size":"258048","encryption":"aes-xts-plain64","key_size":64},"kdf":{"type":"argon2id","time":4,"memory":529866,"cpus":2,...
 
-The output only contains the LUKS header and metadata.
+The output contained LUKS header metadata, random printable fragments, and the UUID. It did not expose the patient record.
 
-No patient information or plaintext files are visible.
+Search for the patient MRN:
 
----
-
-## Search for the Confidential Data
-
-### Command
-
-```bash
 strings encrypted_volume.img | grep -F "MED-50421"
 echo $?
-```
 
-### Output
+Output:
 
-```text
 1
-```
 
-### Explanation
+What the Raw-File Test Proves
 
-The confidential string stored inside the encrypted filesystem cannot be found in the raw disk image.
+The raw-file test proves that the patient record is not stored as readable plaintext inside the closed LUKS image.
 
-An exit code of **1** means that `grep` did not find the searched text.
+An attacker who steals or copies encrypted_volume.img can see that the file is a LUKS volume and may see non-secret metadata such as the UUID, cipher, PBKDF, and keyslot configuration. However, the attacker cannot read the stored backup files without unlocking the volume.
 
-This demonstrates **encryption at rest**. Even if an attacker steals the disk or obtains offline access to the encrypted image, they cannot recover the stored files without first unlocking the LUKS volume.
+This demonstrates encryption at rest against:
 
----
+stolen disks;
 
-## Reopen the Encrypted Volume
+copied image files;
 
-### Commands
+offline access;
 
-```bash
+unauthorised raw-file inspection.
+
+The test does not protect data while the volume is unlocked and mounted. Malware with sufficient permissions may still read, modify, or delete files through /mnt/secure_vol.
+
+Part 3 - Reopen Verification
+
+Step 1 - Reopen and Mount
+
+Commands:
+
 sudo cryptsetup luksOpen encrypted_volume.img secure_vol
-
 sudo mount /dev/mapper/secure_vol /mnt/secure_vol
-```
 
-The passphrase was entered successfully.
+The correct passphrase successfully unlocked the volume.
 
----
+Step 2 - Read the Original File
 
-## Verify the Stored Data
+Command:
 
-### Command
-
-```bash
 sudo cat /mnt/secure_vol/backup_test.txt
-```
 
-### Output
+Output:
 
-```text
 MedDefense confidential backup test - Patient MRN MED-50421
-```
 
-The confidential file remained intact after reopening the encrypted volume.
+Step 3 - Recalculate the Hash
 
----
+Command:
 
-## Verify File Integrity
-
-### Command
-
-```bash
 sudo sha256sum /mnt/secure_vol/backup_test.txt
-```
 
-### Output
+Output:
 
-```text
 28801c60a374ab42d5d46e432449f7572c617dd91deebe518d4d83ee3cd4d419  /mnt/secure_vol/backup_test.txt
-```
 
-This SHA-256 hash is identical to the hash calculated before closing the encrypted volume.
+The hash after reopening is identical to the original hash:
 
-This proves that:
+Before close:
+28801c60a374ab42d5d46e432449f7572c617dd91deebe518d4d83ee3cd4d419
 
-- the encrypted filesystem preserved the data correctly;
-- no corruption occurred while the volume was closed;
-- encryption protects confidentiality without affecting integrity.
+After reopen:
+28801c60a374ab42d5d46e432449f7572c617dd91deebe518d4d83ee3cd4d419
 
----
+This proves that the encrypted volume preserved the original data without corruption.
 
-## Close the Volume Again
+Step 4 - Final Close
 
-### Commands
+Commands:
 
-```bash
 sync
-
 sudo umount /mnt/secure_vol
-
 sudo cryptsetup luksClose secure_vol
-```
 
-### Verification
+Final verification:
 
-```bash
 sudo cryptsetup status secure_vol
-```
 
-### Output
+Output:
 
-```text
 /dev/mapper/secure_vol is inactive.
-```
 
-Once the encrypted volume is closed, the decrypted device mapper disappears and the mounted filesystem is no longer accessible.
+After closing the volume:
 
-This behaviour confirms that access to the data depends entirely on successful authentication with the correct encryption key.
+findmnt /mnt/secure_vol
+sudo ls -lh /mnt/secure_vol
+sudo cat /mnt/secure_vol/backup_test.txt
+sudo sha256sum /mnt/secure_vol/backup_test.txt
 
----
+Output:
 
-# Part 3 - MedDefense Backup Encryption Design
+total 0
+cat: /mnt/secure_vol/backup_test.txt: No such file or directory
+sha256sum: /mnt/secure_vol/backup_test.txt: No such file or directory
 
-## Recommended Encryption Strategy for NAS-01
+This is expected because /mnt/secure_vol is only an empty mount-point directory when the encrypted filesystem is not mounted.
 
-Three different encryption approaches were evaluated.
+Part 4 - LUKS Automation Script
 
-### Full-disk encryption
+The companion script is:
 
-Full-disk encryption protects the entire storage device, including the operating system and swap partitions.
+12-luks_manager.sh
 
-This is useful for laptops and workstations but is not the best solution for a dedicated backup server because administrators may need to manage multiple encrypted backup volumes independently.
+Create Mode
 
----
+./12-luks_manager.sh create encrypted_volume.img 500
 
-### Volume-level encryption
+The mode runs:
 
-**Volume-level encryption is the recommended solution for NAS-01.**
+dd
+cryptsetup luksFormat
+cryptsetup luksOpen
+mkfs.ext4
+cryptsetup luksClose
 
-The backup volume should be protected using **LUKS2** with:
+Open Mode
 
-- AES-XTS-512 encryption;
-- Argon2id key derivation;
-- strong administrator passphrases;
-- multiple authorised recovery keys.
+./12-luks_manager.sh open encrypted_volume.img secure_vol /mnt/secure_vol
 
-This approach encrypts every backup stored on NAS-01 while allowing the operating system to remain separate from the encrypted backup volume.
+The mode runs:
 
----
+cryptsetup luksOpen
+mkdir
+mount
 
-### File-level encryption
+Close Mode
 
-Sensitive backups replicated to external locations should also use **file-level (backup-object) encryption** before transmission.
+./12-luks_manager.sh close secure_vol /mnt/secure_vol
 
-This provides an additional layer of protection if encrypted backup files are copied outside the primary storage system.
+The mode runs:
 
----
+umount
+cryptsetup luksClose
 
-## Performance Impact
+Part 5 - MedDefense NAS-01 Backup Encryption Design
 
-Modern processors include AES hardware acceleration (AES-NI).
+NAS-01 Encryption Level
 
-Because of this, LUKS encryption typically introduces only a small performance overhead, generally between **2% and 5%** during backup operations.
+MedDefense should use a layered encryption strategy.
 
-Compared with the benefits of protecting regulated healthcare data, this overhead is considered acceptable for MedDefense.
+Full-Disk Encryption
 
----
+Full-disk encryption should be enabled where the NAS platform supports it. It protects operating-system partitions, swap, temporary data, and storage media if the complete device or its drives are stolen.
 
-## Encryption Key Storage
+However, full-disk encryption alone is not sufficient because NAS-01 is normally running and unlocked. An attacker who compromises the live NAS may still access mounted data.
 
-The encryption key must be stored **NOT on the NAS**.
+Volume-Level Encryption
 
-Keeping both the encrypted backups and the only decryption key on NAS-01 would allow an attacker who compromises the NAS to obtain everything required to decrypt the data.
+The primary control for NAS-01 should be volume-level encryption.
 
-Recommended key storage locations include:
+The dedicated backup volume should use:
 
-- Enterprise Key Management System (KMS);
-- Hardware Security Module (HSM);
-- encrypted offline recovery media stored in a secure safe;
-- protected password vault with strict administrative controls.
+LUKS2 or an approved NAS equivalent
+AES-XTS
+strong passphrase protection
+multiple controlled recovery keyslots
 
-Access to recovery keys should require:
+Volume-level encryption is the most appropriate primary layer because it:
 
-- multi-factor authentication;
-- role-based access control;
-- least privilege;
-- audit logging;
-- separation of duties.
+protects every backup stored on the volume;
 
----
+is transparent to backup software after unlocking;
 
-## What Happens if the Key is Lost?
+allows the backup repository to be managed independently;
 
-If the **key is lost**, the encrypted backups become permanently inaccessible.
+protects removed drives and offline copies;
 
-If the encryption **key is lost**, MedDefense cannot recover patient records, billing databases, DICOM images, Active Directory backups, or disaster recovery data stored inside the encrypted volume.
+avoids manually encrypting every file.
 
-There is no hidden recovery password or administrative bypass built into LUKS.
+File-Level Encryption
 
-To reduce this risk, MedDefense should:
+MedDefense should also use file-level encryption or backup-object encryption for backup archives before offsite replication.
 
-- maintain multiple authorised recovery keys;
-- back up the LUKS header;
-- store recovery keys **NOT on the NAS**;
-- periodically test recovery procedures.
+Recommended protection:
 
----
+AES-256-GCM
 
-## Cloud Backup Replication
+File-level encryption ensures that backup objects remain encrypted after leaving NAS-01.
+
+Final Recommendation
+
+Full-disk encryption where supported
++
+Volume-level encryption for the NAS-01 backup repository
++
+File-level encryption for offsite backup objects
+
+Performance Impact
+
+The local image creation completed at approximately:
+
+177 MB/s
+
+This dd result is not a complete encrypted-storage benchmark, because it measured zero-filled image creation rather than encrypted NAS backup throughput.
+
+MedDefense must benchmark the real NAS using:
+
+cryptsetup benchmark
+
+and controlled backup tests.
+
+The production assessment should measure:
+
+unencrypted backup throughput;
+
+encrypted backup throughput;
+
+restore performance;
+
+CPU utilisation;
+
+backup-window completion;
+
+cloud replication duration;
+
+Recovery Time Objective compliance.
+
+Modern CPUs with AES acceleration usually reduce encryption overhead, but MedDefense must use measured results rather than an unsupported percentage estimate.
+
+Encryption Key Storage
+
+The encryption key must be stored NOT on the NAS.
+
+The master recovery key must not be stored unprotected on NAS-01. If an attacker compromises the NAS and obtains both the encrypted backups and the only decryption key, the encryption control is defeated.
+
+Recommended key locations:
+
+Enterprise Key Management System.
+
+Hardware Security Module.
+
+Approved secrets-management platform.
+
+Encrypted offline recovery copy in a physically controlled safe.
+
+Access to the key should require:
+
+MFA;
+
+least privilege;
+
+role-based access control;
+
+full audit logging;
+
+dual approval for key export;
+
+separation between backup administrators and key custodians.
+
+NAS-01 may receive an authorised unlock operation, but the master recovery key must remain external to NAS-01.
+
+What Happens if the Key is Lost?
+
+If the key is lost, the encrypted backup volume becomes permanently unrecoverable.
+
+If the encryption key is lost, MedDefense cannot decrypt or restore:
+
+EHR PostgreSQL backups;
+
+MySQL billing backups;
+
+DICOM and PACS archives;
+
+Active Directory backups;
+
+file-server data;
+
+system configurations;
+
+audit logs.
+
+LUKS has no hidden master password or administrative bypass.
+
+MedDefense must therefore maintain:
+
+multiple controlled recovery keyslots;
+
+at least two authorised key custodians;
+
+an encrypted offline recovery copy;
+
+a protected LUKS header backup;
+
+documented emergency-recovery procedures;
+
+regular key-recovery and restore tests.
+
+Header-backup command:
+
+sudo cryptsetup luksHeaderBackup encrypted_volume.img --header-backup-file encrypted_volume-header.backup
+
+The header backup must be encrypted and stored separately from NAS-01.
+
+Cloud Replica Encryption
 
 The cloud replica must also remain encrypted.
 
-Backup data should never be uploaded to cloud storage in plaintext.
+The correct workflow is:
 
-The preferred design is:
+Production system
+        |
+        v
+Backup created
+        |
+        v
+Backup encrypted before leaving MedDefense
+        |
+        +------------------------------+
+        |                              |
+        v                              v
+NAS-01 encrypted volume          Cloud replica remains encrypted
 
-1. Encrypt the backup locally.
-2. Replicate the encrypted backup to the cloud.
-3. Keep ownership of the encryption keys within MedDefense.
+MedDefense must not decrypt the backup before cloud upload.
 
-The cloud provider must never possess the only copy of the encryption key.
+The cloud copy should have:
 
-Instead, MedDefense should use:
+client-side backup-object encryption;
 
-- a MedDefense-controlled Key Management System (KMS); or
-- a customer-managed cloud KMS key (CMK).
+provider-side encryption as a second layer;
 
-This ensures that cloud administrators cannot decrypt regulated healthcare data without MedDefense's authorisation.
+immutable object-lock or retention controls.
 
----
+Cloud Key Ownership
 
-# Conclusion
+The encryption key used for the cloud replica should remain under MedDefense ownership.
 
-This laboratory demonstrated the practical implementation of encryption at rest using LUKS2.
+Preferred options:
 
-The encrypted volume successfully protected confidential information while closed, prevented plaintext recovery from the raw disk image, and preserved data integrity after reopening.
+MedDefense-controlled KMS key
 
-The same principles should be applied to MedDefense's NAS-01 backup infrastructure to protect regulated healthcare information against theft, offline attacks, and unauthorised access.
+or:
 
+customer-managed cloud KMS key
+
+The cloud provider must not be the only party controlling the key. Provider-managed encryption may be used as an additional layer, but MedDefense must retain control of the client-side backup-encryption key.
+
+Ransomware Limitation
+
+Encryption at rest does not make a mounted NAS ransomware-proof.
+
+When the backup volume is unlocked, ransomware with equivalent permissions may:
+
+read backups;
+
+delete backups;
+
+corrupt backup archives;
+
+encrypt the files again;
+
+remove snapshots.
+
+MedDefense must combine encryption with:
+
+immutable snapshots;
+
+offline or logically isolated copies;
+
+object-lock retention;
+
+separate backup credentials;
+
+network segmentation;
+
+MFA;
+
+restricted management access;
+
+Wazuh monitoring;
+
+regular restore testing.
+
+Encryption protects confidentiality. Immutability and isolation protect availability and recoverability.
+
+Final Conclusion
+
+The laboratory followed the complete and correctly ordered workflow:
+
+dd if=/dev/zero of=encrypted_volume.img bs=1M count=500
+sudo cryptsetup luksFormat encrypted_volume.img
+sudo cryptsetup luksOpen encrypted_volume.img secure_vol
+sudo mkfs.ext4 /dev/mapper/secure_vol
+sudo mount /dev/mapper/secure_vol /mnt/secure_vol
+write test data
+calculate SHA-256
+sync
+sudo umount /mnt/secure_vol
+sudo cryptsetup luksClose secure_vol
+strings encrypted_volume.img | head -50
+search for the plaintext
+sudo cryptsetup luksOpen encrypted_volume.img secure_vol
+sudo mount /dev/mapper/secure_vol /mnt/secure_vol
+read the original file
+verify the matching SHA-256 hash
+sync
+sudo umount /mnt/secure_vol
+sudo cryptsetup luksClose secure_vol
+
+The raw-file verification confirmed that the patient MRN was not readable from the closed image. The reopen verification confirmed that the original file remained accessible and produced the same SHA-256 hash after decryption.
+
+For NAS-01, MedDefense should use volume-level encryption as the primary protection layer, full-disk encryption where supported, and file-level encryption for cloud backup objects. The key must be stored NOT on the NAS, the impact if the key is lost must be addressed through tested recovery controls, and the cloud replica must also remain encrypted with a key controlled by MedDefense.
 
