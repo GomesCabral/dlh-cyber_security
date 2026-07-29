@@ -67,9 +67,9 @@ My professional recommendation is to approve the emergency funding request and e
 
 ## Talking Point – Thomas Wright (Former Banker)
 
-**Primary Concern:** Comparison with financial sector security maturity.
+**Primary Concern:** How MedDefense compares with financial sector security maturity.
 
-Compared with organisations in the financial sector, MedDefense demonstrates strong governance but lower technical security maturity in areas such as network segmentation, encryption at rest and identity protection. Financial institutions generally implement deeper defence-in-depth controls, providing a practical benchmark for MedDefense's long-term cybersecurity roadmap.
+Mr. Wright, compared with banks and other financial institutions, MedDefense currently demonstrates a lower level of technical security maturity. Financial organisations typically patch critical internet-facing vulnerabilities within hours, implement strong network segmentation, enforce encryption at rest for sensitive data and continuously monitor privileged access. MedDefense has already established good governance and risk management practices, but it has not yet reached the same level of operational resilience. The recommended investment programme is designed to close that maturity gap by strengthening perimeter security, identity protection, encryption and defence-in-depth controls over the next 12 months.
 
 ---
 
