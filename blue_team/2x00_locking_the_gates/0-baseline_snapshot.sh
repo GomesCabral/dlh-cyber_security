@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # MedDefense Health Systems - Linux Security Baseline
+#
 # Captures the system state before hardening.
 # This baseline provides the evidence required to measure the security delta.
 #
@@ -12,8 +13,7 @@
 #
 # This script is read-only and does not modify system configuration.
 
-set -u
-set -o pipefail
+set -euo pipefail
 
 export LC_ALL=C
 
