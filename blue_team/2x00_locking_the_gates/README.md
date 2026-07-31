@@ -40,3 +40,39 @@ The structured result is written to:
 
 ```text
 0-baseline_snapshot.json
+
+```
+
+---
+
+### Task 1 - MedDefense CIS Control Profile
+
+**Script**
+
+1-cis_profile.sh
+
+**Output**
+
+cis_profile.json
+
+**Purpose**
+
+Builds a threat-driven CIS control profile for MedDefense Linux servers. The profile selects the controls that will be implemented during the remaining hardening tasks instead of blindly applying the complete CIS Benchmark.
+
+**Coverage**
+
+- SSH hardening
+- Kernel hardening
+- PAM
+- Firewall
+- Filesystem permissions
+- Audit logging
+- Log retention
+- Service minimization
+
+**Statistics**
+
+- Total Controls: 15
+- Critical: 5
+- High: 7
+- Medium: 3
