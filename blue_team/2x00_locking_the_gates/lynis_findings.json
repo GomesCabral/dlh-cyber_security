@@ -1,0 +1,320 @@
+{
+  "hardening_index": 65,
+  "findings": [
+    {
+      "severity": "warning",
+      "test_id": "NETW-2704",
+      "message": "Nameserver fd00::7eff:4dff:fef3:d5cf does not respond"
+    },
+    {
+      "severity": "warning",
+      "test_id": "NETW-2704",
+      "message": "Nameserver 2001:7e8:c690:6f01:7eff:4dff:fef3:d5cf does not respond"
+    },
+    {
+      "severity": "warning",
+      "test_id": "NETW-2705",
+      "message": "Couldn't find 2 responsive nameservers"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0280",
+      "message": "Install libpam-tmpdir to set $TMP and $TMPDIR for PAM sessions"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0810",
+      "message": "Install apt-listbugs to display a list of critical bugs prior to each APT installation."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0811",
+      "message": "Install apt-listchanges to display any significant changes prior to any upgrade via APT."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0880",
+      "message": "Install fail2ban to automatically ban hosts that commit multiple authentication errors."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BOOT-5122",
+      "message": "Set a password on GRUB boot loader to prevent altering boot configuration (e.g. boot in single user mode without password)"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BOOT-5180",
+      "message": "Determine runlevel and services at startup"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BOOT-5264",
+      "message": "Consider hardening system services"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9230",
+      "message": "Configure password hashing rounds in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9262",
+      "message": "Install a PAM module for password strength testing like pam_cracklib or pam_passwdqc or libpam-passwdqc"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9282",
+      "message": "When possible set expire dates for all password protected accounts"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9284",
+      "message": "Look at the locked accounts and consider removing them"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9286",
+      "message": "Configure minimum password age in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9286",
+      "message": "Configure maximum password age in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9328",
+      "message": "Default umask in /etc/login.defs could not be found and defaults usually to 022, which could be more strict like 027"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-6310",
+      "message": "To decrease the impact of a full /home file system, place /home on a separate partition"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-6310",
+      "message": "To decrease the impact of a full /var file system, place /var on a separate partition"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "USB-1000",
+      "message": "Disable drivers like USB storage when not used, to prevent unauthorized storage or data theft"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "STRG-1846",
+      "message": "Disable drivers like firewire storage when not used, to prevent unauthorized storage or data theft"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NAME-4028",
+      "message": "Check DNS configuration for the dns domain name"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NAME-4402",
+      "message": "Remove duplicate lines in /etc/hosts"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7308",
+      "message": "Check RPM database as RPM binary available but does not reveal any packages"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7370",
+      "message": "Install debsums utility for the verification of packages with known good database."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7394",
+      "message": "Install package apt-show-versions for patch management purposes"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7420",
+      "message": "Consider using a tool to automatically apply upgrades"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-2704",
+      "message": "Check connection to this nameserver and make sure no outbound DNS queries are blocked (port 53 UDP and TCP)."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-2704",
+      "message": "Check connection to this nameserver and make sure no outbound DNS queries are blocked (port 53 UDP and TCP)."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-2705",
+      "message": "Check your resolv.conf file and fill in a backup nameserver if possible"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'dccp' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'sctp' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'rds' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'tipc' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HTTP-6640",
+      "message": "Install Apache mod_evasive to guard webserver against DoS/brute force attempts"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HTTP-6643",
+      "message": "Install Apache modsecurity to guard webserver against web application attacks"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "SSH-7408",
+      "message": "Consider hardening SSH configuration"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PHP-2376",
+      "message": "Change the allow_url_fopen line to: allow_url_fopen = Off, to disable downloads via PHP"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "LOGG-2154",
+      "message": "Enable logging to an external logging host for archiving purposes and additional protection"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "LOGG-2190",
+      "message": "Check what deleted files are still in use and why."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "INSE-8300",
+      "message": "Remove rsh client when it is not in use or replace with the more secure SSH package"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "INSE-8318",
+      "message": "It is recommended that TFTP be removed, unless there is a specific need for TFTP (such as a boot server)"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "INSE-8320",
+      "message": "Removing the atftpd package decreases the risk of the accidental (or intentional) activation of tftp services"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BANN-7126",
+      "message": "Add a legal banner to /etc/issue, to warn unauthorized users"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BANN-7130",
+      "message": "Add legal banner to /etc/issue.net, to warn unauthorized users"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9622",
+      "message": "Enable process accounting"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9626",
+      "message": "Enable sysstat to collect accounting (disabled)"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9628",
+      "message": "Enable auditd to collect audit information"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "MACF-6208",
+      "message": "Check output of aa-status"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "TOOL-5002",
+      "message": "Determine if automation tools are present for system management"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-7524",
+      "message": "Consider restricting file permissions"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HOME-9304",
+      "message": "Double check the permissions of home directories as some might be not strict enough."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "KRNL-6000",
+      "message": "One or more sysctl values differ from the scan profile and could be tweaked"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HRDN-7222",
+      "message": "Harden compilers like restricting access to root user only"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HRDN-7230",
+      "message": "Harden the system by installing at least one malware scanner, to perform periodic file system scans"
+    }
+  ]
+}
