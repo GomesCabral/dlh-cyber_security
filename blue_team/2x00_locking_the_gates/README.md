@@ -76,3 +76,34 @@ Builds a threat-driven CIS control profile for MedDefense Linux servers. The pro
 - Critical: 5
 - High: 7
 - Medium: 3
+
+---
+
+### Task 2 - Lynis Audit Parser
+
+**Script**
+
+`2-lynis_parse.sh`
+
+**Output**
+
+`lynis_findings.json`
+
+**Purpose**
+
+Runs after a Lynis security audit and converts the Lynis key-value report into structured JSON that can be reused by automated security workflows.
+
+**Data Extracted**
+
+- Lynis hardening index
+- Warnings
+- Suggestions
+- Manual checks
+- Lynis test IDs
+- Finding messages
+
+**Usage**
+
+```bash
+sudo lynis audit system
+./2-lynis_parse.sh /var/log/lynis-report.dat | jq '.' > lynis_findings.json
