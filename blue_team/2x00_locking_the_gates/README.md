@@ -235,4 +235,113 @@ sudo ./5-sysctl_hardening.sh
 
 ---
 
+### Task 6 - The Permission Sweep
+
+**Script**
+
+`6-filesystem_hardening.sh`
+
+**Structured Output**
+
+`6-filesystem_hardening.json`
+
+**Purpose**
+
+Audits and remediates filesystem permissions that may enable local
+privilege escalation, persistence or privileged script modification.
+
+**Controls Applied**
+
+- SUID binaries compared with an Ubuntu 22.04 whitelist
+- Unexpected SUID bits removed
+- SGID binaries compared with an approved whitelist
+- Unexpected SGID bits removed
+- Unsafe world-writable permissions removed
+- `/tmp`, `/var/tmp` and `/dev/shm` protected with:
+  - `noexec`
+  - `nosuid`
+  - `nodev`
+- Cron access restricted through `/etc/cron.allow`
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./6-filesystem_hardening.sh
+
+---
+
+### Task 7 - The Service Minimizer
+
+**Script**
+
+`7-service_minimization.sh`
+
+**Purpose**
+
+Reduces the Linux service attack surface by comparing enabled services
+against a MedDefense billing-server allowlist.
+
+The control addresses CIS service minimization and reduces opportunities
+for initial access through unnecessary or misconfigured daemons.
+
+**Required Services**
+
+- SSH
+- Apache
+- MySQL
+- UFW
+- auditd
+- AppArmor
+- cron
+- rsyslog
+- systemd-timesyncd
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./7-service_minimization.sh
+
+---
+
+### Task 8 - The PAM Fortress
+
+**Script**
+
+`8-pam_hardening.sh`
+
+**Purpose**
+
+Hardens Linux authentication through PAM to reduce password-based attacks,
+credential reuse and repeated authentication attempts.
+
+The controls address credential abuse observed during the Crimson Tide
+attack chain.
+
+**Password Quality**
+
+- Minimum length: 14 characters
+- At least one digit
+- At least one uppercase character
+- At least one lowercase character
+- At least one special character
+- Maximum repeated characters: 3
+- Username-based passwords rejected
+
+**Account Lockout**
+
+- Failed attempts: 5
+- Failure interval: 900 seconds
+- Lockout duration: 900 seconds
+
+**Password History**
+
+- Previous 12 passwords cannot be reused
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./8-pam_hardening.sh
+
+---
+
 
