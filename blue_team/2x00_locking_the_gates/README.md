@@ -344,4 +344,36 @@ sudo AUDIT_ONLY=1 ./8-pam_hardening.sh
 
 ---
 
+### Task 9 - The AppArmor Enforcer
+
+**Script**
+
+`9-apparmor_config.sh`
+
+**Purpose**
+
+Applies Mandatory Access Control to network-exposed services and limits
+the impact of successful exploitation by restricting filesystem access.
+
+The control reduces the blast radius of compromises such as the previous
+Apache crypto-miner incident.
+
+**Controls**
+
+- Verify AppArmor kernel support
+- Verify AppArmor service status
+- Review loaded profiles
+- Enforce Apache profile
+- Enforce MySQL profile
+- Create a custom MedDefense billing application profile
+- Restrict application filesystem access
+- Identify unconfined network-exposed processes
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./9-apparmor_config.sh
+
+---
+
 
