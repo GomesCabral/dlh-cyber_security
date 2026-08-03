@@ -1,0 +1,529 @@
+{
+  "summary": {
+    "controls_assessed": 15,
+    "compliant": 1,
+    "non_compliant": 12,
+    "partially_compliant": 2,
+    "not_assessed": 0
+  },
+  "controls": [
+    {
+      "control_id": "MD-CIS-001",
+      "title": "Disable SSH password authentication",
+      "status": "non_compliant",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "INSE-8300",
+          "severity": "suggestion",
+          "message": "Remove rsh client when it is not in use or replace with the more secure SSH package"
+        }
+      ],
+      "implementation_task": "2-ssh_hardening.sh",
+      "verification_method": "Run sshd -T and confirm passwordauthentication no.",
+      "justification": "Password-based SSH authentication exposes the servers to brute-force attacks, password spraying and credential reuse."
+    },
+    {
+      "control_id": "MD-CIS-002",
+      "title": "Prohibit direct SSH root login",
+      "status": "non_compliant",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "INSE-8300",
+          "severity": "suggestion",
+          "message": "Remove rsh client when it is not in use or replace with the more secure SSH package"
+        }
+      ],
+      "implementation_task": "2-ssh_hardening.sh",
+      "verification_method": "Run sshd -T and confirm permitrootlogin no.",
+      "justification": "Disabling direct root login requires administrators to authenticate through an attributable account before using sudo."
+    },
+    {
+      "control_id": "MD-CIS-003",
+      "title": "Configure SSH session timeout and authentication limits",
+      "status": "partially_compliant",
+      "severity": "medium",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "INSE-8300",
+          "severity": "suggestion",
+          "message": "Remove rsh client when it is not in use or replace with the more secure SSH package"
+        }
+      ],
+      "implementation_task": "2-ssh_hardening.sh",
+      "verification_method": "Use sshd -T to verify clientaliveinterval, clientalivecountmax and maxauthtries.",
+      "justification": "Idle session termination and authentication limits reduce the opportunity to abuse unattended sessions or repeatedly guess credentials."
+    },
+    {
+      "control_id": "MD-CIS-004",
+      "title": "Enable kernel network-stack protections",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "KRNL-6000",
+          "severity": "suggestion",
+          "message": "One or more sysctl values differ from the scan profile and could be tweaked"
+        }
+      ],
+      "implementation_task": "3-kernel_network_hardening.sh",
+      "verification_method": "Query the required net.ipv4 and net.ipv6 parameters using sysctl.",
+      "justification": "Secure sysctl network settings reduce exposure to spoofing, malicious redirects, source routing and denial-of-service activity."
+    },
+    {
+      "control_id": "MD-CIS-005",
+      "title": "Enable kernel memory protections and restrict core dumps",
+      "status": "partially_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [],
+      "implementation_task": "4-kernel_memory_hardening.sh",
+      "verification_method": "Verify kernel.randomize_va_space, fs.suid_dumpable and core dump limits.",
+      "justification": "ASLR and core dump restrictions make memory exploitation more difficult and reduce the risk of sensitive information being written to disk."
+    },
+    {
+      "control_id": "MD-CIS-006",
+      "title": "Enforce PAM login attempt limiting",
+      "status": "non_compliant",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "DEB-0280",
+          "severity": "suggestion",
+          "message": "Install libpam-tmpdir to set $TMP and $TMPDIR for PAM sessions"
+        },
+        {
+          "test_id": "DEB-0880",
+          "severity": "suggestion",
+          "message": "Install fail2ban to automatically ban hosts that commit multiple authentication errors."
+        },
+        {
+          "test_id": "AUTH-9262",
+          "severity": "suggestion",
+          "message": "Install a PAM module for password strength testing like pam_cracklib or pam_passwdqc or libpam-passwdqc"
+        }
+      ],
+      "implementation_task": "5-pam_lockout.sh",
+      "verification_method": "Inspect PAM configuration and test repeated failed authentication attempts with a non-production account.",
+      "justification": "Account lockout or delay controls reduce the number of password guesses available to an attacker."
+    },
+    {
+      "control_id": "MD-CIS-007",
+      "title": "Enforce PAM password quality requirements",
+      "status": "non_compliant",
+      "severity": "medium",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [],
+      "implementation_task": "6-pam_password_quality.sh",
+      "verification_method": "Inspect pam_pwquality configuration and attempt to set a password that violates the defined policy.",
+      "justification": "Password length and quality requirements reduce the likelihood that local credentials can be guessed or cracked."
+    },
+    {
+      "control_id": "MD-CIS-008",
+      "title": "Disable unnecessary services",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "BOOT-5180",
+          "severity": "suggestion",
+          "message": "Determine runlevel and services at startup"
+        },
+        {
+          "test_id": "BOOT-5264",
+          "severity": "suggestion",
+          "message": "Consider hardening system services"
+        },
+        {
+          "test_id": "INSE-8320",
+          "severity": "suggestion",
+          "message": "Removing the atftpd package decreases the risk of the accidental (or intentional) activation of tftp services"
+        }
+      ],
+      "implementation_task": "7-service_minimization.sh",
+      "verification_method": "Compare systemctl running-service output and listening sockets against the approved service allowlist.",
+      "justification": "Every unnecessary daemon creates additional code, network exposure and configuration that an attacker may exploit."
+    },
+    {
+      "control_id": "MD-CIS-009",
+      "title": "Restrict database network exposure",
+      "status": "non_compliant",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "PKGS-7308",
+          "severity": "suggestion",
+          "message": "Check RPM database as RPM binary available but does not reveal any packages"
+        },
+        {
+          "test_id": "PKGS-7370",
+          "severity": "suggestion",
+          "message": "Install debsums utility for the verification of packages with known good database."
+        }
+      ],
+      "implementation_task": "7-service_minimization.sh",
+      "verification_method": "Use ss -lntup and the database bind-address configuration to confirm that MySQL is not publicly exposed.",
+      "justification": "The billing database contains sensitive financial and patient information and must only accept connections from explicitly authorized systems."
+    },
+    {
+      "control_id": "MD-CIS-010",
+      "title": "Apply a default-deny host firewall policy",
+      "status": "non_compliant",
+      "severity": "critical",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [],
+      "implementation_task": "8-firewall_hardening.sh",
+      "verification_method": "Inspect firewall status and confirm that only role-approved ports are permitted.",
+      "justification": "A default-deny firewall restricts connectivity to explicitly approved services and limits both external exposure and lateral movement."
+    },
+    {
+      "control_id": "MD-CIS-011",
+      "title": "Restrict access to administrative and database ports",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "PKGS-7308",
+          "severity": "suggestion",
+          "message": "Check RPM database as RPM binary available but does not reveal any packages"
+        },
+        {
+          "test_id": "PKGS-7370",
+          "severity": "suggestion",
+          "message": "Install debsums utility for the verification of packages with known good database."
+        },
+        {
+          "test_id": "NETW-2704",
+          "severity": "suggestion",
+          "message": "Check connection to this nameserver and make sure no outbound DNS queries are blocked (port 53 UDP and TCP)."
+        },
+        {
+          "test_id": "NETW-2704",
+          "severity": "suggestion",
+          "message": "Check connection to this nameserver and make sure no outbound DNS queries are blocked (port 53 UDP and TCP)."
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "SSH-7408",
+          "severity": "suggestion",
+          "message": "Consider hardening SSH configuration"
+        },
+        {
+          "test_id": "INSE-8300",
+          "severity": "suggestion",
+          "message": "Remove rsh client when it is not in use or replace with the more secure SSH package"
+        }
+      ],
+      "implementation_task": "8-firewall_hardening.sh",
+      "verification_method": "Review firewall rules and test connectivity from authorized and unauthorized network locations.",
+      "justification": "Source-based firewall restrictions ensure that SSH, database and logging services are accessible only from trusted systems."
+    },
+    {
+      "control_id": "MD-CIS-012",
+      "title": "Audit and minimize SUID and SGID binaries",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [],
+      "implementation_task": "9-filesystem_permissions.sh",
+      "verification_method": "Use find with -perm -4000 and -perm -2000, then compare results with the approved privileged-binary allowlist.",
+      "justification": "Unnecessary SUID and SGID permissions can allow a compromised low-privilege account to execute code with elevated privileges."
+    },
+    {
+      "control_id": "MD-CIS-013",
+      "title": "Remediate unsafe world-writable file permissions",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "FILE-7524",
+          "severity": "suggestion",
+          "message": "Consider restricting file permissions"
+        },
+        {
+          "test_id": "HOME-9304",
+          "severity": "suggestion",
+          "message": "Double check the permissions of home directories as some might be not strict enough."
+        }
+      ],
+      "implementation_task": "9-filesystem_permissions.sh",
+      "verification_method": "Search for world-writable files while excluding virtual filesystems and compare the result with approved exceptions.",
+      "justification": "World-writable files may permit unauthorized users to alter scripts, application content or security-relevant configuration."
+    },
+    {
+      "control_id": "MD-CIS-014",
+      "title": "Enable audit logging for privileged and security-relevant activity",
+      "status": "non_compliant",
+      "severity": "high",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [
+        {
+          "test_id": "LOGG-2154",
+          "severity": "suggestion",
+          "message": "Enable logging to an external logging host for archiving purposes and additional protection"
+        },
+        {
+          "test_id": "ACCT-9628",
+          "severity": "suggestion",
+          "message": "Enable auditd to collect audit information"
+        }
+      ],
+      "implementation_task": "10-auditd_hardening.sh",
+      "verification_method": "Use auditctl -l and ausearch to confirm that privilege use, identity changes and security configuration modifications are recorded.",
+      "justification": "Security-relevant audit events are required to detect attacker activity, investigate incidents and preserve evidence."
+    },
+    {
+      "control_id": "MD-CIS-015",
+      "title": "Configure secure log retention and rotation",
+      "status": "compliant",
+      "severity": "medium",
+      "asset_scope": [
+        "billing-srv-01",
+        "web-srv-01",
+        "log-srv-01"
+      ],
+      "matching_lynis_findings": [],
+      "implementation_task": "11-log_retention.sh",
+      "verification_method": "Inspect journald, rsyslog and logrotate configuration and verify that retained logs remain available for the approved period.",
+      "justification": "Defined retention and rotation preserve forensic evidence while preventing uncontrolled log growth from exhausting disk capacity."
+    }
+  ]
+}

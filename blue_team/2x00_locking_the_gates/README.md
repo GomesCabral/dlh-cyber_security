@@ -107,3 +107,43 @@ Runs after a Lynis security audit and converts the Lynis key-value report into s
 ```bash
 sudo lynis audit system
 ./2-lynis_parse.sh /var/log/lynis-report.dat | jq '.' > lynis_findings.json
+
+---
+
+### Task 3 - Evidence-Based Remediation Queue
+
+**Script**
+
+`3-remediation_queue.sh`
+
+**Inputs**
+
+- `cis_profile.json`
+- `lynis_findings.json`
+
+**Outputs**
+
+- `gap_analysis.json`
+- `remediation_queue.json`
+
+**Purpose**
+
+Correlates the MedDefense CIS control profile with Lynis audit findings in
+order to identify security gaps and create a prioritized remediation queue.
+
+Each CIS control is assigned one of four states:
+
+- compliant
+- non_compliant
+- partially_compliant
+- not_assessed
+
+Non-compliant and partially compliant controls are mapped to the hardening
+script responsible for remediation and assigned a risk-based priority score.
+
+**Usage**
+
+```bash
+./3-remediation_queue.sh
+
+---
