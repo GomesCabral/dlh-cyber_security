@@ -147,3 +147,45 @@ script responsible for remediation and assigned a risk-based priority score.
 ./3-remediation_queue.sh
 
 ---
+
+### Task 4 - SSH Lockdown
+
+**Script**
+
+`4-ssh_hardening.sh`
+
+**Purpose**
+
+Hardens the OpenSSH server against credential-based initial access and
+lateral movement. The configuration specifically addresses MedDefense
+Finding 009 and the SSH lateral movement observed during the Crimson Tide
+hospital compromises.
+
+**Hardening Controls**
+
+- Root SSH login disabled
+- Password authentication disabled
+- Empty passwords prohibited
+- X11 forwarding disabled
+- Authentication attempts limited to three
+- Idle SSH sessions restricted
+- SSH access restricted to approved administrators
+- SSH Protocol 2 required
+- Login grace time limited to 60 seconds
+- Authorized-use login banner enabled
+
+**Safety Controls**
+
+The script:
+
+- preserves `/etc/ssh/sshd_config.bak`
+- validates changes using `sshd -t`
+- restores the previous configuration if validation fails
+- restarts SSH only after successful validation
+
+**Validation**
+
+```bash
+sudo sshd -t
+sudo sshd -T
+systemctl status ssh
