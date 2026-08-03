@@ -376,4 +376,51 @@ sudo AUDIT_ONLY=1 ./9-apparmor_config.sh
 
 ---
 
+### Task 10 - The Audit Engine
+
+**Script**
+
+`10-auditd_config.sh`
+
+**Purpose**
+
+Deploys Linux kernel audit telemetry for security-critical activity and
+creates the primary Linux audit trail required for future SOC monitoring.
+
+The controls improve visibility into attacker behavior that previously
+allowed malicious activity to remain undetected for several days.
+
+**Audit Coverage**
+
+- Identity files
+- PAM configuration
+- SSH configuration
+- Privilege escalation
+- sudoers changes
+- Suspicious download tools
+- Netcat execution
+- MySQL data
+- Apache configuration
+- Startup and persistence mechanisms
+
+**Audit Keys**
+
+- `identity`
+- `pam_config`
+- `sshd_config`
+- `priv_esc`
+- `sudoers`
+- `suspicious_download`
+- `suspicious_netcat`
+- `meddefense_db`
+- `meddefense_web`
+- `startup_scripts`
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./10-auditd_config.sh
+
+---
+
 
