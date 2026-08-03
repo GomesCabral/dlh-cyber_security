@@ -189,3 +189,50 @@ The script:
 sudo sshd -t
 sudo sshd -T
 systemctl status ssh
+
+---
+
+### Task 5 - The Kernel Shield
+
+**Script**
+
+`5-sysctl_hardening.sh`
+
+**Purpose**
+
+Hardens the Linux network stack and kernel memory protections against
+pivoting, traffic manipulation, denial-of-service and memory exploitation.
+
+**Controls Applied**
+
+- IP forwarding disabled
+- ICMP redirects rejected
+- ICMP redirect transmission disabled
+- Source routing rejected
+- Martian packet logging enabled
+- TCP SYN cookies enabled
+- Broadcast ICMP echo requests ignored
+- IPv6 disabled for the IPv4-only server profile
+- Full ASLR enabled
+- SUID core dumps disabled
+- Kernel message access restricted
+- Kernel pointer disclosure restricted
+
+**Safety and Idempotency**
+
+The script:
+
+- preserves `/etc/sysctl.conf.bak`;
+- replaces a managed configuration block rather than duplicating it;
+- applies settings with `sysctl -p`;
+- verifies every value through `/proc/sys`;
+- restores the previous configuration if application or validation fails.
+
+**Usage**
+
+```bash
+sudo ./5-sysctl_hardening.sh
+
+---
+
+
