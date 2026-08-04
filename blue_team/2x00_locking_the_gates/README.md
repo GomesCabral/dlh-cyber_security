@@ -423,4 +423,42 @@ sudo AUDIT_ONLY=1 ./10-auditd_config.sh
 
 ---
 
+### Task 11 - Audit Telemetry Coverage Test
+
+**Script**
+
+`11-audit_coverage_test.sh`
+
+**Output**
+
+`audit_validation.json`
+
+**Purpose**
+
+Validates that Linux audit telemetry captures the security events required
+by the MedDefense SOC.
+
+The test generates controlled and non-destructive events and verifies their
+presence using `ausearch`.
+
+**Coverage Tests**
+
+1. Privileged command execution through sudo
+2. Access to `/etc/shadow`
+3. Execution of curl or wget
+4. Read/metadata access to SSH configuration
+5. Controlled write to a monitored temporary path
+6. Controlled cron configuration action
+
+**Safety**
+
+Temporary audit rules and test files are automatically removed when the
+script exits. No test accounts or executable cron jobs are created.
+
+**Usage**
+
+```bash
+sudo ./11-audit_coverage_test.sh
+
+---
 
