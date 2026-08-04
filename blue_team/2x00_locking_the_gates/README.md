@@ -596,3 +596,45 @@ sudo ./14-hardening_orchestrator.sh
 
 ---
 
+### Task 15 - The Post-Hardening Validator
+
+**Script**
+
+`15-validation.sh`
+
+**Purpose**
+
+Provides independent, read-only validation of the MedDefense Linux
+hardening baseline implemented by Tasks 4-13.
+
+The validator detects configuration drift without modifying the system.
+
+**Controls Validated**
+
+- SSH hardening
+- Kernel and sysctl security parameters
+- Filesystem and mount protections
+- Required service state
+- PAM password and account lockout policy
+- AppArmor enforcement
+- auditd service and audit rules
+- Audit telemetry coverage
+- rsyslog configuration
+- Log retention and permissions
+- UFW firewall policy and network restrictions
+
+**Operation**
+
+For every control, the script:
+
+1. Reads the actual system state.
+2. Compares it with the expected MedDefense baseline.
+3. Reports `PASS` or `FAIL`.
+
+**Usage**
+
+```bash
+sudo ./15-validation.sh
+
+---
+
