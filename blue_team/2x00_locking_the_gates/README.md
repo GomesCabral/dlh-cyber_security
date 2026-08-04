@@ -462,3 +462,44 @@ sudo ./11-audit_coverage_test.sh
 
 ---
 
+### Task 12 - The Log Architect
+
+**Script**
+
+`12-log_config.sh`
+
+**Purpose**
+
+Configures structured system and authentication logging, retention and
+access permissions so Linux security telemetry remains available for SOC
+analysis and future SIEM export.
+
+**Logging Sources**
+
+- Authentication and PAM events -> `/var/log/auth.log`
+- General system events -> `/var/log/syslog`
+
+**Retention**
+
+- `auth.log`: 90 daily rotations
+- `syslog`: 60 daily rotations
+- Rotated logs compressed
+
+**Permissions**
+
+- Owner: `root`
+- Group: `adm`
+- Mode: `640`
+
+**Validation**
+
+The script generates controlled `logger` events and confirms they reach
+the expected files.
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./12-log_config.sh
+
+---
+
