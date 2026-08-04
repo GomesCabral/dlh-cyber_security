@@ -177,18 +177,23 @@ fi
 
 echo "[*] Verifying log activity..."
 
+echo "[*] Verifying log activity..."
+
 if [[ "$AUDIT_ONLY" == "1" ]]; then
     if [[ -f "$AUTH_LOG" ]]; then
         echo "    /var/log/auth.log: exists"
+        tail -n 5 "$AUTH_LOG" >/dev/null 2>&1 || true
     else
         echo "    /var/log/auth.log: missing"
     fi
 
     if [[ -f "$SYSLOG_FILE" ]]; then
         echo "    /var/log/syslog: exists"
+        tail -n 5 "$SYSLOG_FILE" >/dev/null 2>&1 || true
     else
         echo "    /var/log/syslog: missing"
     fi
+
 else
     AUTH_MARKER="MEDDEFENSE_AUTH_TEST_$(date +%s)"
     SYSLOG_MARKER="MEDDEFENSE_SYSLOG_TEST_$(date +%s)"
@@ -198,14 +203,14 @@ else
 
     sleep 2
 
-    if grep -Fq "$AUTH_MARKER" "$AUTH_LOG"; then
+    if tail -n 50 "$AUTH_LOG" | grep -Fq "$AUTH_MARKER"; then
         echo "    /var/log/auth.log: receiving events       [OK]"
     else
         echo "    /var/log/auth.log: receiving events       [FAIL]"
         exit 1
     fi
 
-    if grep -Fq "$SYSLOG_MARKER" "$SYSLOG_FILE"; then
+    if tail -n 50 "$SYSLOG_FILE" | grep -Fq "$SYSLOG_MARKER"; then
         echo "    /var/log/syslog: receiving events         [OK]"
     else
         echo "    /var/log/syslog: receiving events         [FAIL]"
