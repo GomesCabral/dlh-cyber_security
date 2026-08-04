@@ -536,3 +536,63 @@ sudo AUDIT_ONLY=1 ./13-firewall_baseline.sh
 
 ---
 
+### Task 14 - Production Hardening Orchestrator
+
+**Script**
+
+`14-hardening_orchestrator.sh`
+
+**Outputs**
+
+- `hardening_run.json`
+- `hardening_improvement.json`
+- `lynis_before.json`
+- `lynis_after.json`
+
+**Purpose**
+
+Coordinates the complete MedDefense Linux hardening workflow in dependency
+order and records measurable evidence of execution and security improvement.
+
+**Workflow**
+
+1. Baseline snapshot
+2. Pre-hardening Lynis assessment
+3. SSH hardening
+4. Kernel/sysctl hardening
+5. Filesystem hardening
+6. Service minimization
+7. PAM hardening
+8. AppArmor confinement
+9. auditd configuration
+10. Audit coverage validation
+11. Log configuration
+12. Firewall baseline
+13. Final validation
+
+**Safety**
+
+The orchestrator performs all prerequisite checks before modifying the
+system and stops immediately if any hardening step returns a non-zero exit
+code.
+
+**Evidence**
+
+Each executed step records:
+
+- start time
+- finish time
+- execution duration
+- exit code
+- completion status
+
+The workflow also compares the pre-hardening and post-hardening Lynis
+hardening indexes.
+
+**Usage**
+
+```bash
+sudo ./14-hardening_orchestrator.sh
+
+---
+
