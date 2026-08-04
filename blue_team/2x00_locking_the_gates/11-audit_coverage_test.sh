@@ -28,17 +28,28 @@ CRON_TEST_FILE="/etc/cron.d/meddefense-audit-validation"
 
 TEMP_RESULT_FILE="$(mktemp)"
 
+TEST_USER="meddefense-audit-test"
+
 TEMP_RULES_ADDED=()
 
 cleanup() {
     echo "[*] Cleaning test artifacts..."
 
+    # Remove controlled test files and directories.
     rm -f "$TEST_FILE"
     rmdir "$TEST_DIR" 2>/dev/null || true
 
+    # Remove the temporary cron validation file.
     rm -f "$CRON_TEST_FILE"
 
-    # Remove only the temporary validation rules created by this script.
+    # Defensive cleanup for any temporary audit test account.
+    # The current validation workflow does not require creating this user,
+    # but if a future test creates it, it must never remain on the system.
+    if id "$TEST_USER" >/dev/null 2>&1; then
+        userdel -r "$TEST_USER" >/dev/null 2>&1 || true
+    fi
+
+    # Remove only temporary validation audit rules created by this script.
     auditctl -W /etc/shadow \
         -p r \
         -k meddefense_shadow_read_test \
