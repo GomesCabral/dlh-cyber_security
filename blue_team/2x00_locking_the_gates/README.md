@@ -503,3 +503,36 @@ sudo AUDIT_ONLY=1 ./12-log_config.sh
 
 ---
 
+### Task 13 - The Firewall Baseline
+
+**Script**
+
+`13-firewall_baseline.sh`
+
+**Purpose**
+
+Implements a default-deny host firewall policy that limits network access
+to only the services required by the MedDefense billing server.
+
+**Firewall Policy**
+
+- Default inbound: deny
+- Default outbound: allow
+- SSH (`22/tcp`): management network only
+- HTTP (`80/tcp`): allowed
+- HTTPS (`443/tcp`): allowed
+- MySQL (`3306/tcp`): application network only
+- Denied connections logged
+
+**Trusted Networks**
+
+- Management: `10.10.1.0/24`
+- Application: `10.10.2.0/24`
+
+**Safe Audit Mode**
+
+```bash
+sudo AUDIT_ONLY=1 ./13-firewall_baseline.sh
+
+---
+
