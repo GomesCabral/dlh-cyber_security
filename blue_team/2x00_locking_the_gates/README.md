@@ -638,3 +638,50 @@ sudo ./15-validation.sh
 
 ---
 
+### Task 16 - Lynis Improvement Diff
+
+**Script**
+
+`16-lynis_diff.sh`
+
+**Inputs**
+
+- `lynis_findings.json`
+- `lynis_post_findings.json`
+
+The script can generate the post-hardening report automatically when it is
+not already available.
+
+**Output**
+
+`hardening_improvement.json`
+
+**Purpose**
+
+Compares the pre-hardening and post-hardening Lynis assessments to provide
+measurable evidence of security improvement and identify residual or newly
+introduced risk.
+
+**Comparison Categories**
+
+- Resolved findings
+- Remaining findings
+- New findings
+
+**Metrics**
+
+- Before Lynis hardening index
+- After Lynis hardening index
+- Score delta
+- Resolved finding count
+- Remaining finding count
+- New finding count
+- Residual risk summary
+
+**Usage**
+
+```bash
+sudo ./16-lynis_diff.sh
+
+---
+
