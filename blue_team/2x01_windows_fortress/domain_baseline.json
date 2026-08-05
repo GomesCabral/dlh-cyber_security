@@ -1,6 +1,6 @@
 {
     "task":  "0 - Domain Reconnaissance",
-    "generated_at_utc":  "2026-08-05T13:51:03.4251711Z",
+    "generated_at_utc":  "2026-08-05T14:14:32.6553616Z",
     "assessment_scope":  "LOCAL_WINDOWS_ONLY",
     "safety":  {
                    "mode":  "READ_ONLY",

@@ -329,3 +329,154 @@ The same concept applies to:
 
 The baseline therefore becomes reference evidence for future Windows
 telemetry, SIEM detections and incident investigations.
+
+---
+
+# Task 1 - Domain Risk Findings Extractor
+
+## Script
+
+`1-domain_findings.ps1`
+
+## Output
+
+`domain_security_findings.json`
+
+## Goal
+
+Transform the Windows and Active Directory baseline into an actionable
+security findings inventory.
+
+Each finding explains:
+
+- what was detected;
+- why it represents risk;
+- what should remediate it;
+- which later project task owns the remediation.
+
+## Required Finding Fields
+
+Every finding contains:
+
+```text
+id
+severity
+category
+asset
+evidence
+risk
+recommended_remediation
+mapped_task
+```
+
+## Security Areas Assessed
+
+When Active Directory is available:
+
+- PasswordNeverExpires accounts
+- privileged group membership
+- stale computer objects
+- password policy
+- account lockout
+- Kerberos encryption
+- service accounts
+- unconstrained delegation
+- DES-only Kerberos configuration
+- stale service-account passwords
+- Advanced Audit Policy
+- PowerShell Script Block Logging
+- Sysmon readiness
+- Group Policy security posture
+
+## Windows Fortress Target State
+
+The findings assessment compares domain policy against:
+
+```text
+Minimum password length: 14
+Password complexity: enabled
+Password history: 24
+Account lockout threshold: 5
+```
+
+## Standalone Windows Mode
+
+When `meddefense.local` is unavailable, the script does not fabricate
+Active Directory evidence.
+
+Domain-specific checks are recorded as:
+
+```text
+NOT_ASSESSED
+```
+
+The script can still safely inspect local telemetry readiness including:
+
+- Advanced Audit Policy visibility
+- PowerShell Script Block Logging
+- Sysmon presence
+
+## Safety
+
+The script is read-only.
+
+It does not:
+
+- modify accounts;
+- change passwords;
+- modify Group Policy;
+- modify Windows audit policy;
+- install Sysmon;
+- enable PowerShell logging;
+- change Registry values;
+- change Kerberos;
+- modify Active Directory.
+
+## Usage
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\1-domain_findings.ps1
+```
+
+## Validate Output
+
+```powershell
+$Report = Get-Content .\domain_security_findings.json -Raw |
+    ConvertFrom-Json
+
+$Report.summary
+```
+
+Display findings:
+
+```powershell
+$Report.findings |
+    Format-Table id,severity,category,asset -AutoSize
+```
+
+## Security Lesson
+
+Task 0 establishes the baseline.
+
+Task 1 converts baseline evidence into prioritized security findings:
+
+```text
+Observed state
+    ↓
+Security weakness
+    ↓
+Severity
+    ↓
+Risk
+    ↓
+Recommended remediation
+    ↓
+Mapped hardening task
+```
+
+This is the bridge between security assessment and remediation.
+
+For a SOC analyst, the task also introduces telemetry readiness. Windows
+security controls such as Advanced Audit Policy, PowerShell Script Block
+Logging and Sysmon determine which events will later be available to a SIEM
+for detection and investigation.
