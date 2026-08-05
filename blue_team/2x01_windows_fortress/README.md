@@ -1195,3 +1195,264 @@ The broader lesson is:
 
 > Security configuration should prevent common attacks while Windows
 > telemetry provides evidence when those attacks are attempted.
+
+---
+
+# Task 5 - Advanced Audit Policy
+
+## Script
+
+`5-audit_policy.ps1`
+
+## Goal
+
+Deploy a dedicated MedDefense Advanced Audit Policy through Group Policy
+to provide the Windows security telemetry required by SOC detection and
+incident investigation.
+
+## GPO
+
+```text
+MedDefense - Advanced Audit Policy
+```
+
+## Audit Configuration
+
+### Account Logon
+
+```text
+Credential Validation:
+Success and Failure
+
+Kerberos Authentication Service:
+Success and Failure
+```
+
+### Logon / Logoff
+
+```text
+Logon:
+Success and Failure
+
+Logoff:
+Success
+
+Special Logon:
+Success
+```
+
+### Account Management
+
+```text
+User Account Management:
+Success and Failure
+```
+
+### Privilege Use
+
+```text
+Sensitive Privilege Use:
+Success and Failure
+```
+
+### Object Access
+
+```text
+File System:
+Success and Failure
+
+Registry:
+Success and Failure
+```
+
+### Process Tracking
+
+```text
+Process Creation:
+Success
+```
+
+Process Creation auditing enables Windows Security Event ID:
+
+```text
+4688
+```
+
+---
+
+## Process Command-Line Logging
+
+The policy enables:
+
+```text
+Include command line in process creation events
+```
+
+This enriches Event ID 4688 with command-line information.
+
+Example:
+
+```text
+powershell.exe
+```
+
+provides less investigative context than:
+
+```text
+powershell.exe -EncodedCommand ...
+```
+
+Command-line telemetry can therefore significantly improve SOC detection
+and incident reconstruction.
+
+---
+
+## Security Log Protection
+
+The task also configures:
+
+```text
+Security log maximum size: 1 GB
+```
+
+Increasing the Security log size improves local evidence retention before
+events are overwritten.
+
+The policy also restricts Security log management/clearing to authorized
+administrators.
+
+Security log clearing is particularly important because Windows generates:
+
+```text
+Event ID 1102
+```
+
+when the Security audit log is cleared.
+
+Unexpected Event ID 1102 activity should receive high SOC attention because
+it may represent defense evasion.
+
+---
+
+## Validation
+
+The effective Advanced Audit Policy is validated using:
+
+```powershell
+auditpol /get /category:*
+```
+
+The validator checks:
+
+```text
+Credential Validation
+Kerberos Authentication Service
+Logon
+Logoff
+Special Logon
+User Account Management
+Sensitive Privilege Use
+File System
+Registry
+Process Creation
+```
+
+Each expected state is reported as:
+
+```text
+[VERIFIED]
+```
+
+or:
+
+```text
+[NOT VERIFIED]
+```
+
+---
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\5-audit_policy.ps1
+```
+
+Audit-only mode does not:
+
+- create GPOs;
+- modify audit policy;
+- modify the Registry;
+- modify Security Event Log configuration;
+- force Group Policy;
+- change Active Directory.
+
+Actual changes require:
+
+```powershell
+-Apply
+```
+
+Apply mode additionally requires the machine to belong to:
+
+```text
+meddefense.local
+```
+
+The `-Apply` option must not be used on a personal standalone workstation.
+
+---
+
+## SOC Lesson
+
+This task demonstrates an important SOC principle:
+
+> A SIEM cannot detect activity for which the endpoint generates no telemetry.
+
+The telemetry chain is:
+
+```text
+Attacker activity
+       ↓
+Advanced Audit Policy
+       ↓
+Windows Security Event
+       ↓
+Event Log
+       ↓
+SIEM
+       ↓
+Detection rule
+       ↓
+SOC alert
+       ↓
+Investigation
+```
+
+For example:
+
+```text
+Process executed
+      ↓
+Event ID 4688
+      ↓
+Command line
+      ↓
+SIEM
+      ↓
+Suspicious execution detection
+```
+
+Task 2 identified visibility gaps.
+
+Task 3 documented what each telemetry source means.
+
+Task 5 begins closing those gaps by defining the audit configuration
+required to generate useful security evidence.
