@@ -1,29 +1,18 @@
-# MedDefense Health Systems - Domain Reconnaissance
-# Task 0 - Windows / Active Directory Security Baseline
+# MedDefense Health Systems
+# Task: 0 - Domain Reconnaissance
+# Script: 0-domain_baseline.ps1
+# Author: Pedro Cabral
+# Purpose: Capture the Windows and Active Directory security baseline.
+# Safety: READ-ONLY. This script does not modify system or domain configuration.
+# Output: domain_baseline.json
 #
-# Purpose:
-# Capture the current Windows and Active Directory security state before
-# any hardening changes are applied.
-#
-# SAFETY:
-# THIS SCRIPT IS READ-ONLY.
-#
-# It does NOT:
-# - create, delete, enable or disable users
-# - change passwords
-# - modify Active Directory
-# - modify Group Policy
-# - modify Registry values
-# - change Windows Firewall
-# - change services
-# - change audit policies
-# - change Kerberos settings
+# Description:
+# Captures domain information, users, groups, service accounts, GPOs,
+# password policy, account lockout policy, Kerberos configuration and
+# privileged accounts when Active Directory is available.
 #
 # When Active Directory is unavailable, domain-specific controls are
 # explicitly reported as NOT ASSESSED.
-#
-# Output:
-# domain_baseline.json
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
