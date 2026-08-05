@@ -58,6 +58,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4624
         Description       = "Successful Logon"
+        AuditCategory     = "Logon"
         AuditSubcategory  = "Logon"
         RequiredSetting   = "Success"
     }
@@ -65,6 +66,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4625
         Description       = "Failed Logon"
+        AuditCategory     = "Logon"
         AuditSubcategory  = "Logon"
         RequiredSetting   = "Failure"
     }
@@ -72,6 +74,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4648
         Description       = "Explicit Credentials"
+        AuditCategory     = "Logon"
         AuditSubcategory  = "Logon"
         RequiredSetting   = "Success"
     }
@@ -79,6 +82,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4688
         Description       = "Process Creation"
+        AuditCategory     = "Process Tracking"
         AuditSubcategory  = "Process Creation"
         RequiredSetting   = "Success"
     }
@@ -86,6 +90,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4720
         Description       = "Account Created"
+        AuditCategory     = "Account Management"
         AuditSubcategory  = "User Account Management"
         RequiredSetting   = "Success"
     }
@@ -93,6 +98,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4726
         Description       = "Account Deleted"
+        AuditCategory     = "Account Management"
         AuditSubcategory  = "User Account Management"
         RequiredSetting   = "Success"
     }
@@ -100,6 +106,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4732
         Description       = "Member Added to Group"
+        AuditCategory     = "Account Management"
         AuditSubcategory  = "Security Group Management"
         RequiredSetting   = "Success"
     }
@@ -107,6 +114,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 4672
         Description       = "Special Logon"
+        AuditCategory     = "Special Logon"
         AuditSubcategory  = "Special Logon"
         RequiredSetting   = "Success"
     }
@@ -114,6 +122,7 @@ $EventDefinitions = @(
     [PSCustomObject]@{
         EventID           = 1102
         Description       = "Audit Log Cleared"
+        AuditCategory     = "System Integrity"
         AuditSubcategory  = "Security System Extension"
         RequiredSetting   = "Success"
     }
