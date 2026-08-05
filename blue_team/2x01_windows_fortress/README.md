@@ -480,3 +480,118 @@ For a SOC analyst, the task also introduces telemetry readiness. Windows
 security controls such as Advanced Audit Policy, PowerShell Script Block
 Logging and Sysmon determine which events will later be available to a SIEM
 for detection and investigation.
+
+---
+
+# Task 2 - Windows Event Log Assessment
+
+## Script
+
+`2-eventlog_assessment.ps1`
+
+## Goal
+
+Assess the current Windows security telemetry capability by comparing
+Advanced Audit Policy configuration with Security events actually generated
+during the previous 24 hours.
+
+## Critical Event IDs
+
+| Event ID | Description |
+|---|---|
+| 4624 | Successful Logon |
+| 4625 | Failed Logon |
+| 4648 | Explicit Credentials |
+| 4688 | Process Creation |
+| 4720 | Account Created |
+| 4726 | Account Deleted |
+| 4732 | Member Added to Group |
+| 4672 | Special Logon |
+| 1102 | Security Audit Log Cleared |
+
+## Assessment Method
+
+The script performs two independent checks.
+
+First, it reads the current Advanced Audit Policy using:
+
+```powershell
+auditpol /get /category:*
+```
+
+Second, it queries the Windows Security log using:
+
+```powershell
+Get-WinEvent
+```
+
+for each critical Event ID during the previous 24 hours.
+
+## Status Values
+
+`GENERATING`
+
+The required audit configuration exists and at least one matching Security
+event was observed during the assessment window.
+
+`NOT CONFIGURED`
+
+The required audit policy could not be confirmed.
+
+`CONFIGURED - NO EVENTS`
+
+The audit policy is configured but no matching event occurred during the
+previous 24 hours.
+
+This does not necessarily indicate a security failure because some events,
+such as account deletion, may legitimately not occur every day.
+
+## Safety
+
+The script is read-only.
+
+It does not:
+
+- enable audit policies;
+- disable audit policies;
+- clear Event Logs;
+- modify Registry settings;
+- configure Group Policy;
+- install software;
+- change Windows security configuration.
+
+## Usage
+
+Run from an elevated PowerShell session when Security log access requires
+administrator privileges:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\2-eventlog_assessment.ps1
+```
+
+## Security Lesson
+
+Audit configuration and telemetry generation are two different concepts.
+
+```text
+Audit Policy
+    ↓
+Windows performs activity
+    ↓
+Security Event generated
+    ↓
+Event Log
+    ↓
+SIEM
+    ↓
+SOC Analyst
+```
+
+A configured audit policy does not automatically prove that useful telemetry
+is being generated.
+
+This task verifies both configuration and observable evidence.
+
+For SOC operations, important Windows Security Event IDs include logon
+events, privileged logons, process creation, account changes, group
+membership changes and Security log clearing.
