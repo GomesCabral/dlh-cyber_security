@@ -174,7 +174,7 @@ $PowerShellEvents = @(
         normal_frequency          = "medium"
         triage_priority           = "critical"
         crimson_tide_phase        = "Phase 4 - Execution"
-        example_suspicious_pattern = "Encoded commands, download cradles, credential access commands, Defender exclusions, or obfuscated PowerShell."
+        example_suspicious_pattern = "encoded PowerShell commands, download cradles, credential access commands, Defender exclusions, or obfuscated PowerShell."
         validation_method         = "Enable Script Block Logging in an authorized lab, run a test PowerShell script, and query Event ID 4104."
     }
 )
