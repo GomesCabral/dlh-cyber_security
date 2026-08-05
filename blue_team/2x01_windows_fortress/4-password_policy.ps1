@@ -2,6 +2,7 @@
 # Task: 4 - Password and Lockout Policy
 # Script: 4-password_policy.ps1
 # Author: Pedro Cabral
+# Date: 2026-08-05
 # Purpose: Deploy and validate the MedDefense password and account lockout policy.
 # Safety: AUDIT-ONLY by default. Changes require the explicit -Apply parameter.
 # Output: Console validation of the configured password and lockout policy.
