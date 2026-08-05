@@ -538,14 +538,15 @@ else {
 
 Write-Host ""
 
+# VERIFIED state is reached only when all effective policy checks pass.
 if ($VerificationFailures -eq 0) {
 
-    Write-Host "[*] Password and lockout policy validation: PASS"
+    Write-Host "[VERIFIED] Password and lockout policy validation: PASS"
     exit 0
 }
 else {
 
-    Write-Host "[!] Password and lockout policy validation: FAIL"
+    Write-Host "[NOT VERIFIED] Password and lockout policy validation: FAIL"
     Write-Host "[!] Failed checks: $VerificationFailures"
 
     exit 1
