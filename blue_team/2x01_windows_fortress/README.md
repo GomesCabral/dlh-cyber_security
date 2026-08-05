@@ -1016,3 +1016,182 @@ Task 3 answers:
 
 The next stages use this knowledge to improve Windows logging and eventually
 send the telemetry to the SIEM for detection and investigation.
+
+---
+
+# Task 4 - Password and Lockout Policy
+
+## Script
+
+`4-password_policy.ps1`
+
+## Goal
+
+Deploy a dedicated Group Policy Object for the MedDefense domain password
+and account lockout baseline.
+
+The control addresses credential attacks observed during the Crimson Tide
+campaign.
+
+## GPO
+
+```text
+MedDefense - Password and Lockout Policy
+```
+
+The GPO is intended to be linked to the domain root.
+
+## Password Policy Target
+
+| Setting | Target |
+|---|---:|
+| Minimum password length | 14 |
+| Password complexity | Enabled |
+| Password history | 24 |
+| Maximum password age | 0 |
+| Minimum password age | 1 day |
+
+## Account Lockout Target
+
+| Setting | Target |
+|---|---:|
+| Lockout threshold | 5 failed attempts |
+| Lockout duration | 15 minutes |
+| Reset lockout counter | 15 minutes |
+
+## Security Purpose
+
+The policy reduces exposure to:
+
+- brute-force attacks;
+- password spraying;
+- weak passwords;
+- password reuse;
+- credential harvesting;
+- repeated authentication attempts.
+
+The Crimson Tide scenario demonstrated that weak authentication controls
+allowed attackers to obtain and reuse credentials for lateral movement.
+
+## Deployment Workflow
+
+```text
+Create dedicated GPO
+        ↓
+Configure password policy
+        ↓
+Configure account lockout
+        ↓
+Link GPO to domain root
+        ↓
+Group Policy update
+        ↓
+Query effective policy
+        ↓
+PASS / FAIL
+```
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Audit-only mode does not:
+
+- create a GPO;
+- modify password policy;
+- modify account lockout;
+- modify Active Directory;
+- link Group Policy;
+- force Group Policy updates.
+
+Safe workstation execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\4-password_policy.ps1
+```
+
+Actual changes require:
+
+```powershell
+-Apply
+```
+
+Apply mode additionally refuses to proceed unless the computer is joined to:
+
+```text
+meddefense.local
+```
+
+Therefore `-Apply` must not be used on a personal standalone workstation.
+
+## Expected Audit-Only Behaviour
+
+```text
+Minimum Length: 14        [WOULD SET]
+Complexity: Enabled       [WOULD SET]
+History: 24               [WOULD SET]
+Maximum Age: 0            [WOULD SET]
+Minimum Age: 1 day        [WOULD SET]
+
+Threshold: 5 attempts     [WOULD SET]
+Duration: 15 minutes      [WOULD SET]
+Reset Counter: 15 minutes [WOULD SET]
+```
+
+## Validation
+
+In the MedDefense domain, effective policy is independently queried using:
+
+```powershell
+Get-ADDefaultDomainPasswordPolicy
+```
+
+This distinguishes between:
+
+```text
+configuration attempted
+```
+
+and:
+
+```text
+configuration actually effective
+```
+
+## SOC Lesson
+
+Weak authentication controls affect both prevention and detection.
+
+For example:
+
+```text
+Password spray
+      ↓
+4625
+4625
+4625
+4625
+4625
+      ↓
+Lockout
+```
+
+A SOC analyst can correlate repeated Event ID `4625` failures by:
+
+- source host;
+- source IP;
+- username;
+- time window;
+- number of targeted accounts.
+
+A strong password and lockout policy reduces the attacker's ability to turn
+credential guessing into successful access.
+
+The broader lesson is:
+
+> Security configuration should prevent common attacks while Windows
+> telemetry provides evidence when those attacks are attempted.
