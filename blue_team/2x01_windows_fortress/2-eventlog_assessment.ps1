@@ -35,6 +35,20 @@ $HoursToCheck = 24
 
 $StartTime = (Get-Date).AddHours(-$HoursToCheck)
 
+$IsElevated = (
+    New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    )
+).IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)
+
+if (-not $IsElevated) {
+    Write-Host "[!] Warning: PowerShell is not running as Administrator."
+    Write-Host "[!] Security log and audit policy visibility may be incomplete."
+    Write-Host ""
+}
+
 # ===========================================================================
 # Event definitions
 # ===========================================================================
@@ -115,18 +129,21 @@ function Get-AuditPolicy {
 
     try {
 
-        $AuditPolicy = auditpol.exe /get /category:* 2>$null
+        $AuditPolicyRaw = @(
+            auditpol.exe /get /category:* 2>$null
+        )
 
         if ($LASTEXITCODE -ne 0) {
             throw "auditpol returned exit code $LASTEXITCODE"
         }
 
-        return @($AuditPolicy)
+        return ,$AuditPolicyRaw
     }
     catch {
 
-        Write-Host "[!] Could not read audit policy."
-        return @()
+        Write-Host "[!] Could not read audit policy: $($_.Exception.Message)"
+
+        return ,@()
     }
 }
 
@@ -244,9 +261,11 @@ Write-Host ""
 # Check audit policy
 # ===========================================================================
 
-$AuditPolicy = Get-AuditPolicy
+$AuditPolicy = @(
+    Get-AuditPolicy
+)
 
-if ($AuditPolicy.Count -eq 0) {
+if (@($AuditPolicy).Count -eq 0) {
 
     Write-Host "[!] Audit policy could not be collected."
     Write-Host "[!] Run PowerShell as Administrator if Security policy access is restricted."
