@@ -595,3 +595,424 @@ This task verifies both configuration and observable evidence.
 For SOC operations, important Windows Security Event IDs include logon
 events, privileged logons, process creation, account changes, group
 membership changes and Security log clearing.
+
+---
+
+# Task 3 - Windows Telemetry Reference Builder
+
+## Script
+
+`3-telemetry_reference.ps1`
+
+## Output
+
+`windows_event_reference.json`
+
+## Goal
+
+Build a machine-readable Windows security telemetry reference that connects
+Windows Event IDs to MedDefense detection and incident-response use cases.
+
+The reference acts as a bridge between:
+
+- Windows Advanced Audit Policy
+- Windows Security Event Log
+- PowerShell logging
+- Sysmon telemetry
+- SIEM ingestion
+- SOC detection and investigation
+- Crimson Tide attack phases
+
+## Why This Matters
+
+A SOC analyst should not only know an Event ID.
+
+For each security event, the analyst should understand:
+
+- where the event is generated;
+- which audit policy or sensor is required;
+- what the event means from a security perspective;
+- how frequently it normally occurs;
+- how urgently it should be investigated;
+- which attacker behavior it may reveal;
+- how to validate that the telemetry is working.
+
+The relationship can be represented as:
+
+```text
+Security Activity
+        ↓
+Windows / PowerShell / Sysmon
+        ↓
+Event ID
+        ↓
+Windows Event Log
+        ↓
+SIEM
+        ↓
+Detection Rule
+        ↓
+SOC Alert
+        ↓
+Investigation
+```
+
+If the endpoint does not generate the required telemetry, the SIEM cannot
+detect the corresponding activity.
+
+---
+
+## Telemetry Sources
+
+The reference contains three main Windows telemetry sources.
+
+### Windows Security Log
+
+Log source:
+
+```text
+Security
+```
+
+Events documented:
+
+| Event ID | Event | Security Use |
+|---:|---|---|
+| 4624 | Successful Logon | Detect unusual successful authentication |
+| 4625 | Failed Logon | Detect brute force and password spraying |
+| 4648 | Explicit Credentials | Detect alternate credential usage |
+| 4672 | Special Privileges Assigned | Detect privileged logons |
+| 4688 | Process Creation | Detect suspicious process execution |
+| 4720 | User Account Created | Detect suspicious account creation |
+| 4726 | User Account Deleted | Detect suspicious account deletion |
+| 4732 | Member Added to Group | Detect privilege/group changes |
+| 1102 | Security Audit Log Cleared | Detect possible defense evasion |
+
+Total:
+
+```text
+9 Security events
+```
+
+---
+
+## PowerShell Telemetry
+
+Log source:
+
+```text
+Microsoft-Windows-PowerShell/Operational
+```
+
+Events documented:
+
+| Event ID | Event | Security Use |
+|---:|---|---|
+| 4103 | Module Logging | Visibility into PowerShell module/pipeline activity |
+| 4104 | Script Block Logging | Visibility into executed PowerShell code |
+
+Total:
+
+```text
+2 PowerShell events
+```
+
+### Event ID 4104
+
+Event ID `4104` is particularly valuable for SOC investigations because
+Script Block Logging can expose PowerShell code executed on the endpoint.
+
+Examples of suspicious patterns include:
+
+```text
+Encoded PowerShell
+Download commands
+Credential-access commands
+Security-control modification
+Obfuscated scripts
+```
+
+Without Script Block Logging, malicious PowerShell activity may have
+significantly less command-level visibility.
+
+---
+
+## Sysmon Telemetry
+
+Log source:
+
+```text
+Microsoft-Windows-Sysmon/Operational
+```
+
+Events documented:
+
+| Event ID | Event | Security Use |
+|---:|---|---|
+| 1 | Process Creation | Detailed process execution telemetry |
+| 3 | Network Connection | Process-to-network correlation |
+| 7 | Image Loaded | DLL/image loading visibility |
+| 11 | File Create | Payload and suspicious file creation |
+| 13 | Registry Value Set | Registry modification and persistence |
+| 22 | DNS Query | Process-to-DNS correlation |
+
+Total:
+
+```text
+6 Sysmon events
+```
+
+Sysmon complements native Windows Security logging by providing richer
+endpoint telemetry.
+
+For example:
+
+```text
+Sysmon Event ID 1
+        ↓
+Process
+Command line
+Parent process
+User
+Hashes
+Image path
+        ↓
+SIEM
+        ↓
+Process execution detection
+```
+
+---
+
+## Event Reference Structure
+
+Every event in `windows_event_reference.json` contains:
+
+```json
+{
+  "event_id": 4688,
+  "event_name": "Process Creation",
+  "log_source": "Security",
+  "audit_or_sensor_dependency": "Audit Process Creation - Success / Process Tracking",
+  "security_meaning": "Records creation of a new process and provides core execution telemetry.",
+  "normal_frequency": "very high",
+  "triage_priority": "high",
+  "crimson_tide_phase": "Phase 4 - Execution",
+  "example_suspicious_pattern": "Suspicious administrative or scripting tools launched by an unusual parent process.",
+  "validation_method": "Start a controlled process and query the Security log for Event ID 4688."
+}
+```
+
+This structure makes the reference machine-readable and suitable for later
+automation and SIEM detection engineering.
+
+---
+
+## Crimson Tide Mapping
+
+The reference connects telemetry to attacker activity observed in the
+Crimson Tide scenario.
+
+Examples:
+
+```text
+Credential attacks
+        ↓
+4625
+Failed Logon
+
+Lateral Movement
+        ↓
+4624 / 4648
+Authentication activity
+
+Privilege Escalation
+        ↓
+4672 / 4732
+Privileged logon or group modification
+
+Execution
+        ↓
+4688 / Sysmon 1 / PowerShell 4104
+Process and script execution
+
+Persistence
+        ↓
+4720 / Sysmon 13
+Account or Registry modification
+
+Command and Control
+        ↓
+Sysmon 3 / Sysmon 22
+Network and DNS activity
+
+Defense Evasion
+        ↓
+1102
+Security log cleared
+```
+
+---
+
+## Example SOC Investigation
+
+Suppose a SIEM generates an alert containing:
+
+```text
+Event ID: 4688
+Process: powershell.exe
+User: DOMAIN\user
+Parent Process: winword.exe
+```
+
+The Event ID alone tells the analyst that a process was created.
+
+The surrounding telemetry provides the context:
+
+```text
+winword.exe
+    ↓
+powershell.exe
+    ↓
+Network connection
+    ↓
+Suspicious DNS query
+```
+
+This could be correlated with:
+
+```text
+4688        Windows process creation
+4104        PowerShell script content
+Sysmon 1    Detailed process information
+Sysmon 3    Network connection
+Sysmon 22   DNS query
+```
+
+This demonstrates why SOC investigations depend on multiple telemetry
+sources rather than a single Event ID.
+
+---
+
+## Machine-Readable Output
+
+The script generates:
+
+```text
+windows_event_reference.json
+```
+
+Expected summary:
+
+```text
+Security events mapped: 9
+PowerShell events mapped: 2
+Sysmon events mapped: 6
+Total events documented: 17
+Reference saved to: windows_event_reference.json
+```
+
+The JSON contains all 17 documented events.
+
+---
+
+## Safety
+
+The script is safe to run on a personal Windows workstation.
+
+It does not:
+
+- modify Windows Audit Policy;
+- modify Group Policy;
+- enable PowerShell logging;
+- install Sysmon;
+- modify the Registry;
+- modify Windows Firewall;
+- create or delete users;
+- clear Event Logs;
+- modify Active Directory.
+
+It only builds a reference JSON file.
+
+---
+
+## Usage
+
+Because PowerShell script execution may be restricted on the workstation:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\3-telemetry_reference.ps1
+```
+
+The bypass applies only to that PowerShell process and does not permanently
+change the machine's Execution Policy.
+
+Verify the generated file:
+
+```powershell
+Get-Item .\windows_event_reference.json
+```
+
+Load the reference:
+
+```powershell
+$Reference = Get-Content .\windows_event_reference.json -Raw |
+    ConvertFrom-Json
+```
+
+View the summary:
+
+```powershell
+$Reference.summary
+```
+
+Display the event reference:
+
+```powershell
+$Reference.events |
+    Format-Table event_id,event_name,log_source,triage_priority -AutoSize
+```
+
+---
+
+## SOC Lesson
+
+The important lesson from this task is:
+
+> An Event ID is useful only when the analyst understands the telemetry source,
+> configuration dependency, security meaning and attacker behavior behind it.
+
+The workflow is:
+
+```text
+Attacker behavior
+        ↓
+Telemetry source
+        ↓
+Event ID
+        ↓
+SIEM ingestion
+        ↓
+Detection
+        ↓
+Alert
+        ↓
+Triage
+        ↓
+Investigation
+```
+
+Task 2 answered:
+
+```text
+"What telemetry can my Windows system currently see?"
+```
+
+Task 3 answers:
+
+```text
+"What does that telemetry mean to a SOC analyst?"
+```
+
+The next stages use this knowledge to improve Windows logging and eventually
+send the telemetry to the SIEM for detection and investigation.
