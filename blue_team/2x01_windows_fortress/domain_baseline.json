@@ -1,0 +1,317 @@
+{
+    "task":  "0 - Domain Reconnaissance",
+    "generated_at_utc":  "2026-08-05T13:51:03.4251711Z",
+    "assessment_scope":  "LOCAL_WINDOWS_ONLY",
+    "safety":  {
+                   "mode":  "READ_ONLY",
+                   "modified_system":  false
+               },
+    "system_identity":  {
+                            "computer_name":  "DESKTOP-3B8OAFG",
+                            "current_user":  "DESKTOP-3B8OAFG\\admin",
+                            "operating_system":  "Microsoft Windows 10 Pro",
+                            "os_version":  "10.0.19045",
+                            "os_build":  "19045",
+                            "architecture":  "64 bits",
+                            "manufacturer":  "Dell Inc.",
+                            "model":  "Latitude 7480",
+                            "domain_joined":  false,
+                            "reported_domain":  "WORKGROUP",
+                            "environment_mode":  "STANDALONE_WINDOWS",
+                            "ad_module":  false,
+                            "group_policy_module":  false
+                        },
+    "domain_information":  {
+                               "status":  "NOT ASSESSED",
+                               "reason":  "Computer is not joined to an Active Directory domain."
+                           },
+    "domain_controllers":  [
+
+                           ],
+    "user_accounts":  [
+                          {
+                              "name":  "admin",
+                              "enabled":  true,
+                              "last_logon":  "2026-08-05T15:03:33.8723089+02:00",
+                              "password_last_set":  null,
+                              "password_expires":  null,
+                              "password_never_expires":  null,
+                              "scope":  "LOCAL"
+                          },
+                          {
+                              "name":  "Administrator",
+                              "enabled":  false,
+                              "last_logon":  "2020-09-27T16:37:49.1399892+02:00",
+                              "password_last_set":  null,
+                              "password_expires":  null,
+                              "password_never_expires":  null,
+                              "scope":  "LOCAL"
+                          },
+                          {
+                              "name":  "DefaultAccount",
+                              "enabled":  false,
+                              "last_logon":  null,
+                              "password_last_set":  null,
+                              "password_expires":  null,
+                              "password_never_expires":  null,
+                              "scope":  "LOCAL"
+                          },
+                          {
+                              "name":  "Guest",
+                              "enabled":  false,
+                              "last_logon":  null,
+                              "password_last_set":  null,
+                              "password_expires":  null,
+                              "password_never_expires":  null,
+                              "scope":  "LOCAL"
+                          },
+                          {
+                              "name":  "WDAGUtilityAccount",
+                              "enabled":  false,
+                              "last_logon":  null,
+                              "password_last_set":  "2020-09-27T16:33:53.6622781+02:00",
+                              "password_expires":  "2020-11-08T15:33:53.6622781+01:00",
+                              "password_never_expires":  false,
+                              "scope":  "LOCAL"
+                          }
+                      ],
+    "groups":  [
+                   {
+                       "name":  "docker-users",
+                       "description":  "Members of this group can access features exposed by the Docker Desktop service (such as Windows Containers and the Hyper-V backend).",
+                       "members":  [
+                                       "DESKTOP-3B8OAFG\\admin"
+                                   ],
+                       "member_count":  1,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Access Control Assistance Operators",
+                       "description":  "Members of this group can remotely query authorization attributes and permissions for resources on this computer.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Administrators",
+                       "description":  "Administrators have complete and unrestricted access to the computer/domain",
+                       "members":  [
+                                       "DESKTOP-3B8OAFG\\admin",
+                                       "DESKTOP-3B8OAFG\\Administrator"
+                                   ],
+                       "member_count":  2,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Backup Operators",
+                       "description":  "Backup Operators can override security restrictions for the sole purpose of backing up or restoring files",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Cryptographic Operators",
+                       "description":  "Members are authorized to perform cryptographic operations.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Device Owners",
+                       "description":  "Members of this group can change system-wide settings.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Distributed COM Users",
+                       "description":  "Members are allowed to launch, activate and use Distributed COM objects on this machine.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Event Log Readers",
+                       "description":  "Members of this group can read event logs from local machine",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Guests",
+                       "description":  "Guests have the same access as members of the Users group by default, except for the Guest account which is further restricted",
+                       "members":  [
+                                       "DESKTOP-3B8OAFG\\Guest"
+                                   ],
+                       "member_count":  1,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Hyper-V Administrators",
+                       "description":  "Members of this group have complete and unrestricted access to all features of Hyper-V.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "IIS_IUSRS",
+                       "description":  "Built-in group used by Internet Information Services.",
+                       "members":  [
+                                       "NT AUTHORITY\\IUSR"
+                                   ],
+                       "member_count":  1,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Network Configuration Operators",
+                       "description":  "Members in this group can have some administrative privileges to manage configuration of networking features",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Performance Log Users",
+                       "description":  "Members of this group may schedule logging of performance counters, enable trace providers, and collect event traces both locally and via remote access to this computer",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Performance Monitor Users",
+                       "description":  "Members of this group can access performance counter data locally and remotely",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Power Users",
+                       "description":  "Power Users are included for backwards compatibility and possess limited administrative powers",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Remote Desktop Users",
+                       "description":  "Members in this group are granted the right to logon remotely",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Remote Management Users",
+                       "description":  "Members of this group can access WMI resources over management protocols (such as WS-Management via the Windows Remote Management service). This applies only to WMI namespaces that grant access to the user.",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Replicator",
+                       "description":  "Supports file replication in a domain",
+                       "members":  [
+
+                                   ],
+                       "member_count":  0,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "System Managed Accounts Group",
+                       "description":  "Members of this group are managed by the system.",
+                       "members":  [
+                                       "DESKTOP-3B8OAFG\\DefaultAccount"
+                                   ],
+                       "member_count":  1,
+                       "scope":  "LOCAL"
+                   },
+                   {
+                       "name":  "Users",
+                       "description":  "Users are prevented from making accidental or intentional system-wide changes and can run most applications",
+                       "members":  [
+                                       "NT AUTHORITY\\Authenticated Users",
+                                       "NT AUTHORITY\\INTERACTIVE"
+                                   ],
+                       "member_count":  2,
+                       "scope":  "LOCAL"
+                   }
+               ],
+    "service_accounts":  [
+
+                         ],
+    "group_policy_objects":  [
+
+                             ],
+    "password_policy":  {
+                            "status":  "NOT ASSESSED",
+                            "reason":  "Domain password policy requires Active Directory."
+                        },
+    "account_lockout_policy":  {
+                                   "status":  "NOT ASSESSED",
+                                   "reason":  "Domain account lockout policy requires Active Directory."
+                               },
+    "kerberos":  {
+                     "status":  "NOT ASSESSED",
+                     "reason":  "Domain Kerberos configuration requires Active Directory."
+                 },
+    "privileged_accounts":  {
+                                "domain_admins":  [
+
+                                                  ],
+                                "enterprise_admins":  [
+
+                                                      ]
+                            },
+    "summary":  {
+                    "user_accounts":  5,
+                    "password_never_expires":  0,
+                    "service_accounts":  0,
+                    "unconstrained_delegation":  0,
+                    "groups":  20,
+                    "gpos":  0,
+                    "domain_controllers":  0,
+                    "domain_admins":  0,
+                    "enterprise_admins":  0,
+                    "security_findings":  2,
+                    "critical_findings":  0,
+                    "high_findings":  0,
+                    "medium_findings":  2
+                },
+    "findings":  [
+                     {
+                         "severity":  "medium",
+                         "title":  "Active Directory domain unavailable for assessment",
+                         "evidence":  "The current computer belongs to WORKGROUP and is not joined to an Active Directory domain.",
+                         "recommendation":  "Perform domain-specific assessment against the MedDefense Domain Controller when available."
+                     },
+                     {
+                         "severity":  "medium",
+                         "title":  "ActiveDirectory PowerShell module unavailable",
+                         "evidence":  "The ActiveDirectory PowerShell module is not installed on this workstation.",
+                         "recommendation":  "Use RSAT Active Directory tools when assessing an Active Directory environment."
+                     }
+                 ]
+}
