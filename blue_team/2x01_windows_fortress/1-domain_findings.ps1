@@ -237,13 +237,15 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
         $Groups = @(Get-GroupMembershipNames -User $User)
         $IsServiceAccount = Test-ServiceAccount -User $User
 
+        $MemberOf = @($Groups)
+
         $Evidence = @(
             "Account=$($User.SamAccountName)"
             "Enabled=$($User.Enabled)"
             "PasswordLastSet=$($User.PasswordLastSet)"
             "PasswordNeverExpires=$($User.PasswordNeverExpires)"
             "ServiceAccount=$IsServiceAccount"
-            "Groups=$($Groups -join ', ')"
+            "MemberOf=$($MemberOf -join ', ')"
         ) -join "; "
 
         Add-Finding `
