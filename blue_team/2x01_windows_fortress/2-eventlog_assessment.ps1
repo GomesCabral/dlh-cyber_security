@@ -33,7 +33,8 @@ $ErrorActionPreference = "Stop"
 
 $HoursToCheck = 24
 
-$StartTime = (Get-Date).AddHours(-$HoursToCheck)
+# Required 24-hour assessment window.
+$StartTime = (Get-Date).AddHours(-24)
 
 $IsElevated = (
     New-Object Security.Principal.WindowsPrincipal(
