@@ -3,14 +3,30 @@
 # Script: 1-domain_findings.ps1
 # Author: Pedro Cabral
 # Purpose: Produce an actionable Windows and Active Directory security findings inventory.
-# Safety: READ-ONLY. This script does not modify system or domain configuration.
+# Safety: READ-ONLY. This script does not modify Windows or Active Directory security configuration.
 # Output: domain_security_findings.json
 #
-# The script audits meddefense.local when Active Directory is available.
-# On a standalone Windows workstation, domain-specific checks are recorded
-# as NOT_ASSESSED rather than fabricated.
+# Target domain:
+# meddefense.local
 #
-# Required finding fields:
+# Required areas:
+# - PasswordNeverExpires
+# - PasswordLastSet
+# - MemberOf
+# - privileged groups
+# - stale computer objects
+# - password and lockout policy
+# - Kerberos DES/RC4
+# - service accounts containing svc
+# - TrustedForDelegation
+# - UseDESKeyOnly
+# - interactive logon
+# - Advanced Audit Policy
+# - PowerShell Script Block Logging
+# - Sysmon readiness
+# - Group Policy security posture
+#
+# Every finding contains:
 # id
 # severity
 # category
@@ -25,18 +41,18 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 $OutputFile = Join-Path $ScriptDirectory "domain_security_findings.json"
-$BaselineFile = Join-Path $ScriptDirectory "domain_baseline.json"
 
 $TargetDomain = "meddefense.local"
 
 $Findings = @()
 $FindingCounter = 0
 
-# ---------------------------------------------------------------------------
+# ===========================================================================
 # Helper functions
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
 function Add-Finding {
+
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet("critical", "high", "medium")]
@@ -63,10 +79,10 @@ function Add-Finding {
 
     $script:FindingCounter++
 
-    $Id = "WIN-{0:D3}" -f $script:FindingCounter
+    $FindingId = "WIN-{0:D3}" -f $script:FindingCounter
 
     $script:Findings += [PSCustomObject]@{
-        id                      = $Id
+        id                      = $FindingId
         severity                = $Severity
         category                = $Category
         asset                   = $Asset
@@ -77,7 +93,9 @@ function Add-Finding {
     }
 }
 
+
 function Add-NotAssessedFinding {
+
     param(
         [Parameter(Mandatory = $true)]
         [string]$Category,
@@ -94,19 +112,24 @@ function Add-NotAssessedFinding {
         -Category $Category `
         -Asset $TargetDomain `
         -Evidence "NOT_ASSESSED: $Reason" `
-        -Risk "The security state of this domain control cannot be verified from the current standalone workstation." `
-        -RecommendedRemediation "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT." `
+        -Risk "The security state of this domain control cannot be verified from the current standalone Windows workstation." `
+        -RecommendedRemediation "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT." `
         -MappedTask $MappedTask
 }
 
+
 function Test-ServiceAccount {
+
     param(
+        [Parameter(Mandatory = $true)]
         [object]$User
     )
 
-    if ($null -eq $User) {
-        return $false
-    }
+    # Service account identification:
+    # - account name containing svc
+    # - display name containing svc
+    # - account in Service Accounts OU
+    # - account with Service Principal Name (SPN)
 
     if ($User.SamAccountName -match "(?i)svc") {
         return $true
@@ -127,55 +150,181 @@ function Test-ServiceAccount {
     return $false
 }
 
-function Get-GroupMembershipNames {
+
+function Get-MemberOf {
+
     param(
         [Parameter(Mandatory = $true)]
         [object]$User
     )
 
     try {
-        return @(
+
+        $MemberOf = @(
             Get-ADPrincipalGroupMembership `
                 -Identity $User `
                 -ErrorAction Stop |
             Select-Object -ExpandProperty Name
         )
+
+        return $MemberOf
     }
     catch {
+
         return @()
     }
 }
 
-function Get-LocalAuditPolicyText {
+
+function Convert-DateSafe {
+
+    param(
+        [object]$Value
+    )
+
+    if ($null -eq $Value) {
+        return "NEVER"
+    }
+
     try {
+        return ([datetime]$Value).ToString("o")
+    }
+    catch {
+        return [string]$Value
+    }
+}
+
+
+function Get-AuditPolicyText {
+
+    try {
+
         return (
             auditpol.exe /get /category:* 2>$null |
             Out-String
         )
     }
     catch {
+
         return ""
     }
 }
 
-# ---------------------------------------------------------------------------
+
+function Test-InteractiveLogonVisibility {
+
+    # This is a READ-ONLY assessment of interactive logon policy.
+    #
+    # Security concepts checked:
+    # - interactive logon
+    # - Allow log on locally
+    # - Allow log on through Remote Desktop Services
+    # - Deny log on locally
+    # - Deny log on through Remote Desktop Services
+    #
+    # secedit /export does NOT change the security policy.
+    # It only exports the current policy to a temporary file.
+
+    $TemporaryPolicy = Join-Path `
+        $env:TEMP `
+        "meddefense-security-policy.inf"
+
+    $Result = [ordered]@{
+        available                       = $false
+        interactive_logon               = "NOT_ASSESSED"
+        local_logon_rule                = $null
+        remote_interactive_logon_rule   = $null
+        deny_local_logon_rule           = $null
+        deny_remote_interactive_rule    = $null
+    }
+
+    try {
+
+        secedit.exe `
+            /export `
+            /cfg $TemporaryPolicy `
+            /quiet |
+        Out-Null
+
+        if (Test-Path $TemporaryPolicy) {
+
+            $PolicyText = Get-Content `
+                $TemporaryPolicy `
+                -ErrorAction SilentlyContinue
+
+            $Result.available = $true
+
+            $Result.local_logon_rule = (
+                $PolicyText |
+                Select-String `
+                    -Pattern "^SeInteractiveLogonRight" |
+                Select-Object -First 1
+            ).Line
+
+            $Result.remote_interactive_logon_rule = (
+                $PolicyText |
+                Select-String `
+                    -Pattern "^SeRemoteInteractiveLogonRight" |
+                Select-Object -First 1
+            ).Line
+
+            $Result.deny_local_logon_rule = (
+                $PolicyText |
+                Select-String `
+                    -Pattern "^SeDenyInteractiveLogonRight" |
+                Select-Object -First 1
+            ).Line
+
+            $Result.deny_remote_interactive_rule = (
+                $PolicyText |
+                Select-String `
+                    -Pattern "^SeDenyRemoteInteractiveLogonRight" |
+                Select-Object -First 1
+            ).Line
+
+            $Result.interactive_logon = "REVIEW_REQUIRED"
+        }
+    }
+    catch {
+
+        $Result.interactive_logon = "NOT_ASSESSED"
+    }
+    finally {
+
+        Remove-Item `
+            $TemporaryPolicy `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+
+    return [PSCustomObject]$Result
+}
+
+
+# ===========================================================================
 # Environment detection
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
 Write-Host "[*] MedDefense Domain Risk Findings Extractor"
+Write-Host "[*] Target domain: $TargetDomain"
 Write-Host "[*] Mode: READ ONLY"
 Write-Host ""
 
-$ComputerSystem = Get-CimInstance Win32_ComputerSystem
+$ComputerSystem = Get-CimInstance `
+    -ClassName Win32_ComputerSystem
 
 $PartOfDomain = [bool]$ComputerSystem.PartOfDomain
 
 $ADModuleAvailable = [bool](
-    Get-Module -ListAvailable -Name ActiveDirectory
+    Get-Module `
+        -ListAvailable `
+        -Name ActiveDirectory
 )
 
 $GPOModuleAvailable = [bool](
-    Get-Module -ListAvailable -Name GroupPolicy
+    Get-Module `
+        -ListAvailable `
+        -Name GroupPolicy
 )
 
 $AssessmentMode = "STANDALONE_WINDOWS"
@@ -192,8 +341,9 @@ Write-Host "    ActiveDirectory module: $ADModuleAvailable"
 Write-Host "    GroupPolicy module: $GPOModuleAvailable"
 Write-Host ""
 
+
 # ===========================================================================
-# ACTIVE DIRECTORY ASSESSMENT
+# ACTIVE DIRECTORY MODE
 # ===========================================================================
 
 if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
@@ -203,13 +353,12 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
     $Domain = Get-ADDomain
     $DomainName = $Domain.DNSRoot
 
-    Write-Host "[*] Auditing domain: $DomainName"
+    Write-Host "[*] Auditing Active Directory domain: $DomainName"
+    Write-Host ""
 
     # -----------------------------------------------------------------------
-    # Accounts with PasswordNeverExpires
+    # Collect all users once
     # -----------------------------------------------------------------------
-
-    Write-Host "[*] Checking PasswordNeverExpires accounts..."
 
     $AllUsers = @(
         Get-ADUser `
@@ -219,49 +368,66 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
                 PasswordNeverExpires,
                 PasswordLastSet,
                 LastLogonDate,
+                MemberOf,
                 ServicePrincipalName,
                 TrustedForDelegation,
+                UseDESKeyOnly,
                 UserAccountControl,
                 DistinguishedName
     )
 
-    $PasswordNeverExpiresUsers = @(
+    # =======================================================================
+    # PasswordNeverExpires accounts
+    # =======================================================================
+
+    Write-Host "[*] Checking PasswordNeverExpires accounts..."
+
+    $PasswordNeverExpiresAccounts = @(
         $AllUsers |
         Where-Object {
             $_.PasswordNeverExpires -eq $true
         }
     )
 
-    foreach ($User in $PasswordNeverExpiresUsers) {
+    foreach ($User in $PasswordNeverExpiresAccounts) {
 
-        $Groups = @(Get-GroupMembershipNames -User $User)
-        $IsServiceAccount = Test-ServiceAccount -User $User
+        $MemberOf = @(
+            Get-MemberOf -User $User
+        )
 
-        $MemberOf = @($Groups)
+        $IsServiceAccount = Test-ServiceAccount `
+            -User $User
 
-        $Evidence = @(
-            "Account=$($User.SamAccountName)"
-            "Enabled=$($User.Enabled)"
-            "PasswordLastSet=$($User.PasswordLastSet)"
-            "PasswordNeverExpires=$($User.PasswordNeverExpires)"
-            "ServiceAccount=$IsServiceAccount"
-            "MemberOf=$($MemberOf -join ', ')"
-        ) -join "; "
+        $EvidenceObject = [ordered]@{
+            Account              = $User.SamAccountName
+            Enabled              = $User.Enabled
+            PasswordNeverExpires = $User.PasswordNeverExpires
+            PasswordLastSet      = Convert-DateSafe $User.PasswordLastSet
+            MemberOf             = $MemberOf
+            ServiceAccount       = $IsServiceAccount
+        }
+
+        $Evidence = (
+            $EvidenceObject |
+            ConvertTo-Json `
+                -Compress `
+                -Depth 5
+        )
 
         Add-Finding `
             -Severity "high" `
             -Category "PasswordNeverExpires" `
             -Asset $User.SamAccountName `
             -Evidence $Evidence `
-            -Risk "Long-lived credentials increase the impact of credential theft and password cracking." `
-            -RecommendedRemediation "Remove unnecessary PasswordNeverExpires settings and migrate eligible service identities to managed service accounts." `
+            -Risk "Long-lived credentials increase exposure to credential theft, password cracking and persistence." `
+            -RecommendedRemediation "Remove unnecessary PasswordNeverExpires settings and migrate eligible service identities to gMSA." `
             -MappedTask "Password policy and service account hardening"
     }
 
-    # -----------------------------------------------------------------------
+
+    # =======================================================================
     # Disabled accounts in privileged groups
-    # Domain Admins, Enterprise Admins, G_IT_Admins
-    # -----------------------------------------------------------------------
+    # =======================================================================
 
     Write-Host "[*] Checking disabled accounts in privileged groups..."
 
@@ -274,7 +440,8 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
     foreach ($GroupName in $PrivilegedGroups) {
 
         try {
-            $Members = @(
+
+            $GroupMembers = @(
                 Get-ADGroupMember `
                     -Identity $GroupName `
                     -Recursive `
@@ -282,22 +449,25 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
             )
         }
         catch {
-            $Members = @()
+
+            $GroupMembers = @()
         }
 
-        foreach ($Member in $Members) {
+        foreach ($Member in $GroupMembers) {
 
             if ($Member.objectClass -ne "user") {
                 continue
             }
 
             try {
+
                 $PrivilegedUser = Get-ADUser `
                     -Identity $Member.DistinguishedName `
                     -Properties Enabled `
                     -ErrorAction Stop
             }
             catch {
+
                 continue
             }
 
@@ -305,19 +475,20 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
 
                 Add-Finding `
                     -Severity "high" `
-                    -Category "Privileged Disabled Account" `
+                    -Category "Disabled Privileged Account" `
                     -Asset $PrivilegedUser.SamAccountName `
-                    -Evidence "Disabled account remains a member of privileged group '$GroupName'." `
-                    -Risk "Dormant privileged memberships can be re-enabled or abused and increase unnecessary administrative exposure." `
-                    -RecommendedRemediation "Remove disabled accounts from privileged groups and review whether the account should be deleted after retention requirements." `
-                    -MappedTask "Stale object and privileged access cleanup"
+                    -Evidence "Enabled=False; MemberOf=$GroupName" `
+                    -Risk "Dormant privileged identities retain unnecessary administrative access and may be re-enabled or abused." `
+                    -RecommendedRemediation "Remove disabled accounts from privileged groups and review them for approved deletion." `
+                    -MappedTask "Privileged access and stale object cleanup"
             }
         }
     }
 
-    # -----------------------------------------------------------------------
-    # Stale computer objects - 90+ days
-    # -----------------------------------------------------------------------
+
+    # =======================================================================
+    # Stale computers - 90+ days
+    # =======================================================================
 
     Write-Host "[*] Checking stale computer objects..."
 
@@ -326,8 +497,11 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
     $StaleComputers = @(
         Get-ADComputer `
             -Filter * `
-            -Properties LastLogonDate,Enabled |
+            -Properties `
+                LastLogonDate,
+                Enabled |
         Where-Object {
+
             $null -eq $_.LastLogonDate -or
             $_.LastLogonDate -lt $StaleCutoff
         }
@@ -335,7 +509,7 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
 
     if ($StaleComputers.Count -gt 0) {
 
-        $ComputerNames = @(
+        $StaleComputerNames = @(
             $StaleComputers |
             Select-Object -ExpandProperty Name
         )
@@ -344,91 +518,95 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
             -Severity "medium" `
             -Category "Stale Computer Objects" `
             -Asset $DomainName `
-            -Evidence "$($StaleComputers.Count) computer object(s) show no authentication/logon activity within 90 days: $($ComputerNames -join ', ')." `
-            -Risk "Stale computer accounts increase attack surface and may retain outdated credentials or permissions." `
-            -RecommendedRemediation "Investigate stale systems, disable verified unused computer accounts, and remove them after the approved retention period." `
+            -Evidence "$($StaleComputers.Count) computer object(s) have no logon/authentication activity for 90+ days: $($StaleComputerNames -join ', ')." `
+            -Risk "Stale computer objects increase attack surface and may retain valid machine credentials and permissions." `
+            -RecommendedRemediation "Investigate, disable and later remove confirmed unused computer objects." `
             -MappedTask "Stale object cleanup"
     }
 
-    # -----------------------------------------------------------------------
+
+    # =======================================================================
     # Password and lockout policy
-    #
-    # Windows Fortress targets:
+    # =======================================================================
+
+    Write-Host "[*] Checking password and account lockout policy..."
+
+    $PasswordPolicy = Get-ADDefaultDomainPasswordPolicy
+
+    # Windows Fortress target:
     # Minimum length = 14
-    # Complexity = enabled
-    # History = 24
-    # Lockout threshold = 5
-    # -----------------------------------------------------------------------
 
-    Write-Host "[*] Checking password and lockout policy..."
-
-    $Policy = Get-ADDefaultDomainPasswordPolicy
-
-    if ($Policy.MinPasswordLength -lt 14) {
+    if ($PasswordPolicy.MinPasswordLength -lt 14) {
 
         Add-Finding `
             -Severity "critical" `
             -Category "Password Policy" `
             -Asset $DomainName `
-            -Evidence "Password policy minimum length: $($Policy.MinPasswordLength); target: 14." `
-            -Risk "Short passwords increase exposure to password guessing, cracking, and credential attacks." `
-            -RecommendedRemediation "Configure the MedDefense domain password policy with a minimum length of 14 characters." `
+            -Evidence "Password policy minimum length: $($PasswordPolicy.MinPasswordLength); expected: 14." `
+            -Risk "Short passwords increase exposure to password guessing, spraying and offline cracking." `
+            -RecommendedRemediation "Set domain minimum password length to 14 after compatibility testing." `
             -MappedTask "Password policy hardening"
     }
 
-    if (-not $Policy.ComplexityEnabled) {
+    # Complexity enabled
+
+    if (-not $PasswordPolicy.ComplexityEnabled) {
 
         Add-Finding `
             -Severity "high" `
             -Category "Password Policy" `
             -Asset $DomainName `
-            -Evidence "Password complexity is disabled; target: enabled." `
-            -Risk "Weak password composition increases credential compromise risk." `
-            -RecommendedRemediation "Enable domain password complexity after compatibility testing." `
+            -Evidence "Password complexity: disabled; expected: enabled." `
+            -Risk "Weak passwords increase credential compromise risk." `
+            -RecommendedRemediation "Enable domain password complexity." `
             -MappedTask "Password policy hardening"
     }
 
-    if ($Policy.PasswordHistoryCount -lt 24) {
+    # Password history = 24
+
+    if ($PasswordPolicy.PasswordHistoryCount -lt 24) {
 
         Add-Finding `
             -Severity "high" `
             -Category "Password Policy" `
             -Asset $DomainName `
-            -Evidence "Password history: $($Policy.PasswordHistoryCount); target: 24." `
-            -Risk "Insufficient password history allows rapid password reuse." `
+            -Evidence "Password history: $($PasswordPolicy.PasswordHistoryCount); expected: 24." `
+            -Risk "Insufficient password history allows users to rapidly reuse previous passwords." `
             -RecommendedRemediation "Configure password history to remember 24 passwords." `
             -MappedTask "Password policy hardening"
     }
 
-    if ($Policy.LockoutThreshold -eq 0) {
+    # Account lockout threshold = 5
+
+    if ($PasswordPolicy.LockoutThreshold -eq 0) {
 
         Add-Finding `
             -Severity "critical" `
             -Category "Account Lockout" `
             -Asset $DomainName `
-            -Evidence "Account lockout: not configured; LockoutThreshold=0; target: 5." `
-            -Risk "Attackers can perform repeated password guessing without triggering account lockout." `
-            -RecommendedRemediation "Configure an account lockout threshold of 5 failed attempts with an approved observation and lockout period." `
+            -Evidence "Account lockout: not configured; threshold=0; expected=5." `
+            -Risk "Unlimited authentication attempts increase password spraying and brute-force risk." `
+            -RecommendedRemediation "Configure an account lockout threshold of 5 failed attempts." `
             -MappedTask "Account lockout hardening"
     }
-    elseif ($Policy.LockoutThreshold -gt 5) {
+    elseif ($PasswordPolicy.LockoutThreshold -ne 5) {
 
         Add-Finding `
             -Severity "high" `
             -Category "Account Lockout" `
             -Asset $DomainName `
-            -Evidence "LockoutThreshold=$($Policy.LockoutThreshold); target: 5." `
-            -Risk "A high lockout threshold permits excessive authentication attempts." `
-            -RecommendedRemediation "Reduce the account lockout threshold to the Windows Fortress target of 5." `
+            -Evidence "Account lockout threshold=$($PasswordPolicy.LockoutThreshold); expected=5." `
+            -Risk "The current account lockout threshold does not match the Windows Fortress baseline." `
+            -RecommendedRemediation "Set the account lockout threshold to 5 after operational testing." `
             -MappedTask "Account lockout hardening"
     }
 
-    # -----------------------------------------------------------------------
-    # Kerberos weak encryption / service account risks
-    # DES-only flag = ADS_UF_USE_DES_KEY_ONLY = 0x200000
-    # -----------------------------------------------------------------------
 
-    Write-Host "[*] Checking Kerberos and service account risks..."
+    # =======================================================================
+    # Service account security
+    # =======================================================================
+
+    Write-Host "[*] Checking service account security..."
 
     $ServiceAccounts = @(
         $AllUsers |
@@ -438,14 +616,71 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
     )
 
     $StalePasswordCutoff = (Get-Date).AddDays(-180)
-    $SuspiciousLogonCutoff = (Get-Date).AddDays(-90)
+    $StaleLogonCutoff = (Get-Date).AddDays(-90)
+
+    $InteractiveLogonPolicy = Test-InteractiveLogonVisibility
 
     foreach ($ServiceAccount in $ServiceAccounts) {
 
-        $Groups = @(Get-GroupMembershipNames -User $ServiceAccount)
+        $MemberOf = @(
+            Get-MemberOf `
+                -User $ServiceAccount
+        )
 
-        $PrivilegedMembership = @(
-            $Groups |
+        # -------------------------------------------------------------------
+        # TrustedForDelegation
+        # -------------------------------------------------------------------
+
+        if ($ServiceAccount.TrustedForDelegation -eq $true) {
+
+            Add-Finding `
+                -Severity "high" `
+                -Category "Service Account - Unconstrained Delegation" `
+                -Asset $ServiceAccount.SamAccountName `
+                -Evidence "TrustedForDelegation=True" `
+                -Risk "Unconstrained delegation may expose reusable Kerberos credentials if the service host is compromised." `
+                -RecommendedRemediation "Remove unconstrained delegation and use constrained or resource-based constrained delegation where required." `
+                -MappedTask "Kerberos and service account hardening"
+        }
+
+        # -------------------------------------------------------------------
+        # UseDESKeyOnly
+        # -------------------------------------------------------------------
+
+        $UseDESKeyOnly = $false
+
+        if ($null -ne $ServiceAccount.UseDESKeyOnly) {
+
+            $UseDESKeyOnly = [bool]$ServiceAccount.UseDESKeyOnly
+        }
+        else {
+
+            # ADS_UF_USE_DES_KEY_ONLY = 0x200000
+            $UserAccountControl = [int64]$ServiceAccount.UserAccountControl
+
+            $UseDESKeyOnly = (
+                ($UserAccountControl -band 0x200000) -ne 0
+            )
+        }
+
+        if ($UseDESKeyOnly) {
+
+            Add-Finding `
+                -Severity "critical" `
+                -Category "Kerberos DES" `
+                -Asset $ServiceAccount.SamAccountName `
+                -Evidence "UseDESKeyOnly=True" `
+                -Risk "DES is obsolete cryptography and significantly weakens Kerberos authentication." `
+                -RecommendedRemediation "Disable DES-only authentication and migrate the service account to AES-compatible Kerberos encryption." `
+                -MappedTask "Kerberos hardening"
+        }
+
+        # -------------------------------------------------------------------
+        # Privileged membership
+        # -------------------------------------------------------------------
+
+        $PrivilegedMemberOf = @(
+            $MemberOf |
             Where-Object {
                 $_ -in @(
                     "Domain Admins",
@@ -455,46 +690,21 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
             }
         )
 
-        if ($ServiceAccount.TrustedForDelegation) {
-
-            Add-Finding `
-                -Severity "high" `
-                -Category "Service Account - Unconstrained Delegation" `
-                -Asset $ServiceAccount.SamAccountName `
-                -Evidence "TrustedForDelegation=True." `
-                -Risk "Unconstrained delegation may expose reusable Kerberos credentials if the service host is compromised." `
-                -RecommendedRemediation "Remove unconstrained delegation and use constrained or resource-based constrained delegation where required." `
-                -MappedTask "Kerberos and service account hardening"
-        }
-
-        $UserAccountControl = [int64]$ServiceAccount.UserAccountControl
-
-        # ADS_UF_USE_DES_KEY_ONLY = 0x200000
-        $UseDESKeyOnly = (($UserAccountControl -band 0x200000) -ne 0)
-
-        if ($UseDESKeyOnly) {
-
-            Add-Finding `
-                -Severity "critical" `
-                -Category "Kerberos DES" `
-                -Asset $ServiceAccount.SamAccountName `
-                -Evidence "UseDESKeyOnly=True; DES-only Kerberos flag detected in UserAccountControl." `
-                -Risk "DES is obsolete cryptography and materially weakens Kerberos authentication." `
-                -RecommendedRemediation "Remove the DES-only flag and migrate compatible accounts to AES Kerberos encryption." `
-                -MappedTask "Kerberos hardening"
-        }
-
-        if ($PrivilegedMembership.Count -gt 0) {
+        if ($PrivilegedMemberOf.Count -gt 0) {
 
             Add-Finding `
                 -Severity "high" `
                 -Category "Privileged Service Account" `
                 -Asset $ServiceAccount.SamAccountName `
-                -Evidence "Service account belongs to privileged group(s): $($PrivilegedMembership -join ', ')." `
-                -Risk "Compromise of the service account may provide immediate privileged access." `
+                -Evidence "MemberOf=$($PrivilegedMemberOf -join ', ')" `
+                -Risk "Compromise of a privileged service account may provide immediate administrative access." `
                 -RecommendedRemediation "Remove unnecessary privileged group membership and apply least privilege." `
                 -MappedTask "Service account hardening"
         }
+
+        # -------------------------------------------------------------------
+        # Stale password
+        # -------------------------------------------------------------------
 
         if (
             $null -eq $ServiceAccount.PasswordLastSet -or
@@ -505,43 +715,58 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
                 -Severity "high" `
                 -Category "Service Account Stale Password" `
                 -Asset $ServiceAccount.SamAccountName `
-                -Evidence "PasswordLastSet=$($ServiceAccount.PasswordLastSet); threshold: 180 days." `
-                -Risk "Old service-account credentials provide attackers with longer-lived opportunities for credential abuse." `
-                -RecommendedRemediation "Rotate stale credentials or migrate the service account to gMSA where supported." `
+                -Evidence "PasswordLastSet=$(Convert-DateSafe $ServiceAccount.PasswordLastSet); older than 180-day review threshold." `
+                -Risk "Long-lived service-account credentials provide attackers with an extended opportunity for credential abuse." `
+                -RecommendedRemediation "Rotate the credential or migrate the identity to a Group Managed Service Account (gMSA)." `
                 -MappedTask "Service account hardening"
         }
 
+        # -------------------------------------------------------------------
+        # Suspicious/stale last logon
+        # -------------------------------------------------------------------
+
         if (
             $null -eq $ServiceAccount.LastLogonDate -or
-            $ServiceAccount.LastLogonDate -lt $SuspiciousLogonCutoff
+            $ServiceAccount.LastLogonDate -lt $StaleLogonCutoff
         ) {
 
             Add-Finding `
                 -Severity "medium" `
                 -Category "Service Account Suspicious Last Logon" `
                 -Asset $ServiceAccount.SamAccountName `
-                -Evidence "LastLogonDate=$($ServiceAccount.LastLogonDate)." `
-                -Risk "Inactive service accounts may be obsolete yet still retain permissions and credentials." `
-                -RecommendedRemediation "Confirm whether the service account is still required and disable unused identities after dependency review." `
+                -Evidence "LastLogonDate=$(Convert-DateSafe $ServiceAccount.LastLogonDate); no recent authentication within 90 days." `
+                -Risk "Unused service identities may retain credentials and permissions long after the associated service is retired." `
+                -RecommendedRemediation "Confirm the account is still required and disable unused service identities after dependency review." `
                 -MappedTask "Service account hardening"
         }
 
-        # Interactive logon rights require local/domain security policy
-        # correlation. Flag visibility if explicit evidence is unavailable.
-        #
-        # This script intentionally does not alter User Rights Assignment.
+        # -------------------------------------------------------------------
+        # interactive logon
+        # -------------------------------------------------------------------
+
+        if ($InteractiveLogonPolicy.interactive_logon -eq "REVIEW_REQUIRED") {
+
+            Add-Finding `
+                -Severity "high" `
+                -Category "Service Account Interactive Logon" `
+                -Asset $ServiceAccount.SamAccountName `
+                -Evidence "interactive logon rights require review. Effective Allow/Deny logon rights must be correlated with the service account SID and group memberships." `
+                -Risk "Allowing a service account to perform interactive logon increases credential exposure and may facilitate lateral movement." `
+                -RecommendedRemediation "Deny interactive logon and Remote Desktop logon for service accounts unless explicitly required and documented." `
+                -MappedTask "Service account hardening"
+        }
     }
 
-    # -----------------------------------------------------------------------
+
+    # =======================================================================
     # Advanced Audit Policy
-    # process creation, special logon, account management, object access
-    # -----------------------------------------------------------------------
+    # =======================================================================
 
-    Write-Host "[*] Checking audit visibility..."
+    Write-Host "[*] Checking Advanced Audit Policy..."
 
-    $AuditPolicyText = Get-LocalAuditPolicyText
+    $AuditPolicy = Get-AuditPolicyText
 
-    $RequiredAuditTerms = @(
+    $AuditRequirements = @(
         "Process Creation",
         "Special Logon",
         "User Account Management",
@@ -550,238 +775,61 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
         "File System"
     )
 
-    $MissingAuditTerms = @()
+    $MissingAuditVisibility = @()
 
-    foreach ($AuditTerm in $RequiredAuditTerms) {
-
-        if ($AuditPolicyText -notmatch [regex]::Escape($AuditTerm)) {
-            $MissingAuditTerms += $AuditTerm
-        }
-    }
-
-    if ($MissingAuditTerms.Count -gt 0) {
-
-        Add-Finding `
-            -Severity "high" `
-            -Category "Advanced Audit Policy" `
-            -Asset $env:COMPUTERNAME `
-            -Evidence "Advanced Audit Policy visibility could not be confirmed for: $($MissingAuditTerms -join ', ')." `
-            -Risk "Missing process, logon, account-management or object-access events reduce SOC visibility and investigation capability." `
-            -RecommendedRemediation "Configure Advanced Audit Policy through the MedDefense security GPO and validate generated Windows Events." `
-            -MappedTask "Audit policy hardening"
-    }
-
-    # -----------------------------------------------------------------------
-    # PowerShell Script Block Logging readiness
-    # Read-only Registry query
-    # -----------------------------------------------------------------------
-
-    $ScriptBlockLoggingPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
-
-    $ScriptBlockLoggingEnabled = $false
-
-    if (Test-Path $ScriptBlockLoggingPath) {
-
-        try {
-            $SBL = Get-ItemProperty `
-                -Path $ScriptBlockLoggingPath `
-                -Name EnableScriptBlockLogging `
-                -ErrorAction Stop
-
-            $ScriptBlockLoggingEnabled = (
-                $SBL.EnableScriptBlockLogging -eq 1
-            )
-        }
-        catch {
-            $ScriptBlockLoggingEnabled = $false
-        }
-    }
-
-    if (-not $ScriptBlockLoggingEnabled) {
-
-        Add-Finding `
-            -Severity "high" `
-            -Category "PowerShell Logging" `
-            -Asset $env:COMPUTERNAME `
-            -Evidence "PowerShell Script Block Logging is not confirmed as enabled." `
-            -Risk "Malicious or suspicious PowerShell activity may execute without sufficient command-level telemetry." `
-            -RecommendedRemediation "Enable PowerShell Script Block Logging through Group Policy and forward Event ID 4104 to the SIEM." `
-            -MappedTask "PowerShell logging hardening"
-    }
-
-    # -----------------------------------------------------------------------
-    # Sysmon readiness
-    # -----------------------------------------------------------------------
-
-    $SysmonService = Get-Service `
-        -Name "Sysmon*" `
-        -ErrorAction SilentlyContinue
-
-    if ($null -eq $SysmonService) {
-
-        Add-Finding `
-            -Severity "high" `
-            -Category "Sysmon Readiness" `
-            -Asset $env:COMPUTERNAME `
-            -Evidence "Sysmon service was not detected." `
-            -Risk "Process creation, network connections and other endpoint telemetry may be unavailable to the SOC." `
-            -RecommendedRemediation "Deploy Sysmon using the approved MedDefense configuration and forward Microsoft-Windows-Sysmon/Operational events." `
-            -MappedTask "Sysmon deployment"
-    }
-
-    # -----------------------------------------------------------------------
-    # GPO security posture
-    # -----------------------------------------------------------------------
-
-    if ($GPOModuleAvailable) {
-
-        Import-Module GroupPolicy
-
-        $GPOs = @(Get-GPO -All)
-
-        $DefaultGPOs = @(
-            $GPOs |
-            Where-Object {
-                $_.DisplayName -in @(
-                    "Default Domain Policy",
-                    "Default Domain Controllers Policy"
-                )
-            }
-        )
-
-        $MedDefenseHardeningGPOs = @(
-            $GPOs |
-            Where-Object {
-                $_.DisplayName -match "(?i)(MedDefense|Hardening|Security|Audit|Firewall|Sysmon|AppLocker)"
-            }
-        )
+    foreach ($AuditRequirement in $AuditRequirements) {
 
         if (
-            $GPOs.Count -le 2 -and
-            $GPOs.Count -eq $DefaultGPOs.Count
+            $AuditPolicy -notmatch
+            [regex]::Escape($AuditRequirement)
         ) {
 
-            Add-Finding `
-                -Severity "medium" `
-                -Category "GPO Security Posture" `
-                -Asset $DomainName `
-                -Evidence "Only default GPOs are present." `
-                -Risk "Security controls are not centrally separated into purpose-built hardening policies." `
-                -RecommendedRemediation "Create dedicated MedDefense security GPOs for baseline hardening, auditing, firewall, PowerShell logging, Sysmon and application control." `
-                -MappedTask "GPO hardening"
-        }
-
-        if ($MedDefenseHardeningGPOs.Count -eq 0) {
-
-            Add-Finding `
-                -Severity "medium" `
-                -Category "GPO Security Posture" `
-                -Asset $DomainName `
-                -Evidence "No MedDefense hardening GPOs were identified." `
-                -Risk "Security configuration may remain inconsistent across domain endpoints." `
-                -RecommendedRemediation "Create clearly named and scoped security GPOs with documented purpose and ownership." `
-                -MappedTask "GPO hardening"
+            $MissingAuditVisibility += $AuditRequirement
         }
     }
-    else {
 
-        Add-Finding `
-            -Severity "medium" `
-            -Category "GPO Security Posture" `
-            -Asset $DomainName `
-            -Evidence "GroupPolicy PowerShell module is unavailable." `
-            -Risk "GPO security posture cannot be independently verified." `
-            -RecommendedRemediation "Perform GPO assessment from a host with Group Policy Management tools installed." `
-            -MappedTask "GPO hardening"
-    }
-}
-
-# ===========================================================================
-# STANDALONE WINDOWS ASSESSMENT
-# ===========================================================================
-
-else {
-
-    Write-Host "[!] meddefense.local is not available from this workstation."
-    Write-Host "[*] Domain-specific findings will be marked NOT_ASSESSED."
-    Write-Host "[*] Safe local visibility checks will still be performed."
-    Write-Host ""
-
-    Add-NotAssessedFinding `
-        -Category "PasswordNeverExpires Accounts" `
-        -Reason "Get-ADUser cannot be used because Active Directory is unavailable." `
-        -MappedTask "Password policy and service account hardening"
-
-    Add-NotAssessedFinding `
-        -Category "Privileged Group Membership" `
-        -Reason "Domain Admins, Enterprise Admins and G_IT_Admins cannot be queried without Active Directory." `
-        -MappedTask "Privileged access cleanup"
-
-    Add-NotAssessedFinding `
-        -Category "Stale Computer Objects" `
-        -Reason "Get-ADComputer cannot be used because Active Directory is unavailable." `
-        -MappedTask "Stale object cleanup"
-
-    Add-NotAssessedFinding `
-        -Category "Domain Password and Lockout Policy" `
-        -Reason "Get-ADDefaultDomainPasswordPolicy requires Active Directory." `
-        -MappedTask "Password policy hardening"
-
-    Add-NotAssessedFinding `
-        -Category "Kerberos Domain Security" `
-        -Reason "Domain Kerberos encryption and delegation cannot be fully assessed without meddefense.local." `
-        -MappedTask "Kerberos hardening"
-
-    Add-NotAssessedFinding `
-        -Category "Service Account Domain Risks" `
-        -Reason "Domain service accounts, SPNs and delegation settings cannot be queried." `
-        -MappedTask "Service account hardening"
-
-    Add-NotAssessedFinding `
-        -Category "GPO Security Posture" `
-        -Reason "Domain GPOs cannot be queried because Group Policy domain context is unavailable." `
-        -MappedTask "GPO hardening"
-
-    # -----------------------------------------------------------------------
-    # Safe local audit visibility checks
-    # -----------------------------------------------------------------------
-
-    Write-Host "[*] Checking local audit telemetry readiness..."
-
-    $AuditPolicyText = Get-LocalAuditPolicyText
-
-    if ([string]::IsNullOrWhiteSpace($AuditPolicyText)) {
+    if ($MissingAuditVisibility.Count -gt 0) {
 
         Add-Finding `
             -Severity "high" `
             -Category "Advanced Audit Policy" `
             -Asset $env:COMPUTERNAME `
-            -Evidence "auditpol output could not be collected." `
-            -Risk "Security-event visibility cannot be verified." `
-            -RecommendedRemediation "Review Advanced Audit Policy on the intended Windows lab system before enabling any settings." `
+            -Evidence "Missing audit visibility for: $($MissingAuditVisibility -join ', ')." `
+            -Risk "Missing process creation, special logon, account management or object access telemetry limits SOC detection and investigation." `
+            -RecommendedRemediation "Configure Advanced Audit Policy through the MedDefense hardening GPO." `
             -MappedTask "Audit policy hardening"
     }
 
-    # -----------------------------------------------------------------------
-    # PowerShell Script Block Logging - read only
-    # -----------------------------------------------------------------------
 
-    $ScriptBlockLoggingPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+    # =======================================================================
+    # PowerShell Script Block Logging
+    # =======================================================================
+
+    Write-Host "[*] Checking PowerShell logging readiness..."
+
+    $ScriptBlockLoggingPath = `
+        "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+
     $ScriptBlockLoggingEnabled = $false
 
     if (Test-Path $ScriptBlockLoggingPath) {
 
         try {
-            $Value = Get-ItemProperty `
+
+            $ScriptBlockLogging = Get-ItemProperty `
                 -Path $ScriptBlockLoggingPath `
                 -Name EnableScriptBlockLogging `
                 -ErrorAction Stop
 
-            $ScriptBlockLoggingEnabled = (
-                $Value.EnableScriptBlockLogging -eq 1
-            )
+            if (
+                $ScriptBlockLogging.EnableScriptBlockLogging -eq 1
+            ) {
+
+                $ScriptBlockLoggingEnabled = $true
+            }
         }
         catch {
+
             $ScriptBlockLoggingEnabled = $false
         }
     }
@@ -790,17 +838,20 @@ else {
 
         Add-Finding `
             -Severity "high" `
-            -Category "PowerShell Logging" `
+            -Category "PowerShell Script Block Logging" `
             -Asset $env:COMPUTERNAME `
-            -Evidence "PowerShell Script Block Logging is not enabled or cannot be confirmed." `
-            -Risk "PowerShell execution may lack the detailed Event ID 4104 telemetry required for SOC investigation." `
-            -RecommendedRemediation "Do not modify the personal workstation automatically. Validate and deploy Script Block Logging only in the intended Windows lab/MedDefense environment." `
+            -Evidence "PowerShell Script Block Logging is disabled or not configured." `
+            -Risk "PowerShell commands may execute without detailed Event ID 4104 telemetry." `
+            -RecommendedRemediation "Enable PowerShell Script Block Logging through Group Policy." `
             -MappedTask "PowerShell logging hardening"
     }
 
-    # -----------------------------------------------------------------------
-    # Sysmon readiness - read only
-    # -----------------------------------------------------------------------
+
+    # =======================================================================
+    # Sysmon readiness
+    # =======================================================================
+
+    Write-Host "[*] Checking Sysmon readiness..."
 
     $SysmonService = Get-Service `
         -Name "Sysmon*" `
@@ -813,15 +864,271 @@ else {
             -Category "Sysmon Readiness" `
             -Asset $env:COMPUTERNAME `
             -Evidence "Sysmon service is not installed." `
-            -Risk "Enhanced process, network and file telemetry is unavailable." `
-            -RecommendedRemediation "Install Sysmon only in the approved laboratory or managed endpoint environment using a reviewed configuration." `
+            -Risk "Detailed process, network, file and registry telemetry may be unavailable to the SOC." `
+            -RecommendedRemediation "Deploy Sysmon using the approved MedDefense configuration." `
+            -MappedTask "Sysmon deployment"
+    }
+
+
+    # =======================================================================
+    # Group Policy posture
+    # =======================================================================
+
+    Write-Host "[*] Checking GPO security posture..."
+
+    if ($GPOModuleAvailable) {
+
+        Import-Module GroupPolicy
+
+        $GPOs = @(
+            Get-GPO -All
+        )
+
+        $DefaultGPOs = @(
+            $GPOs |
+            Where-Object {
+
+                $_.DisplayName -in @(
+                    "Default Domain Policy",
+                    "Default Domain Controllers Policy"
+                )
+            }
+        )
+
+        $HardeningGPOs = @(
+            $GPOs |
+            Where-Object {
+
+                $_.DisplayName -match `
+                    "(?i)(MedDefense|Hardening|Security|Audit|Firewall|Sysmon|AppLocker)"
+            }
+        )
+
+        if (
+            $GPOs.Count -le 2 -and
+            $DefaultGPOs.Count -eq $GPOs.Count
+        ) {
+
+            Add-Finding `
+                -Severity "medium" `
+                -Category "GPO Security Posture" `
+                -Asset $DomainName `
+                -Evidence "Only default GPOs are present." `
+                -Risk "Security configuration is not separated into purpose-built centrally managed hardening policies." `
+                -RecommendedRemediation "Create dedicated MedDefense security hardening GPOs." `
+                -MappedTask "GPO hardening"
+        }
+
+        if ($HardeningGPOs.Count -eq 0) {
+
+            Add-Finding `
+                -Severity "medium" `
+                -Category "GPO Security Posture" `
+                -Asset $DomainName `
+                -Evidence "No MedDefense hardening GPOs with a clear security purpose were identified." `
+                -Risk "Windows security configuration may remain inconsistent across endpoints." `
+                -RecommendedRemediation "Create clearly named and scoped GPOs for Windows hardening, audit policy, Sysmon, AppLocker and firewall controls." `
+                -MappedTask "GPO hardening"
+        }
+    }
+    else {
+
+        Add-Finding `
+            -Severity "medium" `
+            -Category "GPO Security Posture" `
+            -Asset $DomainName `
+            -Evidence "GroupPolicy PowerShell module is unavailable." `
+            -Risk "GPO security posture cannot be fully verified." `
+            -RecommendedRemediation "Run GPO assessment from a system with Group Policy Management tools installed." `
+            -MappedTask "GPO hardening"
+    }
+}
+
+
+# ===========================================================================
+# STANDALONE WINDOWS MODE
+# ===========================================================================
+
+else {
+
+    Write-Host "[!] Active Directory / meddefense.local unavailable."
+    Write-Host "[*] Domain-specific controls will be marked NOT_ASSESSED."
+    Write-Host "[*] Local telemetry readiness will still be assessed."
+    Write-Host ""
+
+    # -----------------------------------------------------------------------
+    # Domain-only controls
+    # -----------------------------------------------------------------------
+
+    Add-NotAssessedFinding `
+        -Category "PasswordNeverExpires Accounts" `
+        -Reason "PasswordNeverExpires, PasswordLastSet and MemberOf domain information requires Get-ADUser." `
+        -MappedTask "Password policy and service account hardening"
+
+    Add-NotAssessedFinding `
+        -Category "Privileged Groups" `
+        -Reason "Domain Admins, Enterprise Admins and G_IT_Admins are unavailable without Active Directory." `
+        -MappedTask "Privileged access cleanup"
+
+    Add-NotAssessedFinding `
+        -Category "Stale Computer Objects" `
+        -Reason "Stale domain computers require Get-ADComputer and domain authentication data." `
+        -MappedTask "Stale object cleanup"
+
+    Add-NotAssessedFinding `
+        -Category "Domain Password Policy" `
+        -Reason "Minimum length 14, complexity, history 24 and lockout threshold 5 require Get-ADDefaultDomainPasswordPolicy." `
+        -MappedTask "Password policy hardening"
+
+    Add-NotAssessedFinding `
+        -Category "Kerberos Security" `
+        -Reason "RC4, DES, TrustedForDelegation and UseDESKeyOnly require Active Directory account information." `
+        -MappedTask "Kerberos hardening"
+
+    Add-NotAssessedFinding `
+        -Category "Service Account Security" `
+        -Reason "Domain svc accounts, interactive logon, SPNs, delegation and privileged MemberOf information require Active Directory." `
+        -MappedTask "Service account hardening"
+
+    Add-NotAssessedFinding `
+        -Category "GPO Security Posture" `
+        -Reason "meddefense.local Group Policy Objects cannot be queried from this standalone workstation." `
+        -MappedTask "GPO hardening"
+
+
+    # -----------------------------------------------------------------------
+    # Local Advanced Audit Policy
+    # READ ONLY
+    # -----------------------------------------------------------------------
+
+    Write-Host "[*] Checking local Advanced Audit Policy..."
+
+    $LocalAuditPolicy = Get-AuditPolicyText
+
+    if ([string]::IsNullOrWhiteSpace($LocalAuditPolicy)) {
+
+        Add-Finding `
+            -Severity "high" `
+            -Category "Advanced Audit Policy" `
+            -Asset $env:COMPUTERNAME `
+            -Evidence "Advanced Audit Policy could not be collected using auditpol." `
+            -Risk "Security event visibility cannot be confirmed." `
+            -RecommendedRemediation "Review Advanced Audit Policy on the intended Windows laboratory environment. Do not automatically modify this personal workstation." `
+            -MappedTask "Audit policy hardening"
+    }
+    else {
+
+        $RequiredAuditVisibility = @(
+            "Process Creation",
+            "Special Logon",
+            "User Account Management",
+            "Computer Account Management",
+            "Security Group Management",
+            "File System"
+        )
+
+        $MissingLocalAuditVisibility = @()
+
+        foreach ($RequiredAuditItem in $RequiredAuditVisibility) {
+
+            if (
+                $LocalAuditPolicy -notmatch
+                [regex]::Escape($RequiredAuditItem)
+            ) {
+
+                $MissingLocalAuditVisibility += $RequiredAuditItem
+            }
+        }
+
+        if ($MissingLocalAuditVisibility.Count -gt 0) {
+
+            Add-Finding `
+                -Severity "high" `
+                -Category "Advanced Audit Policy" `
+                -Asset $env:COMPUTERNAME `
+                -Evidence "Missing or unconfirmed audit visibility for: $($MissingLocalAuditVisibility -join ', ')." `
+                -Risk "Important security events may not be available for SOC analysis." `
+                -RecommendedRemediation "Review and enable required auditing only in the approved Windows laboratory or managed environment." `
+                -MappedTask "Audit policy hardening"
+        }
+    }
+
+
+    # -----------------------------------------------------------------------
+    # Local PowerShell Script Block Logging
+    # READ ONLY
+    # -----------------------------------------------------------------------
+
+    Write-Host "[*] Checking PowerShell Script Block Logging..."
+
+    $ScriptBlockLoggingPath = `
+        "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+
+    $ScriptBlockLoggingEnabled = $false
+
+    if (Test-Path $ScriptBlockLoggingPath) {
+
+        try {
+
+            $ScriptBlockLogging = Get-ItemProperty `
+                -Path $ScriptBlockLoggingPath `
+                -Name EnableScriptBlockLogging `
+                -ErrorAction Stop
+
+            if (
+                $ScriptBlockLogging.EnableScriptBlockLogging -eq 1
+            ) {
+
+                $ScriptBlockLoggingEnabled = $true
+            }
+        }
+        catch {
+
+            $ScriptBlockLoggingEnabled = $false
+        }
+    }
+
+    if (-not $ScriptBlockLoggingEnabled) {
+
+        Add-Finding `
+            -Severity "high" `
+            -Category "PowerShell Script Block Logging" `
+            -Asset $env:COMPUTERNAME `
+            -Evidence "PowerShell Script Block Logging is not enabled or cannot be confirmed." `
+            -Risk "PowerShell execution may lack detailed Event ID 4104 telemetry for SOC investigation." `
+            -RecommendedRemediation "Do not modify the personal workstation automatically. Enable Script Block Logging in the intended MedDefense/lab environment." `
+            -MappedTask "PowerShell logging hardening"
+    }
+
+
+    # -----------------------------------------------------------------------
+    # Local Sysmon readiness
+    # READ ONLY
+    # -----------------------------------------------------------------------
+
+    Write-Host "[*] Checking Sysmon readiness..."
+
+    $SysmonService = Get-Service `
+        -Name "Sysmon*" `
+        -ErrorAction SilentlyContinue
+
+    if ($null -eq $SysmonService) {
+
+        Add-Finding `
+            -Severity "high" `
+            -Category "Sysmon Readiness" `
+            -Asset $env:COMPUTERNAME `
+            -Evidence "Sysmon service is not installed." `
+            -Risk "Enhanced endpoint process, network and file telemetry is unavailable." `
+            -RecommendedRemediation "Deploy Sysmon only in the approved laboratory or managed Windows environment." `
             -MappedTask "Sysmon deployment"
     }
 }
 
-# ---------------------------------------------------------------------------
-# Summary
-# ---------------------------------------------------------------------------
+
+# ===========================================================================
+# Summary calculations
+# ===========================================================================
 
 $CriticalCount = @(
     $Findings |
@@ -844,14 +1151,18 @@ $MediumCount = @(
     }
 ).Count
 
-# ---------------------------------------------------------------------------
+
+# ===========================================================================
 # Structured JSON report
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
 $Report = [ordered]@{
+
     task = "1 - Domain Risk Findings Extractor"
 
-    generated_at_utc = (Get-Date).ToUniversalTime().ToString("o")
+    generated_at_utc = (
+        Get-Date
+    ).ToUniversalTime().ToString("o")
 
     target_domain = $TargetDomain
 
@@ -872,7 +1183,11 @@ $Report = [ordered]@{
     findings = $Findings
 }
 
-$Json = $Report | ConvertTo-Json -Depth 12
+
+$Json = $Report |
+    ConvertTo-Json `
+        -Depth 15
+
 
 [System.IO.File]::WriteAllText(
     $OutputFile,
@@ -880,9 +1195,10 @@ $Json = $Report | ConvertTo-Json -Depth 12
     [System.Text.UTF8Encoding]::new($false)
 )
 
-# ---------------------------------------------------------------------------
+
+# ===========================================================================
 # Console output
-# ---------------------------------------------------------------------------
+# ===========================================================================
 
 Write-Host ""
 Write-Host "=============================================="

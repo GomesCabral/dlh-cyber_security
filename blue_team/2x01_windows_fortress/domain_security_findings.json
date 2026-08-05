@@ -1,6 +1,6 @@
 {
     "task":  "1 - Domain Risk Findings Extractor",
-    "generated_at_utc":  "2026-08-05T14:14:43.5779007Z",
+    "generated_at_utc":  "2026-08-05T14:32:46.8082752Z",
     "target_domain":  "meddefense.local",
     "assessment_mode":  "STANDALONE_WINDOWS",
     "safety":  {
@@ -19,19 +19,19 @@
                          "severity":  "medium",
                          "category":  "PasswordNeverExpires Accounts",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Get-ADUser cannot be used because Active Directory is unavailable.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: PasswordNeverExpires, PasswordLastSet and MemberOf domain information requires Get-ADUser.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Password policy and service account hardening"
                      },
                      {
                          "id":  "WIN-002",
                          "severity":  "medium",
-                         "category":  "Privileged Group Membership",
+                         "category":  "Privileged Groups",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Domain Admins, Enterprise Admins and G_IT_Admins cannot be queried without Active Directory.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: Domain Admins, Enterprise Admins and G_IT_Admins are unavailable without Active Directory.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Privileged access cleanup"
                      },
                      {
@@ -39,39 +39,39 @@
                          "severity":  "medium",
                          "category":  "Stale Computer Objects",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Get-ADComputer cannot be used because Active Directory is unavailable.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: Stale domain computers require Get-ADComputer and domain authentication data.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Stale object cleanup"
                      },
                      {
                          "id":  "WIN-004",
                          "severity":  "medium",
-                         "category":  "Domain Password and Lockout Policy",
+                         "category":  "Domain Password Policy",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Get-ADDefaultDomainPasswordPolicy requires Active Directory.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: Minimum length 14, complexity, history 24 and lockout threshold 5 require Get-ADDefaultDomainPasswordPolicy.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Password policy hardening"
                      },
                      {
                          "id":  "WIN-005",
                          "severity":  "medium",
-                         "category":  "Kerberos Domain Security",
+                         "category":  "Kerberos Security",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Domain Kerberos encryption and delegation cannot be fully assessed without meddefense.local.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: RC4, DES, TrustedForDelegation and UseDESKeyOnly require Active Directory account information.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Kerberos hardening"
                      },
                      {
                          "id":  "WIN-006",
                          "severity":  "medium",
-                         "category":  "Service Account Domain Risks",
+                         "category":  "Service Account Security",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Domain service accounts, SPNs and delegation settings cannot be queried.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: Domain svc accounts, interactive logon, SPNs, delegation and privileged MemberOf information require Active Directory.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "Service account hardening"
                      },
                      {
@@ -79,9 +79,9 @@
                          "severity":  "medium",
                          "category":  "GPO Security Posture",
                          "asset":  "meddefense.local",
-                         "evidence":  "NOT_ASSESSED: Domain GPOs cannot be queried because Group Policy domain context is unavailable.",
-                         "risk":  "The security state of this domain control cannot be verified from the current standalone workstation.",
-                         "recommended_remediation":  "Re-run this assessment from the MedDefense Domain Controller or a domain management workstation with RSAT.",
+                         "evidence":  "NOT_ASSESSED: meddefense.local Group Policy Objects cannot be queried from this standalone workstation.",
+                         "risk":  "The security state of this domain control cannot be verified from the current standalone Windows workstation.",
+                         "recommended_remediation":  "Re-run this assessment against the MedDefense domain from a Domain Controller or an authorized workstation with RSAT.",
                          "mapped_task":  "GPO hardening"
                      },
                      {
@@ -89,19 +89,19 @@
                          "severity":  "high",
                          "category":  "Advanced Audit Policy",
                          "asset":  "DESKTOP-3B8OAFG",
-                         "evidence":  "auditpol output could not be collected.",
-                         "risk":  "Security-event visibility cannot be verified.",
-                         "recommended_remediation":  "Review Advanced Audit Policy on the intended Windows lab system before enabling any settings.",
+                         "evidence":  "Advanced Audit Policy could not be collected using auditpol.",
+                         "risk":  "Security event visibility cannot be confirmed.",
+                         "recommended_remediation":  "Review Advanced Audit Policy on the intended Windows laboratory environment. Do not automatically modify this personal workstation.",
                          "mapped_task":  "Audit policy hardening"
                      },
                      {
                          "id":  "WIN-009",
                          "severity":  "high",
-                         "category":  "PowerShell Logging",
+                         "category":  "PowerShell Script Block Logging",
                          "asset":  "DESKTOP-3B8OAFG",
                          "evidence":  "PowerShell Script Block Logging is not enabled or cannot be confirmed.",
-                         "risk":  "PowerShell execution may lack the detailed Event ID 4104 telemetry required for SOC investigation.",
-                         "recommended_remediation":  "Do not modify the personal workstation automatically. Validate and deploy Script Block Logging only in the intended Windows lab/MedDefense environment.",
+                         "risk":  "PowerShell execution may lack detailed Event ID 4104 telemetry for SOC investigation.",
+                         "recommended_remediation":  "Do not modify the personal workstation automatically. Enable Script Block Logging in the intended MedDefense/lab environment.",
                          "mapped_task":  "PowerShell logging hardening"
                      },
                      {
@@ -110,8 +110,8 @@
                          "category":  "Sysmon Readiness",
                          "asset":  "DESKTOP-3B8OAFG",
                          "evidence":  "Sysmon service is not installed.",
-                         "risk":  "Enhanced process, network and file telemetry is unavailable.",
-                         "recommended_remediation":  "Install Sysmon only in the approved laboratory or managed endpoint environment using a reviewed configuration.",
+                         "risk":  "Enhanced endpoint process, network and file telemetry is unavailable.",
+                         "recommended_remediation":  "Deploy Sysmon only in the approved laboratory or managed Windows environment.",
                          "mapped_task":  "Sysmon deployment"
                      }
                  ]
