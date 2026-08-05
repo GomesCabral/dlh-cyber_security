@@ -1,7 +1,7 @@
 # MedDefense Health Systems - Domain Reconnaissance
 # Task 0 - Windows / Active Directory Security Baseline
 #
-# PURPOSE:
+# Purpose:
 # Capture the current Windows and Active Directory security state before
 # any hardening changes are applied.
 #
