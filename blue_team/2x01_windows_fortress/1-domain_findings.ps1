@@ -469,13 +469,16 @@ if ($AssessmentMode -eq "ACTIVE_DIRECTORY") {
 
         $UserAccountControl = [int64]$ServiceAccount.UserAccountControl
 
-        if (($UserAccountControl -band 0x200000) -ne 0) {
+        # ADS_UF_USE_DES_KEY_ONLY = 0x200000
+        $UseDESKeyOnly = (($UserAccountControl -band 0x200000) -ne 0)
+
+        if ($UseDESKeyOnly) {
 
             Add-Finding `
                 -Severity "critical" `
                 -Category "Kerberos DES" `
                 -Asset $ServiceAccount.SamAccountName `
-                -Evidence "DES-only Kerberos flag detected in UserAccountControl." `
+                -Evidence "UseDESKeyOnly=True; DES-only Kerberos flag detected in UserAccountControl." `
                 -Risk "DES is obsolete cryptography and materially weakens Kerberos authentication." `
                 -RecommendedRemediation "Remove the DES-only flag and migrate compatible accounts to AES Kerberos encryption." `
                 -MappedTask "Kerberos hardening"
