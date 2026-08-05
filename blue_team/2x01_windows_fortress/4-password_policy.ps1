@@ -460,7 +460,7 @@ gpupdate.exe /force |
 Write-Host "    COMPLETE"
 
 # ---------------------------------------------------------------------------
-# Effective policy verification
+# VERIFY effective password and lockout policy
 # ---------------------------------------------------------------------------
 
 Write-Host ""
