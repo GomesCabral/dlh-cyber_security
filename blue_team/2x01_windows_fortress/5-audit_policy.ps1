@@ -36,7 +36,7 @@
 #
 # Additional controls:
 # - Include command line in Event ID 4688
-# - Restrict Security log clearing
+# Restrict the Clear Security Log permission to authorized administrators.
 # - Security log maximum size: 1 GB
 #
 # VERIFY:
@@ -366,10 +366,10 @@ if (-not $Apply) {
 
     Write-Host ""
 
-    Write-Step "Restricting Security log clearing..."
+    Write-Step "Restricting Clear Security Log permission..."
 
     Write-WouldSet `
-        "Security log clearing restricted to Domain Admins"
+    "Clear Security Log permission restricted to Domain Admins"
 
     Write-Host ""
 
@@ -634,7 +634,7 @@ Write-Host "    Advanced Audit Policy override enabled [SET]"
 
 Write-Host ""
 
-Write-Step "Restricting Security log clearing..."
+Write-Step "Restricting Clear Security Log permission..."
 
 $SecurityChannelSDDL = `
     "O:BAG:SYD:(A;;0xf0007;;;SY)(A;;0x7;;;BA)"
@@ -646,7 +646,7 @@ Set-GPRegistryValue `
     -Type String `
     -Value $SecurityChannelSDDL
 
-Write-Host "    Security log clearing restricted to authorized administrators [SET]"
+Write-Host "    Clear Security Log permission restricted to authorized administrators [SET]"
 
 # ===========================================================================
 # Security log maximum size - 1 GB
