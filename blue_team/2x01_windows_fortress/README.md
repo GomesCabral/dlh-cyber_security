@@ -2846,3 +2846,248 @@ How will the SOC triage the alert?
 
 This is the beginning of practical detection engineering.
 
+---
+
+# Task 11 - Windows Firewall Lockdown
+
+## Script
+
+`11-firewall_hardening.ps1`
+
+## Goal
+
+Enforce endpoint-level network segmentation using Windows Defender Firewall
+with default-deny inbound policies and explicit service allow rules.
+
+## Firewall Profiles
+
+All three Windows Firewall profiles must be enabled:
+
+```text
+Domain
+Private
+Public
+```
+
+Target state:
+
+```text
+Enabled = True
+DefaultInboundAction = Block
+DefaultOutboundAction = Allow
+```
+
+This implements a default-deny inbound model.
+
+## Allowed Services
+
+### RDP
+
+```text
+Protocol: TCP
+Port: 3389
+Source: 10.10.3.0/24
+```
+
+RDP is restricted to the management subnet.
+
+### DNS
+
+```text
+TCP 53
+UDP 53
+```
+
+Required for Domain Controller DNS operation.
+
+### LDAP
+
+```text
+TCP 389
+```
+
+Required for Active Directory LDAP communication.
+
+### Kerberos
+
+```text
+TCP 88
+UDP 88
+```
+
+Required for Active Directory Kerberos authentication.
+
+### SMB
+
+```text
+TCP 445
+Source: 10.10.1.0/24
+```
+
+SMB access is restricted to the server subnet.
+
+### WinRM
+
+```text
+TCP 5985
+TCP 5986
+Source: 10.10.3.0/24
+```
+
+Remote Windows management is restricted to the management subnet.
+
+## Firewall Logging
+
+Dropped packet logging is enabled for:
+
+```text
+Domain
+Private
+Public
+```
+
+This provides evidence of connections blocked by the host firewall.
+
+The basic telemetry path is:
+
+```text
+Inbound connection
+       ↓
+Windows Firewall
+       ↓
+Allowed or Blocked
+       ↓
+Firewall log
+       ↓
+Telemetry / SIEM
+       ↓
+SOC investigation
+```
+
+## Legacy Rule Handling
+
+The script reviews existing inbound `Allow` rules.
+
+Legacy rules that conflict with the ports protected by the new MedDefense
+baseline are disabled.
+
+The protected ports are:
+
+```text
+53
+88
+389
+445
+3389
+5985
+5986
+```
+
+The script does not blindly disable every Windows Firewall allow rule because
+a Domain Controller requires additional operating-system and Active Directory
+communication.
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Run safely with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\11-firewall_hardening.ps1
+```
+
+Actual changes require:
+
+```powershell
+-Apply
+```
+
+and should only be performed in the authorized `meddefense.local` lab.
+
+## Verification
+
+The script verifies:
+
+```text
+Domain profile enabled
+Private profile enabled
+Public profile enabled
+DefaultInboundAction = Block
+Dropped packet logging enabled
+MedDefense allow rules active
+```
+
+Successful checks report:
+
+```text
+[VERIFIED]
+```
+
+## Before / After Evidence
+
+The script records the firewall state before and after hardening.
+
+Example:
+
+```text
+BEFORE
+Domain  = ON / Allow
+Private = OFF
+Public  = OFF
+
+        ↓
+
+AFTER
+Domain  = ON / Block
+Private = ON / Block
+Public  = ON / Block
+```
+
+## SOC Lesson
+
+A host firewall is another layer of defense-in-depth.
+
+Service hardening answers:
+
+```text
+Should this service be running?
+```
+
+The firewall answers:
+
+```text
+Who is allowed to reach it?
+```
+
+For example:
+
+```text
+RDP running
+   ↓
+Firewall
+   ↓
+Only management subnet
+```
+
+This limits lateral movement even if an attacker discovers that the service
+exists.
+
+Relevant SOC evidence may include:
+
+```text
+Windows Firewall dropped packets
+4624 / 4625 authentication activity
+Sysmon Event ID 3 network connections
+RDP authentication events
+SMB access events
+```
+
+The central principle is:
+
+> A service should be reachable only from the systems and networks that
+> genuinely require it.
