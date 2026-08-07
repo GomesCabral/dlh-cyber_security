@@ -2000,3 +2000,254 @@ The key lesson is:
 > Service accounts with SPNs are normal in Active Directory, but weak
 > encryption, weak passwords and excessive privilege turn them into
 > high-value attacker targets.
+
+---
+
+# Task 8 - SMB and Protocol Hardening
+
+## Script
+
+`8-smb_hardening.ps1`
+
+## Goal
+
+Reduce Windows lateral-movement and credential-relay attack surface by
+hardening SMB and disabling legacy name-resolution protocols.
+
+## Controls
+
+The task assesses and configures:
+
+```text
+SMBv1
+SMB Signing
+SMB Encryption
+NetBIOS over TCP/IP
+LLMNR
+```
+
+## SMBv1
+
+SMBv1 is a legacy implementation of the Server Message Block protocol.
+
+It is associated with historical vulnerabilities and attack campaigns
+including EternalBlue, WannaCry and NotPetya.
+
+The MedDefense target state is:
+
+```text
+SMBv1 server: disabled
+SMBv1 client: disabled
+```
+
+Modern systems should use SMBv2 or SMBv3 where compatible.
+
+## SMB Signing
+
+SMB signing provides integrity protection for SMB communications.
+
+The target state is:
+
+```text
+Server Signing Required = True
+Client Signing Required = True
+```
+
+The distinction between enabled and required is important.
+
+```text
+Enabled
+↓
+signing supported
+
+Required
+↓
+unsigned SMB sessions rejected
+```
+
+The Windows Fortress baseline requires signing to be mandatory.
+
+## SMB Encryption
+
+The server configuration enables:
+
+```text
+EncryptData = True
+```
+
+SMB encryption protects data transferred through SMB from network
+observation where supported by the SMB version and communicating systems.
+
+## NetBIOS over TCP/IP
+
+Legacy NetBIOS name resolution is disabled on IP-enabled adapters using:
+
+```text
+TcpipNetbiosOptions = 2
+```
+
+This reduces dependency on legacy name-resolution mechanisms.
+
+## LLMNR
+
+LLMNR stands for:
+
+```text
+Link-Local Multicast Name Resolution
+```
+
+The MedDefense GPO configures:
+
+```text
+EnableMulticast = 0
+```
+
+under:
+
+```text
+HKLM\Software\Policies\Microsoft\Windows NT\DNSClient
+```
+
+This disables LLMNR.
+
+## Security Relevance
+
+Legacy name-resolution protocols can expose authentication attempts when a
+system cannot resolve a hostname through DNS.
+
+Simplified risk:
+
+```text
+User requests hostname
+        ↓
+DNS resolution fails
+        ↓
+LLMNR / NetBIOS request
+        ↓
+malicious responder
+        ↓
+credential authentication attempt
+        ↓
+credential capture / relay opportunity
+```
+
+Disabling unnecessary legacy name-resolution protocols reduces this attack
+surface.
+
+## Before / After Validation
+
+The script captures the security state before remediation and again after
+hardening.
+
+Example:
+
+```text
+BEFORE
+
+SMBv1: Enabled
+Signing Required: False
+Encryption: False
+LLMNR: Enabled
+
+        ↓ hardening
+
+AFTER
+
+SMBv1: Disabled
+Signing Required: True
+Encryption: True
+LLMNR: Disabled
+```
+
+This provides measurable evidence that the configuration changed.
+
+## Verification
+
+The final checks verify:
+
+```text
+SMBv1: Disabled
+Signing: Required
+Encryption: Enabled
+NetBIOS over TCP/IP: Disabled
+LLMNR: Disabled
+```
+
+Successful controls are reported as:
+
+```text
+[VERIFIED]
+```
+
+Failures are reported as:
+
+```text
+[NOT VERIFIED]
+```
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\8-smb_hardening.ps1
+```
+
+Audit-only mode does not modify:
+
+- SMB;
+- Windows optional features;
+- network adapters;
+- NetBIOS;
+- LLMNR;
+- Registry;
+- Group Policy.
+
+Actual remediation requires:
+
+```powershell
+-Apply
+```
+
+and must only be executed in the authorized:
+
+```text
+meddefense.local
+```
+
+laboratory.
+
+## SOC Lesson
+
+SMB is one of the most important Windows enterprise protocols for a SOC
+analyst to understand because it is frequently involved in:
+
+```text
+lateral movement
+credential relay
+remote administration
+file access
+malware propagation
+```
+
+Relevant telemetry may include:
+
+```text
+4624    successful logon
+4625    failed logon
+4648    explicit credential use
+5140    network share accessed
+5145    network share object access
+Sysmon 3 network connections
+```
+
+The important security principle is:
+
+> Keep required enterprise protocols, harden them, and remove legacy
+> protocols that provide unnecessary attacker opportunities.
