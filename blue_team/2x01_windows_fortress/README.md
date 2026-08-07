@@ -1746,3 +1746,257 @@ The important lesson is:
 
 > Logging the execution of powershell.exe is useful, but understanding what
 > PowerShell actually executed provides much stronger investigation evidence.
+
+---
+
+# Task 7 - Kerberos and Authentication Hardening
+
+## Script
+
+`7-auth_hardening.ps1`
+
+## Goal
+
+Harden MedDefense Active Directory authentication by removing weak Kerberos
+encryption and refusing legacy NTLMv1 authentication.
+
+The task addresses credential attacks observed during the Crimson Tide
+campaign, particularly Kerberoasting against service accounts.
+
+## Kerberos Security Assessment
+
+The script assesses:
+
+- service accounts;
+- Service Principal Names (SPNs);
+- `UseDESKeyOnly`;
+- `TrustedForDelegation`;
+- `msDS-SupportedEncryptionTypes`;
+- DES support;
+- RC4 support;
+- AES128 support;
+- AES256 support.
+
+## Service Principal Names
+
+A Service Principal Name maps a service to an Active Directory identity.
+
+Examples:
+
+```text
+HTTP/backup.meddefense.local
+HTTP/ehr.meddefense.local
+MSSQLSvc/sql.meddefense.local:1433
+```
+
+Accounts with SPNs can receive Kerberos service tickets and are therefore
+potential Kerberoasting targets.
+
+An SPN alone does not indicate compromise.
+
+Risk increases when an SPN is combined with:
+
+```text
+weak service-account password
++
+RC4
++
+privileged account
++
+long-lived password
+```
+
+## Kerberoasting
+
+Simplified attack path:
+
+```text
+Authenticated attacker
+        ↓
+Enumerate SPNs
+        ↓
+Request Kerberos service ticket
+        ↓
+Obtain ticket material
+        ↓
+Offline password cracking attempt
+        ↓
+Service-account credential compromise
+```
+
+The MedDefense hardening objective is therefore:
+
+```text
+DES       disabled
+RC4       disabled
+AES128    enabled
+AES256    enabled
+```
+
+## Encryption Value
+
+Windows represents Kerberos encryption capabilities as bit values.
+
+```text
+DES_CRC = 0x01
+DES_MD5 = 0x02
+RC4     = 0x04
+AES128  = 0x08
+AES256  = 0x10
+```
+
+The Windows Fortress AES-only target is:
+
+```text
+AES128 + AES256
+0x08 + 0x10
+= 0x18
+= 24 decimal
+```
+
+## DES Remediation
+
+Accounts configured with:
+
+```text
+UseDESKeyOnly = True
+```
+
+are identified.
+
+In Apply mode the flag is removed using:
+
+```powershell
+Set-ADAccountControl -UseDESKeyOnly $false
+```
+
+## NTLM Hardening
+
+The policy configures:
+
+```text
+LmCompatibilityLevel = 5
+```
+
+The intended target is:
+
+```text
+LM       refused
+NTLMv1   refused
+NTLMv2   allowed as fallback
+Kerberos preferred for domain authentication
+```
+
+## Credential Guard Awareness
+
+The script assesses Credential Guard and Virtualization-Based Security
+using:
+
+```powershell
+Win32_DeviceGuard
+```
+
+Credential Guard is not blindly enabled because VBS and hypervisor support
+must be validated before deployment.
+
+This follows the professional hardening methodology:
+
+```text
+recommendation
+    ↓
+compatibility assessment
+    ↓
+test
+    ↓
+deploy
+    ↓
+verify
+```
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Run the safe assessment with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\7-auth_hardening.ps1
+```
+
+No authentication configuration is changed.
+
+Actual remediation requires:
+
+```powershell
+-Apply
+```
+
+and is permitted only when the host belongs to:
+
+```text
+meddefense.local
+```
+
+## Validation
+
+The script verifies:
+
+```text
+UseDESKeyOnly = False
+Kerberos = AES128 + AES256 only
+RC4 = disabled
+DES = disabled
+LmCompatibilityLevel = 5
+NTLMv1 = refused
+Credential Guard status checked
+```
+
+Successful controls are reported as:
+
+```text
+[VERIFIED]
+```
+
+## SOC Lesson
+
+Authentication protocols directly affect the value of stolen credentials.
+
+An attacker may combine:
+
+```text
+AD enumeration
+      ↓
+SPN discovery
+      ↓
+Kerberoasting
+      ↓
+offline cracking
+      ↓
+service-account compromise
+      ↓
+lateral movement
+```
+
+For a SOC analyst, authentication hardening and authentication telemetry
+must therefore be considered together.
+
+Relevant evidence may include:
+
+```text
+4768 - Kerberos TGT activity
+4769 - Kerberos service ticket activity
+4624 - successful logon
+4625 - failed logon
+4648 - explicit credential use
+4672 - privileged logon
+```
+
+The key lesson is:
+
+> Service accounts with SPNs are normal in Active Directory, but weak
+> encryption, weak passwords and excessive privilege turn them into
+> high-value attacker targets.
