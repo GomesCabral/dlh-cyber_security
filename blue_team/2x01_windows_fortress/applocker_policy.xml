@@ -10,7 +10,7 @@
   <RuleCollection Type="Exe" EnforcementMode="AuditOnly">
 
     <FilePathRule
-      Id="6833ebb0-a3f8-4710-a137-4efdb2d26d25"
+      Id="14eee844-4598-4921-8853-b4b8ed0faa4d"
       Name="MedDefense - Allow Windows System Directories"
       Description="Allow .exe and .com executables under C:\Windows\*"
       UserOrGroupSid="S-1-1-0"
@@ -21,7 +21,7 @@
     </FilePathRule>
 
     <FilePathRule
-      Id="133b9855-1c3f-42cc-bc88-6605c03fea1e"
+      Id="d611e412-1f1c-40c5-8a2a-0369bd70396b"
       Name="MedDefense - Allow Program Files"
       Description="Allow executables under C:\Program Files\*"
       UserOrGroupSid="S-1-1-0"
@@ -32,7 +32,7 @@
     </FilePathRule>
 
     <FilePathRule
-      Id="85e03332-f0e7-4a86-b9e4-3a48c103440d"
+      Id="3c8e947a-493c-4abe-b270-ba6a554e1397"
       Name="MedDefense - Allow Program Files x86"
       Description="Allow executables under C:\Program Files (x86)\*"
       UserOrGroupSid="S-1-1-0"
@@ -43,7 +43,7 @@
     </FilePathRule>
 
     <FilePathRule
-      Id="38811704-b47a-4f82-a9b1-ca74ce2f8395"
+      Id="d8c1476a-92f7-4b39-a72c-de7eac935f6d"
       Name="MedDefense - Allow DicomViewer.exe (MedImage Corp)"
       Description="Explicit path rule for approved clinical DicomViewer.exe"
       UserOrGroupSid="S-1-1-0"
@@ -64,7 +64,7 @@
   <RuleCollection Type="Script" EnforcementMode="AuditOnly">
 
     <FilePathRule
-      Id="65d5b6f9-3183-420a-abba-f8e4197d7eb8"
+      Id="c871a597-3f74-42a9-87db-07f5b04a3e6c"
       Name="MedDefense - Allow Windows System Scripts"
       Description="Allow .ps1, .bat, .cmd and .vbs scripts under C:\Windows\*"
       UserOrGroupSid="S-1-1-0"
@@ -75,7 +75,7 @@
     </FilePathRule>
 
     <FilePathRule
-      Id="17292aa1-1943-4ef2-b7cf-3d740c98fe43"
+      Id="ccc2a98b-d514-40d9-b02b-19b6bc519dd3"
       Name="MedDefense - Allow Administrative Scripts"
       Description="Allow MedDefense administrative scripts from C:\MedDefense_Lab\Scripts\*"
       UserOrGroupSid="S-1-1-0"

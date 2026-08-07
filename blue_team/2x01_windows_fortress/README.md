@@ -4490,3 +4490,455 @@ The central principle is:
 > A control that is not continuously validated can silently stop protecting
 > the environment.
 
+---
+
+# Task 16 - Hardened Windows State Export
+
+## Script
+
+`16-hardened_state_export.ps1`
+
+## Deliverables
+
+```text
+16-hardened_state_export.ps1
+windows_hardened_state.json
+```
+
+## Goal
+
+Export the final hardened MedDefense Windows domain state as structured,
+machine-readable evidence.
+
+The artifact provides a handoff between Windows security engineering and
+future SOC / SIEM detection work.
+
+## Evidence Model
+
+The final JSON contains:
+
+```text
+domain_metadata
+gpo_inventory
+audit_policy
+powershell_logging
+sysmon_posture
+firewall_posture
+applocker_posture
+rdp_posture
+authentication_protocols
+service_account_posture
+validation_summary
+```
+
+## Domain Metadata
+
+The `domain_metadata` section records:
+
+```text
+domain name
+NetBIOS name
+domain controller
+forest
+domain mode
+forest mode
+timestamp
+script runner
+computer name
+```
+
+This provides system identity and provenance for the evidence artifact.
+
+## GPO Inventory
+
+The `gpo_inventory` section records MedDefense Group Policy Objects,
+including:
+
+```text
+GPO name
+GUID
+enabled state
+linked scopes
+creation time
+modification time
+key settings
+```
+
+Only GPOs matching:
+
+```text
+MedDefense -*
+```
+
+are included in the MedDefense inventory.
+
+## Audit Policy
+
+The `audit_policy` section includes the raw:
+
+```powershell
+auditpol /get /category:*
+```
+
+output.
+
+It also records the state of required audit subcategories including:
+
+```text
+Credential Validation
+Kerberos Authentication Service
+Logon
+Logoff
+Special Logon
+User Account Management
+Sensitive Privilege Use
+File System
+Registry
+Process Creation
+Security System Extension
+```
+
+Command-line process logging and Security log size are also exported.
+
+## PowerShell Logging
+
+The `powershell_logging` section records:
+
+```text
+Script Block Logging
+Module Logging
+ModuleNames
+Transcription
+Transcript directory
+AMSI availability
+```
+
+Relevant telemetry includes:
+
+```text
+4103 - Module Logging
+4104 - Script Block Logging
+```
+
+## Sysmon Posture
+
+The `sysmon_posture` section records:
+
+```text
+Sysmon service status
+SysmonDrv status
+sysmonconfig.xml path
+configuration status
+custom rule count
+active Event IDs
+```
+
+The MedDefense custom detections include:
+
+```text
+Rclone
+PsExec
+Encoded PowerShell
+Shadow deletion
+Scheduled Task persistence
+```
+
+## Firewall Posture
+
+The `firewall_posture` section records:
+
+```text
+Domain profile
+Private profile
+Public profile
+Default inbound policy
+Default outbound policy
+Dropped packet logging
+MedDefense firewall rules
+```
+
+The six logical MedDefense services are:
+
+```text
+RDP
+DNS
+LDAP
+Kerberos
+SMB
+WinRM
+```
+
+## AppLocker Posture
+
+The `applocker_posture` section records:
+
+```text
+AppIDSvc state
+Executable enforcement mode
+Script enforcement mode
+Executable rules
+Script rules
+Exported policy path
+```
+
+The project baseline remains:
+
+```text
+AuditOnly
+```
+
+during testing.
+
+## RDP Posture
+
+The `rdp_posture` section records:
+
+```text
+NLA state
+G_IT_Admins access
+Remote Desktop Users membership
+idle timeout
+maximum session time
+encryption level
+clipboard redirection
+drive redirection
+Remote Assistance
+```
+
+## Authentication Protocols
+
+The `authentication_protocols` section records:
+
+```text
+DES
+RC4
+AES128
+AES256
+NTLMv1
+SMBv1
+SMB signing
+SMB encryption
+```
+
+The MedDefense Kerberos target is:
+
+```text
+DES    disabled
+RC4    disabled
+AES128 enabled
+AES256 enabled
+```
+
+NTLM hardening target:
+
+```text
+LmCompatibilityLevel = 5
+NTLMv1 refused
+```
+
+SMB target:
+
+```text
+SMBv1 disabled
+SMB signing required
+SMB encryption enabled
+```
+
+## Service Account Posture
+
+The `service_account_posture` section records the security state of service
+accounts including:
+
+```text
+svc_backup
+svc_ehr
+svc_sql
+```
+
+For each account it exports:
+
+```text
+password age
+password last set
+PasswordNeverExpires
+last logon
+delegation
+SPNs
+group memberships
+privileged membership
+interactive logon risk
+```
+
+The target state includes:
+
+```text
+AccountNotDelegated = True
+TrustedForDelegation = False
+interactive logon denied
+remote interactive logon denied
+no unauthorized privileged membership
+```
+
+## Validation Summary
+
+The script looks for machine-readable Task 15 validation results.
+
+If available:
+
+```json
+"validation_summary": {
+  "status": "found"
+}
+```
+
+If no Task 15 JSON exists:
+
+```json
+"validation_summary": {
+  "status": "not_found"
+}
+```
+
+A `not_found` state is explicit and intentional rather than silently
+assuming compliance.
+
+## Safety
+
+This script is read-only.
+
+It does not:
+
+```text
+modify Active Directory
+modify Group Policy
+modify Registry settings
+change firewall rules
+change audit policy
+modify Sysmon
+change AppLocker
+change RDP
+change service accounts
+```
+
+It only reads configuration and writes:
+
+```text
+windows_hardened_state.json
+```
+
+to the project directory.
+
+## Running the Export
+
+Run on DC01:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\16-hardened_state_export.ps1
+```
+
+Expected final message:
+
+```text
+Hardened state exported to: windows_hardened_state.json
+```
+
+## Validate the JSON
+
+```powershell
+$State = Get-Content .\windows_hardened_state.json -Raw |
+    ConvertFrom-Json
+```
+
+List the exported sections:
+
+```powershell
+$State.PSObject.Properties.Name
+```
+
+## SOC Handoff
+
+This artifact bridges hardening and detection engineering.
+
+The workflow becomes:
+
+```text
+Windows hardening
+      ↓
+validated security state
+      ↓
+windows_hardened_state.json
+      ↓
+Module 3 analyst
+      ↓
+expected telemetry
+      ↓
+SIEM detection rules
+      ↓
+SOC monitoring
+```
+
+For example:
+
+```text
+Script Block Logging = Enabled
+        ↓
+Event ID 4104 expected
+        ↓
+SIEM should receive 4104
+        ↓
+detection can search encoded PowerShell
+```
+
+Another example:
+
+```text
+Sysmon custom Rclone rule present
+        ↓
+Sysmon Event ID 1 expected
+        ↓
+rclone.exe execution
+        ↓
+SOC alert / investigation
+```
+
+## Drift Detection
+
+The exported state can also be compared between weeks:
+
+```text
+Week 1
+SMBv1 = Disabled
+
+Week 2
+SMBv1 = Enabled
+        ↓
+configuration drift
+```
+
+This turns the hardened configuration into measurable evidence rather than
+a one-time implementation.
+
+## Security Engineering Lesson
+
+Hardening is not complete when a setting is changed.
+
+A professional lifecycle is:
+
+```text
+discover
+   ↓
+remediate
+   ↓
+validate
+   ↓
+export evidence
+   ↓
+monitor
+   ↓
+detect drift
+```
+
+The central principle is:
+
+> Security controls must be provable, reviewable and usable by the analysts
+> who depend on their telemetry.

@@ -1,0 +1,577 @@
+﻿{
+    "domain_metadata":  {
+                            "domain_name":  "meddefense.local",
+                            "netbios_name":  "MEDDEFENSE",
+                            "domain_controller":  "DC01.meddefense.local",
+                            "computer_name":  "DC01",
+                            "forest_name":  "meddefense.local",
+                            "domain_mode":  "Windows2016Domain",
+                            "forest_mode":  "Windows2016Forest",
+                            "timestamp":  "2026-08-07T14:08:13.3603421+02:00",
+                            "script_runner":  "MEDDEFENSE\\analyst",
+                            "script_name":  "16-hardened_state_export.ps1"
+                        },
+    "gpo_inventory":  [
+                          {
+                              "name":  "MedDefense - AppLocker Policy",
+                              "id":  "e58124f6-006a-4d45-9e2e-c01b24f11f82",
+                              "gpo_status":  "AllSettingsEnabled",
+                              "enabled":  true,
+                              "creation_time":  "\/Date(1786101645000)\/",
+                              "modification_time":  "\/Date(1786104400000)\/",
+                              "linked_scopes":  [
+                                                    {
+                                                        "scope":  "meddefense.local",
+                                                        "enabled":  "true"
+                                                    }
+                                                ],
+                              "key_settings":  [
+
+                                               ]
+                          },
+                          {
+                              "name":  "MedDefense - PowerShell Security",
+                              "id":  "1915985b-b804-4344-a6ba-19d261b4b55f",
+                              "gpo_status":  "AllSettingsEnabled",
+                              "enabled":  true,
+                              "creation_time":  "\/Date(1786095261000)\/",
+                              "modification_time":  "\/Date(1786095262000)\/",
+                              "linked_scopes":  [
+                                                    {
+                                                        "scope":  "meddefense.local",
+                                                        "enabled":  "true"
+                                                    }
+                                                ],
+                              "key_settings":  [
+
+                                               ]
+                          },
+                          {
+                              "name":  "MedDefense - SMB and Protocol Hardening",
+                              "id":  "b60361a5-2ad3-4151-af8b-57a4b941fa70",
+                              "gpo_status":  "AllSettingsEnabled",
+                              "enabled":  true,
+                              "creation_time":  "\/Date(1786097186000)\/",
+                              "modification_time":  "\/Date(1786097188000)\/",
+                              "linked_scopes":  [
+                                                    {
+                                                        "scope":  "meddefense.local",
+                                                        "enabled":  "true"
+                                                    }
+                                                ],
+                              "key_settings":  [
+                                                   {
+                                                       "name":  "q2:RegistrySetting",
+                                                       "value":  "System.Xml.XmlElement"
+                                                   },
+                                                   {
+                                                       "name":  "q2:RegistrySetting",
+                                                       "value":  "System.Xml.XmlElement"
+                                                   },
+                                                   {
+                                                       "name":  "q2:RegistrySetting",
+                                                       "value":  "System.Xml.XmlElement"
+                                                   }
+                                               ]
+                          }
+                      ],
+    "audit_policy":  {
+                         "raw_auditpol_output":  [
+                                                     "System audit policy",
+                                                     "",
+                                                     "Category/Subcategory                      Setting",
+                                                     "System",
+                                                     "  Security System Extension               No Auditing",
+                                                     "",
+                                                     "  System Integrity                        No Auditing",
+                                                     "",
+                                                     "  IPsec Driver                            No Auditing",
+                                                     "",
+                                                     "  Other System Events                     No Auditing",
+                                                     "",
+                                                     "  Security State Change                   No Auditing",
+                                                     "",
+                                                     "Logon/Logoff",
+                                                     "  Logon                                   Success and Failure",
+                                                     "",
+                                                     "  Logoff                                  No Auditing",
+                                                     "",
+                                                     "  Account Lockout                         No Auditing",
+                                                     "",
+                                                     "  IPsec Main Mode                         No Auditing",
+                                                     "",
+                                                     "  IPsec Quick Mode                        No Auditing",
+                                                     "",
+                                                     "  IPsec Extended Mode                     No Auditing",
+                                                     "",
+                                                     "  Special Logon                           No Auditing",
+                                                     "",
+                                                     "  Other Logon/Logoff Events               No Auditing",
+                                                     "",
+                                                     "  Network Policy Server                   No Auditing",
+                                                     "",
+                                                     "  User / Device Claims                    No Auditing",
+                                                     "",
+                                                     "  Group Membership                        No Auditing",
+                                                     "",
+                                                     "Object Access",
+                                                     "  File System                             No Auditing",
+                                                     "",
+                                                     "  Registry                                No Auditing",
+                                                     "",
+                                                     "  Kernel Object                           No Auditing",
+                                                     "",
+                                                     "  SAM                                     No Auditing",
+                                                     "",
+                                                     "  Certification Services                  No Auditing",
+                                                     "",
+                                                     "  Application Generated                   No Auditing",
+                                                     "",
+                                                     "  Handle Manipulation                     No Auditing",
+                                                     "",
+                                                     "  File Share                              No Auditing",
+                                                     "",
+                                                     "  Filtering Platform Packet Drop          No Auditing",
+                                                     "",
+                                                     "  Filtering Platform Connection           No Auditing",
+                                                     "",
+                                                     "  Other Object Access Events              No Auditing",
+                                                     "",
+                                                     "  Detailed File Share                     No Auditing",
+                                                     "",
+                                                     "  Removable Storage                       No Auditing",
+                                                     "",
+                                                     "  Central Policy Staging                  No Auditing",
+                                                     "",
+                                                     "Privilege Use",
+                                                     "  Non Sensitive Privilege Use             No Auditing",
+                                                     "",
+                                                     "  Other Privilege Use Events              No Auditing",
+                                                     "",
+                                                     "  Sensitive Privilege Use                 No Auditing",
+                                                     "",
+                                                     "Detailed Tracking",
+                                                     "  Process Creation                        No Auditing",
+                                                     "",
+                                                     "  Process Termination                     No Auditing",
+                                                     "",
+                                                     "  DPAPI Activity                          No Auditing",
+                                                     "",
+                                                     "  RPC Events                              No Auditing",
+                                                     "",
+                                                     "  Plug and Play Events                    No Auditing",
+                                                     "",
+                                                     "  Token Right Adjusted Events             No Auditing",
+                                                     "",
+                                                     "Policy Change",
+                                                     "  Audit Policy Change                     No Auditing",
+                                                     "",
+                                                     "  Authentication Policy Change            No Auditing",
+                                                     "",
+                                                     "  Authorization Policy Change             No Auditing",
+                                                     "",
+                                                     "  MPSSVC Rule-Level Policy Change         No Auditing",
+                                                     "",
+                                                     "  Filtering Platform Policy Change        No Auditing",
+                                                     "",
+                                                     "  Other Policy Change Events              No Auditing",
+                                                     "",
+                                                     "Account Management",
+                                                     "  Computer Account Management             No Auditing",
+                                                     "",
+                                                     "  Security Group Management               No Auditing",
+                                                     "",
+                                                     "  Distribution Group Management           No Auditing",
+                                                     "",
+                                                     "  Application Group Management            No Auditing",
+                                                     "",
+                                                     "  Other Account Management Events         No Auditing",
+                                                     "",
+                                                     "  User Account Management                 No Auditing",
+                                                     "",
+                                                     "DS Access",
+                                                     "  Directory Service Access                No Auditing",
+                                                     "",
+                                                     "  Directory Service Changes               No Auditing",
+                                                     "",
+                                                     "  Directory Service Replication           No Auditing",
+                                                     "",
+                                                     "  Detailed Directory Service Replication  No Auditing",
+                                                     "",
+                                                     "Account Logon",
+                                                     "  Kerberos Service Ticket Operations      No Auditing",
+                                                     "",
+                                                     "  Other Account Logon Events              No Auditing",
+                                                     "",
+                                                     "  Kerberos Authentication Service         No Auditing",
+                                                     "",
+                                                     "  Credential Validation                   No Auditing",
+                                                     ""
+                                                 ],
+                         "required_subcategories":  [
+                                                        {
+                                                            "subcategory":  "Credential Validation",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Account Logon   Credential Validation                   No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Kerberos Authentication Service",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Account Logon   Kerberos Authentication Service         No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Logon",
+                                                            "status":  "Success and Failure",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Logon/Logoff   Logon                                   Success and Failure"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Logoff",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Logon/Logoff   Logoff                                  No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Special Logon",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Logon/Logoff   Special Logon                           No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "User Account Management",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Account Management   User Account Management                 No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Sensitive Privilege Use",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Privilege Use   Sensitive Privilege Use                 No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "File System",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Object Access   File System                             No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Registry",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Object Access   Registry                                No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Process Creation",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting Detailed Tracking   Process Creation                        No Auditing"
+                                                        },
+                                                        {
+                                                            "subcategory":  "Security System Extension",
+                                                            "status":  "No Auditing / Unknown",
+                                                            "raw":  "System audit policy  Category/Subcategory                      Setting System   Security System Extension               No Auditing"
+                                                        }
+                                                    ],
+                         "required_subcategory_count":  11,
+                         "process_command_line_logging":  null,
+                         "security_log_max_size_bytes":  134217728
+                     },
+    "powershell_logging":  {
+                               "script_block_logging":  1,
+                               "module_logging":  1,
+                               "module_names":  "*",
+                               "transcription":  1,
+                               "transcript_directory":  "C:\\PSTranscripts",
+                               "amsi_available":  true,
+                               "event_ids":  [
+                                                 {
+                                                     "event_id":  4103,
+                                                     "meaning":  "PowerShell Module Logging"
+                                                 },
+                                                 {
+                                                     "event_id":  4104,
+                                                     "meaning":  "PowerShell Script Block Logging"
+                                                 }
+                                             ]
+                           },
+    "sysmon_posture":  {
+                           "service_name":  "Sysmon64",
+                           "service_status":  "Running",
+                           "driver_name":  "SysmonDrv",
+                           "driver_status":  "not_found",
+                           "driver_started":  false,
+                           "config_path":  "\\\\VBOXSVR\\dlh-cyber_security\\blue_team\\2x01_windows_fortress\\sysmonconfig.xml",
+                           "config_status":  "found",
+                           "custom_rule_count":  5,
+                           "active_event_ids":  [
+                                                    1,
+                                                    2,
+                                                    3,
+                                                    5,
+                                                    6,
+                                                    7,
+                                                    8,
+                                                    9,
+                                                    10,
+                                                    11,
+                                                    13,
+                                                    15,
+                                                    17,
+                                                    19
+                                                ]
+                       },
+    "firewall_posture":  {
+                             "profiles":  [
+                                              {
+                                                  "name":  "Domain",
+                                                  "enabled":  true,
+                                                  "default_inbound_action":  "Allow",
+                                                  "default_outbound_action":  "Allow",
+                                                  "dropped_packet_logging":  false,
+                                                  "log_path":  "%systemroot%\\system32\\LogFiles\\Firewall\\pfirewall.log"
+                                              },
+                                              {
+                                                  "name":  "Private",
+                                                  "enabled":  false,
+                                                  "default_inbound_action":  "NotConfigured",
+                                                  "default_outbound_action":  "NotConfigured",
+                                                  "dropped_packet_logging":  false,
+                                                  "log_path":  "%systemroot%\\system32\\LogFiles\\Firewall\\pfirewall.log"
+                                              },
+                                              {
+                                                  "name":  "Public",
+                                                  "enabled":  false,
+                                                  "default_inbound_action":  "NotConfigured",
+                                                  "default_outbound_action":  "NotConfigured",
+                                                  "dropped_packet_logging":  false,
+                                                  "log_path":  "%systemroot%\\system32\\LogFiles\\Firewall\\pfirewall.log"
+                                              }
+                                          ],
+                             "meddefense_rules":  [
+
+                                                  ],
+                             "physical_rule_count":  0,
+                             "logical_services":  [
+                                                      "RDP",
+                                                      "DNS",
+                                                      "LDAP",
+                                                      "Kerberos",
+                                                      "SMB",
+                                                      "WinRM"
+                                                  ],
+                             "logical_service_count":  6
+                         },
+    "applocker_posture":  {
+                              "service_status":  "Running",
+                              "executable_mode":  "AuditOnly",
+                              "script_mode":  "AuditOnly",
+                              "executable_rules":  [
+                                                       {
+                                                           "name":  "MedDefense - Allow Windows System Directories",
+                                                           "action":  "Allow",
+                                                           "type":  "FilePathRule"
+                                                       },
+                                                       {
+                                                           "name":  "MedDefense - Allow Program Files x86",
+                                                           "action":  "Allow",
+                                                           "type":  "FilePathRule"
+                                                       },
+                                                       {
+                                                           "name":  "MedDefense - Allow Program Files",
+                                                           "action":  "Allow",
+                                                           "type":  "FilePathRule"
+                                                       },
+                                                       {
+                                                           "name":  "MedDefense - Allow DicomViewer.exe (MedImage Corp)",
+                                                           "action":  "Allow",
+                                                           "type":  "FilePathRule"
+                                                       }
+                                                   ],
+                              "script_rules":  [
+                                                   {
+                                                       "name":  "MedDefense - Allow Windows System Scripts",
+                                                       "action":  "Allow",
+                                                       "type":  "FilePathRule"
+                                                   },
+                                                   {
+                                                       "name":  "MedDefense - Allow Administrative Scripts",
+                                                       "action":  "Allow",
+                                                       "type":  "FilePathRule"
+                                                   }
+                                               ],
+                              "executable_rule_count":  4,
+                              "script_rule_count":  2,
+                              "total_rule_count":  6,
+                              "exported_policy_path":  "\\\\VBOXSVR\\dlh-cyber_security\\blue_team\\2x01_windows_fortress\\applocker_policy.xml"
+                          },
+    "rdp_posture":  {
+                        "nla_required":  true,
+                        "allowed_group":  "G_IT_Admins",
+                        "remote_desktop_users_members":  [
+                                                             {
+                                                                 "Name":  "G_IT_Admins",
+                                                                 "SamAccountName":  "G_IT_Admins",
+                                                                 "ObjectClass":  "group"
+                                                             }
+                                                         ],
+                        "idle_timeout_ms":  900000,
+                        "max_session_ms":  28800000,
+                        "min_encryption_level":  3,
+                        "security_layer":  2,
+                        "clipboard_redirection_disabled":  true,
+                        "drive_redirection_disabled":  true,
+                        "remote_assistance_disabled":  true
+                    },
+    "authentication_protocols":  {
+                                     "kerberos_policy_value":  null,
+                                     "DES":  {
+                                                 "enabled_accounts":  [
+                                                                          "svc_sql"
+                                                                      ]
+                                             },
+                                     "RC4":  {
+                                                 "enabled_accounts":  [
+
+                                                                      ]
+                                             },
+                                     "AES":  {
+                                                 "expected":  "AES128 + AES256",
+                                                 "accounts":  [
+                                                                  {
+                                                                      "account":  "svc_backup",
+                                                                      "encryption_value":  null,
+                                                                      "encryption_types":  [
+                                                                                               "DEFAULT"
+                                                                                           ],
+                                                                      "DES_enabled":  [
+
+                                                                                      ],
+                                                                      "RC4_enabled":  false,
+                                                                      "AES128_enabled":  false,
+                                                                      "AES256_enabled":  false,
+                                                                      "UseDESKeyOnly":  false
+                                                                  },
+                                                                  {
+                                                                      "account":  "svc_ehr",
+                                                                      "encryption_value":  null,
+                                                                      "encryption_types":  [
+                                                                                               "DEFAULT"
+                                                                                           ],
+                                                                      "DES_enabled":  [
+
+                                                                                      ],
+                                                                      "RC4_enabled":  false,
+                                                                      "AES128_enabled":  false,
+                                                                      "AES256_enabled":  false,
+                                                                      "UseDESKeyOnly":  false
+                                                                  },
+                                                                  {
+                                                                      "account":  "svc_sql",
+                                                                      "encryption_value":  null,
+                                                                      "encryption_types":  [
+                                                                                               "DEFAULT"
+                                                                                           ],
+                                                                      "DES_enabled":  [
+
+                                                                                      ],
+                                                                      "RC4_enabled":  false,
+                                                                      "AES128_enabled":  false,
+                                                                      "AES256_enabled":  false,
+                                                                      "UseDESKeyOnly":  true
+                                                                  }
+                                                              ]
+                                             },
+                                     "NTLMv1":  {
+                                                    "lm_compatibility_level":  null,
+                                                    "refused":  false
+                                                },
+                                     "SMBv1":  {
+                                                   "enabled":  false
+                                               },
+                                     "SMB_signing":  {
+                                                         "server_required":  true,
+                                                         "client_required":  true
+                                                     },
+                                     "SMB_encryption":  {
+                                                            "server_enabled":  true
+                                                        }
+                                 },
+    "service_account_posture":  [
+                                    {
+                                        "account_name":  "svc_backup",
+                                        "enabled":  true,
+                                        "password_last_set":  "\/Date(1776343523398)\/",
+                                        "password_age_days":  113,
+                                        "password_never_expires":  true,
+                                        "last_logon":  null,
+                                        "delegation":  {
+                                                           "TrustedForDelegation":  false,
+                                                           "AccountNotDelegated":  true
+                                                       },
+                                        "spns":  [
+                                                     "HTTP/backup.meddefense.local"
+                                                 ],
+                                        "group_memberships":  [
+
+                                                              ],
+                                        "privileged_membership":  [
+
+                                                                  ],
+                                        "interactive_logon":  {
+                                                                  "denied_local":  false,
+                                                                  "denied_remote_rdp":  false,
+                                                                  "risk":  "interactive_logon_risk"
+                                                              }
+                                    },
+                                    {
+                                        "account_name":  "svc_ehr",
+                                        "enabled":  true,
+                                        "password_last_set":  "\/Date(1776343523464)\/",
+                                        "password_age_days":  113,
+                                        "password_never_expires":  true,
+                                        "last_logon":  null,
+                                        "delegation":  {
+                                                           "TrustedForDelegation":  false,
+                                                           "AccountNotDelegated":  true
+                                                       },
+                                        "spns":  [
+                                                     "HTTP/ehr.meddefense.local"
+                                                 ],
+                                        "group_memberships":  [
+
+                                                              ],
+                                        "privileged_membership":  [
+
+                                                                  ],
+                                        "interactive_logon":  {
+                                                                  "denied_local":  false,
+                                                                  "denied_remote_rdp":  false,
+                                                                  "risk":  "interactive_logon_risk"
+                                                              }
+                                    },
+                                    {
+                                        "account_name":  "svc_sql",
+                                        "enabled":  true,
+                                        "password_last_set":  "\/Date(1776343523515)\/",
+                                        "password_age_days":  113,
+                                        "password_never_expires":  true,
+                                        "last_logon":  null,
+                                        "delegation":  {
+                                                           "TrustedForDelegation":  false,
+                                                           "AccountNotDelegated":  true
+                                                       },
+                                        "spns":  [
+                                                     "MSSQLSvc/sql.meddefense.local:1433"
+                                                 ],
+                                        "group_memberships":  [
+
+                                                              ],
+                                        "privileged_membership":  [
+
+                                                                  ],
+                                        "interactive_logon":  {
+                                                                  "denied_local":  false,
+                                                                  "denied_remote_rdp":  false,
+                                                                  "risk":  "interactive_logon_risk"
+                                                              }
+                                    }
+                                ],
+    "validation_summary":  {
+                               "status":  "not_found",
+                               "source_file":  null,
+                               "results":  null
+                           }
+}
