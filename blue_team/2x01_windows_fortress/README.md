@@ -2251,3 +2251,271 @@ The important security principle is:
 
 > Keep required enterprise protocols, harden them, and remove legacy
 > protocols that provide unnecessary attacker opportunities.
+
+---
+
+# Task 9 - Sysmon Deployment
+
+## Script
+
+`9-sysmon_deploy.ps1`
+
+## Deliverables
+
+```text
+9-sysmon_deploy.ps1
+sysmonconfig.xml
+```
+
+## Goal
+
+Deploy Microsoft Sysinternals Sysmon with a detection-oriented configuration
+and validate that endpoint telemetry is actually being generated.
+
+## Sysmon
+
+Sysmon is a Windows system service and kernel driver that records detailed
+endpoint activity in:
+
+```text
+Microsoft-Windows-Sysmon/Operational
+```
+
+It complements native Windows Security logging.
+
+Native Windows logs can provide information such as:
+
+```text
+authentication
+account management
+privileged logons
+process creation
+```
+
+Sysmon adds richer endpoint context such as:
+
+```text
+process execution
+network connections
+DNS queries
+file creation
+registry activity
+image loading
+```
+
+## Configuration Baseline
+
+The project uses the SwiftOnSecurity Sysmon configuration as the baseline:
+
+```text
+sysmonconfig.xml
+```
+
+The original upstream filename is:
+
+```text
+sysmonconfig-export.xml
+```
+
+The configuration must be reviewed and adapted before broad production
+deployment.
+
+## Installation
+
+The normal Sysmon installation command is:
+
+```powershell
+Sysmon64.exe -accepteula -i sysmonconfig.xml
+```
+
+If Sysmon is already installed, the configuration can be updated using:
+
+```powershell
+Sysmon64.exe -c sysmonconfig.xml
+```
+
+## Offline Laboratory Support
+
+DC01 may not have Internet connectivity.
+
+The script therefore supports two methods:
+
+```text
+ONLINE
+↓
+Invoke-WebRequest
+↓
+Microsoft Sysinternals + SwiftOnSecurity
+
+OFFLINE
+↓
+Sysmon.zip + sysmonconfig.xml
+stored in the shared project directory
+```
+
+This allows the laboratory Domain Controller to remain isolated while the
+Windows host handles Internet downloads.
+
+## Service and Driver Validation
+
+The script verifies:
+
+```text
+Service: Sysmon64
+Driver: SysmonDrv
+```
+
+Target state:
+
+```text
+Sysmon64 = Running
+SysmonDrv = Loaded
+```
+
+A running service alone is not sufficient evidence.
+
+The script also checks whether events are being written to the Sysmon
+Operational log.
+
+## Event ID 11 - FileCreate Test
+
+The script performs a controlled test by creating:
+
+```text
+C:\Windows\Temp\sysmon_test.txt
+```
+
+It then queries:
+
+```text
+Microsoft-Windows-Sysmon/Operational
+```
+
+for:
+
+```text
+Event ID 11
+```
+
+and verifies that the test file appears in the event.
+
+Expected result:
+
+```text
+Created: C:\Windows\Temp\sysmon_test.txt
+Event ID 11 captured [VERIFIED]
+```
+
+The temporary file is removed after validation.
+
+## Why Sysmon Matters to SOC
+
+Sysmon changes endpoint visibility from:
+
+```text
+user logged in
+```
+
+to:
+
+```text
+user logged in
+        ↓
+process started
+        ↓
+command executed
+        ↓
+network connection
+        ↓
+DNS lookup
+        ↓
+file created
+        ↓
+Registry modified
+```
+
+This provides much richer evidence for incident investigation.
+
+## Important Sysmon Events
+
+Examples include:
+
+```text
+1   Process Creation
+3   Network Connection
+7   Image Loaded
+11  File Create
+13  Registry Value Set
+22  DNS Query
+```
+
+These events were documented previously in the Windows telemetry reference.
+
+## Crimson Tide Relevance
+
+Sysmon telemetry can help identify behaviors associated with the Crimson
+Tide attack chain, including:
+
+```text
+PsExec / remote execution
+WMI activity
+PowerShell execution
+Rclone execution
+network connections
+payload creation
+Registry persistence
+ransomware deployment
+```
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\9-sysmon_deploy.ps1
+```
+
+Installation requires:
+
+```powershell
+-Apply
+```
+
+The script uses a harmless controlled file creation test and removes the
+test file after validation.
+
+## SOC Lesson
+
+Sysmon is a telemetry sensor, not a SIEM and not a detection engine.
+
+The pipeline is:
+
+```text
+Windows activity
+      ↓
+Sysmon
+      ↓
+Sysmon Event IDs
+      ↓
+Windows Event Log
+      ↓
+SIEM
+      ↓
+Detection rule
+      ↓
+SOC alert
+      ↓
+Investigation
+```
+
+The central lesson is:
+
+> Installing a sensor is not enough. A security engineer must prove that
+> the expected events are actually being generated.
+
