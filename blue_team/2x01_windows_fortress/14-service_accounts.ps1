@@ -292,7 +292,7 @@ function Get-ServiceAccountFindings {
             $Findings += [PSCustomObject]@{
                 Account  = $Account.SamAccountName
                 Severity = "HIGH"
-                Finding  = "Old service-account password"
+                Finding  = "old service-account password"
                 Evidence = "Password age: $PasswordAge days"
             }
         }
