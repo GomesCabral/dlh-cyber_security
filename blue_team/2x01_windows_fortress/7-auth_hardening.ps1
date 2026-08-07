@@ -3,39 +3,42 @@
 # Script: 7-auth_hardening.ps1
 # Author: Pedro Cabral
 # Date: 2026-08-07
-# Purpose: Audit, harden and verify Kerberos and Windows authentication security.
+# Purpose: Harden Kerberos encryption, service-account authentication, NTLM and Credential Guard configuration.
 # Safety: AUDIT-ONLY by default. Changes require the explicit -Apply parameter.
-# Output: Console evidence of Kerberos, SPN, DES, RC4, NTLM and Credential Guard status.
+# Output: Console evidence of Kerberos, SPN, DES, RC4, AES, NTLM and Credential Guard state.
 #
 # Target domain:
 # meddefense.local
 #
-# Security objectives:
-# - Identify service accounts with ServicePrincipalName (SPN)
-# - Identify Kerberoastable service accounts
-# - Identify UseDESKeyOnly accounts
+# Required controls:
+# - Query current Kerberos encryption types
+# - Identify UseDESKeyOnly service accounts
+# - Check each service account ServicePrincipalName / SPN
 # - Disable DES
-# - Disable RC4 Kerberos at the domain controller policy level
-# - Allow AES128 and AES256 only
-# - Set LmCompatibilityLevel = 5 to refuse LM and NTLMv1
-# - Assess Credential Guard readiness/status
+# - Disable RC4
+# - Configure AES128 and AES256 only
+# - Disable NTLMv1
+# - LmCompatibilityLevel = 5
+# - Credential Guard awareness
+# - DeviceGuard status
+# - LsaCfgFlags
 #
-# Kerberos encryption bit values:
-# DES_CRC  = 0x01
-# DES_MD5  = 0x02
-# RC4      = 0x04
-# AES128   = 0x08
-# AES256   = 0x10
+# Kerberos encryption bitmask:
+# DES_CRC = 0x01
+# DES_MD5 = 0x02
+# RC4     = 0x04
+# AES128  = 0x08
+# AES256  = 0x10
 #
-# AES128 + AES256:
-# 0x08 + 0x10 = 0x18 = 24
+# AES128 + AES256 = 0x18 = 24
 #
 # VERIFY:
-# Verify UseDESKeyOnly, ServicePrincipalName, SupportedEncryptionTypes,
-# LmCompatibilityLevel and Credential Guard state.
+# Verify UseDESKeyOnly=False, AES128/AES256 only,
+# RC4 absent, LmCompatibilityLevel=5 and Credential Guard state.
 #
 # VERIFIED:
-# Kerberos should permit AES128 and AES256 only and NTLMv1 should be refused.
+# Kerberos and authentication hardening passes only if the expected
+# effective security state can be confirmed.
 
 [CmdletBinding()]
 param(
@@ -48,20 +51,17 @@ $ErrorActionPreference = "Stop"
 $TargetDomain = "meddefense.local"
 $GpoName = "MedDefense - Authentication Hardening"
 
-# AES128 = 8
-# AES256 = 16
-# AES128 + AES256 = 24
+# AES128 (8) + AES256 (16)
 $AESOnlyValue = 24
 
-# NTLMv2 only. Refuse LM and NTLMv1.
-$LmCompatibilityLevel = 5
+# Send NTLMv2 response only. Refuse LM and NTLMv1.
+$TargetLmCompatibilityLevel = 5
 
 # ===========================================================================
 # Helper functions
 # ===========================================================================
 
 function Write-Step {
-
     param(
         [Parameter(Mandatory = $true)]
         [string]$Message
@@ -70,9 +70,7 @@ function Write-Step {
     Write-Host "[*] $Message"
 }
 
-
 function Write-WouldSet {
-
     param(
         [Parameter(Mandatory = $true)]
         [string]$Message
@@ -81,10 +79,9 @@ function Write-WouldSet {
     Write-Host "    $Message [WOULD SET]"
 }
 
-
 function Test-IsAdministrator {
 
-    $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $Identity = [Security.Principal.WindowsIdentity]::GetCurrent
 
     $Principal = New-Object `
         Security.Principal.WindowsPrincipal($Identity)
@@ -94,7 +91,6 @@ function Test-IsAdministrator {
     )
 }
 
-
 function Convert-KerberosEncryptionTypes {
 
     param(
@@ -103,62 +99,59 @@ function Convert-KerberosEncryptionTypes {
     )
 
     if ($null -eq $Value) {
-
-        return @(
-            "DEFAULT / NOT EXPLICITLY SET"
-        )
+        return @("DEFAULT")
     }
 
     try {
-
-        $EncryptionMask = [int]$Value
+        $Mask = [int]$Value
     }
     catch {
-
-        return @(
-            "UNKNOWN"
-        )
+        return @("UNKNOWN")
     }
 
     $Types = @()
 
-    if (($EncryptionMask -band 1) -ne 0) {
+    if (($Mask -band 0x01) -ne 0) {
         $Types += "DES_CRC"
     }
 
-    if (($EncryptionMask -band 2) -ne 0) {
+    if (($Mask -band 0x02) -ne 0) {
         $Types += "DES_MD5"
     }
 
-    if (($EncryptionMask -band 4) -ne 0) {
+    if (($Mask -band 0x04) -ne 0) {
         $Types += "RC4"
     }
 
-    if (($EncryptionMask -band 8) -ne 0) {
+    if (($Mask -band 0x08) -ne 0) {
         $Types += "AES128"
     }
 
-    if (($EncryptionMask -band 16) -ne 0) {
+    if (($Mask -band 0x10) -ne 0) {
         $Types += "AES256"
     }
 
     if ($Types.Count -eq 0) {
-        $Types += "NONE / UNKNOWN"
+        $Types += "NONE"
     }
 
     return $Types
 }
 
-
 function Get-CredentialGuardStatus {
 
     $Result = [ordered]@{
-        available                    = $false
-        virtualization_based_security = "UNKNOWN"
-        credential_guard             = "UNKNOWN"
-        services_running             = @()
-        services_configured          = @()
+        deviceguard_available            = $false
+        virtualization_based_security    = "UNKNOWN"
+        credential_guard                 = "UNKNOWN"
+        services_running                 = @()
+        services_configured              = @()
+        LsaCfgFlags                      = $null
     }
+
+    # -----------------------------------------------------------------------
+    # DeviceGuard / Credential Guard effective state
+    # -----------------------------------------------------------------------
 
     try {
 
@@ -167,7 +160,7 @@ function Get-CredentialGuardStatus {
             -ClassName Win32_DeviceGuard `
             -ErrorAction Stop
 
-        $Result.available = $true
+        $Result.deviceguard_available = $true
 
         $Result.services_running = @(
             $DeviceGuard.SecurityServicesRunning
@@ -178,30 +171,55 @@ function Get-CredentialGuardStatus {
         )
 
         if ($DeviceGuard.VirtualizationBasedSecurityStatus -eq 2) {
+
             $Result.virtualization_based_security = "RUNNING"
         }
         elseif ($DeviceGuard.VirtualizationBasedSecurityStatus -eq 1) {
+
             $Result.virtualization_based_security = "ENABLED_NOT_RUNNING"
         }
         else {
+
             $Result.virtualization_based_security = "NOT_ENABLED"
         }
 
-        # Security service value 1 represents Credential Guard.
+        # DeviceGuard Security Service 1 = Credential Guard
         if (@($DeviceGuard.SecurityServicesRunning) -contains 1) {
+
             $Result.credential_guard = "RUNNING"
         }
         elseif (@($DeviceGuard.SecurityServicesConfigured) -contains 1) {
+
             $Result.credential_guard = "CONFIGURED_NOT_RUNNING"
         }
         else {
+
             $Result.credential_guard = "NOT_CONFIGURED"
         }
     }
     catch {
 
-        $Result.available = $false
+        $Result.deviceguard_available = $false
+        $Result.virtualization_based_security = "NOT_ASSESSED"
         $Result.credential_guard = "NOT_ASSESSED"
+    }
+
+    # -----------------------------------------------------------------------
+    # LsaCfgFlags - Credential Guard policy awareness
+    # -----------------------------------------------------------------------
+
+    try {
+
+        $LsaPolicy = Get-ItemProperty `
+            -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+            -Name "LsaCfgFlags" `
+            -ErrorAction Stop
+
+        $Result.LsaCfgFlags = $LsaPolicy.LsaCfgFlags
+    }
+    catch {
+
+        $Result.LsaCfgFlags = $null
     }
 
     return [PSCustomObject]$Result
@@ -211,7 +229,14 @@ function Get-CredentialGuardStatus {
 # Environment detection
 # ===========================================================================
 
-$ComputerSystem = Get-CimInstance Win32_ComputerSystem
+Write-Host ""
+Write-Host "=============================================="
+Write-Host "MedDefense Kerberos and Authentication Hardening"
+Write-Host "=============================================="
+Write-Host ""
+
+$ComputerSystem = Get-CimInstance `
+    -ClassName Win32_ComputerSystem
 
 $PartOfDomain = [bool]$ComputerSystem.PartOfDomain
 $CurrentDomain = [string]$ComputerSystem.Domain
@@ -223,12 +248,6 @@ $ADModuleAvailable = [bool](
 $GPOModuleAvailable = [bool](
     Get-Module -ListAvailable -Name GroupPolicy
 )
-
-Write-Host ""
-Write-Host "=============================================="
-Write-Host "MedDefense Kerberos and Authentication Hardening"
-Write-Host "=============================================="
-Write-Host ""
 
 Write-Host "Computer: $env:COMPUTERNAME"
 Write-Host "Domain joined: $PartOfDomain"
@@ -245,7 +264,7 @@ else {
 Write-Host ""
 
 # ===========================================================================
-# Prerequisite check
+# Safety prerequisites
 # ===========================================================================
 
 if (-not $PartOfDomain) {
@@ -269,10 +288,10 @@ if ($Domain.DNSRoot.ToLower() -ne $TargetDomain.ToLower()) {
 }
 
 # ===========================================================================
-# Query domain and service accounts
+# Query service accounts
 # ===========================================================================
 
-Write-Step "Querying current Kerberos configuration..."
+Write-Step "Querying current Kerberos encryption types..."
 
 $ServiceAccounts = @(
     Get-ADUser `
@@ -283,33 +302,33 @@ $ServiceAccounts = @(
             UseDESKeyOnly,
             TrustedForDelegation,
             PasswordLastSet,
-            msDS-SupportedEncryptionTypes |
+            LastLogonDate,
+            msDS-SupportedEncryptionTypes,
+            DistinguishedName |
     Where-Object {
         $_.SamAccountName -match "(?i)^svc_" -or
         $_.DistinguishedName -match "(?i)OU=Service Accounts"
     }
 )
 
-Write-Host ""
-
 # ===========================================================================
-# Current Kerberos encryption types
+# Current Kerberos encryption state
 # ===========================================================================
 
 $ObservedTypes = @()
 
 foreach ($Account in $ServiceAccounts) {
 
-    $AccountTypes = @(
+    $Types = @(
         Convert-KerberosEncryptionTypes `
             $Account.'msDS-SupportedEncryptionTypes'
     )
 
-    foreach ($Type in $AccountTypes) {
+    foreach ($Type in $Types) {
 
         if (
-            $Type -notmatch "DEFAULT" -and
-            $Type -notmatch "UNKNOWN"
+            $Type -ne "DEFAULT" -and
+            $Type -ne "UNKNOWN"
         ) {
             $ObservedTypes += $Type
         }
@@ -321,6 +340,8 @@ $ObservedTypes = @(
     Sort-Object -Unique
 )
 
+Write-Host ""
+
 if ($ObservedTypes.Count -gt 0) {
 
     Write-Host "[*] Current Kerberos types: $($ObservedTypes -join ', ')"
@@ -331,15 +352,17 @@ else {
 }
 
 if ($ObservedTypes -match "DES") {
-    Write-Host "    [!] DES enabled - trivially breakable"
+
+    Write-Host "    [!] DES enabled - weak legacy encryption"
 }
 
 if ($ObservedTypes -contains "RC4") {
-    Write-Host "    [!] RC4 enabled - Kerberoastable"
+
+    Write-Host "    [!] RC4 enabled - Kerberoasting risk"
 }
 
 # ===========================================================================
-# DES accounts
+# Accounts with DES flag
 # ===========================================================================
 
 Write-Host ""
@@ -354,7 +377,7 @@ $DESAccounts = @(
 
 if ($DESAccounts.Count -eq 0) {
 
-    Write-Host "    No UseDESKeyOnly service accounts detected."
+    Write-Host "    No service account with UseDESKeyOnly=True detected."
 }
 else {
 
@@ -366,7 +389,7 @@ else {
 }
 
 # ===========================================================================
-# SPN assessment
+# Service Principal Names / SPNs
 # ===========================================================================
 
 Write-Host ""
@@ -383,15 +406,73 @@ foreach ($Account in $SPNAccounts) {
 
     foreach ($SPN in @($Account.ServicePrincipalName)) {
 
-        Write-Host "    $($Account.SamAccountName): $SPN"
+        Write-Host `
+            "    $($Account.SamAccountName): $SPN"
     }
 }
 
 if ($SPNAccounts.Count -gt 0) {
 
     Write-Host ""
-    Write-Host "    [!] $($SPNAccounts.Count) account(s) with SPNs are Kerberoastable targets."
-    Write-Host "    [!] An SPN does not mean compromise; it means the account can receive service tickets."
+    Write-Host `
+        "    [!] $($SPNAccounts.Count) service account(s) with SPNs are Kerberoastable targets."
+
+    Write-Host `
+        "    [!] SPNs are legitimate, but weak encryption/passwords increase Kerberoasting risk."
+}
+
+# ===========================================================================
+# TrustedForDelegation awareness
+# ===========================================================================
+
+Write-Host ""
+Write-Step "Checking unconstrained delegation..."
+
+$DelegationAccounts = @(
+    $ServiceAccounts |
+    Where-Object {
+        $_.TrustedForDelegation -eq $true
+    }
+)
+
+if ($DelegationAccounts.Count -eq 0) {
+
+    Write-Host "    TrustedForDelegation=True: none detected"
+}
+else {
+
+    foreach ($Account in $DelegationAccounts) {
+
+        Write-Host `
+            "    $($Account.SamAccountName): TrustedForDelegation=True [!]"
+    }
+}
+
+# ===========================================================================
+# NTLM current policy
+# ===========================================================================
+
+Write-Host ""
+Write-Step "Checking NTLM configuration..."
+
+$CurrentLmCompatibilityLevel = $null
+
+try {
+
+    $NTLMPolicy = Get-ItemProperty `
+        -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+        -Name "LmCompatibilityLevel" `
+        -ErrorAction Stop
+
+    $CurrentLmCompatibilityLevel = [int]$NTLMPolicy.LmCompatibilityLevel
+
+    Write-Host `
+        "    LmCompatibilityLevel=$CurrentLmCompatibilityLevel"
+}
+catch {
+
+    Write-Host `
+        "    LmCompatibilityLevel not explicitly configured"
 }
 
 # ===========================================================================
@@ -403,18 +484,34 @@ Write-Step "Credential Guard awareness..."
 
 $CredentialGuard = Get-CredentialGuardStatus
 
-Write-Host "    Credential Guard: $($CredentialGuard.credential_guard)"
-Write-Host "    VBS: $($CredentialGuard.virtualization_based_security)"
+Write-Host `
+    "    DeviceGuard available: $($CredentialGuard.deviceguard_available)"
+
+Write-Host `
+    "    Credential Guard: $($CredentialGuard.credential_guard)"
+
+Write-Host `
+    "    VBS: $($CredentialGuard.virtualization_based_security)"
+
+if ($null -eq $CredentialGuard.LsaCfgFlags) {
+
+    Write-Host "    LsaCfgFlags: NOT CONFIGURED"
+}
+else {
+
+    Write-Host `
+        "    LsaCfgFlags: $($CredentialGuard.LsaCfgFlags)"
+}
 
 # ===========================================================================
-# AUDIT-ONLY
+# AUDIT ONLY
 # ===========================================================================
 
 if (-not $Apply) {
 
     Write-Host ""
     Write-Host "[!] AUDIT-ONLY mode."
-    Write-Host "[!] No Kerberos, NTLM, Active Directory or GPO setting will be changed."
+    Write-Host "[!] No Active Directory, Kerberos, RC4, DES, NTLM or GPO settings will be changed."
     Write-Host ""
 
     Write-Step "Remediating..."
@@ -422,22 +519,32 @@ if (-not $Apply) {
     foreach ($Account in $DESAccounts) {
 
         Write-Host `
-            "    $($Account.SamAccountName): Clearing DES flag [WOULD DO]"
+            "    $($Account.SamAccountName): Clearing UseDESKeyOnly [WOULD DO]"
     }
 
-    Write-WouldSet "Supported encryption: AES128 + AES256"
-    Write-WouldSet "RC4 disabled"
+    foreach ($Account in $SPNAccounts) {
+
+        Write-Host `
+            "    $($Account.SamAccountName): SupportedEncryptionTypes = AES128 + AES256 [WOULD SET]"
+    }
+
+    Write-WouldSet "Domain Kerberos SupportedEncryptionTypes = AES128 + AES256"
     Write-WouldSet "DES disabled"
-    Write-WouldSet "LmCompatibilityLevel=5 - NTLMv1 refused"
+    Write-WouldSet "RC4 disabled"
+    Write-WouldSet "LmCompatibilityLevel=5"
+    Write-WouldSet "NTLMv1 refused; NTLMv2 fallback only"
 
     Write-Host ""
 
     Write-Step "VERIFY target state..."
 
-    Write-Host "    Kerberos: AES128, AES256 only [WOULD VERIFY]"
-    Write-Host "    NTLM: v2 only [WOULD VERIFY]"
     Write-Host "    UseDESKeyOnly = False [WOULD VERIFY]"
-    Write-Host "    Credential Guard awareness [CHECKED]"
+    Write-Host "    Kerberos: AES128, AES256 only [WOULD VERIFY]"
+    Write-Host "    RC4 absent [WOULD VERIFY]"
+    Write-Host "    DES absent [WOULD VERIFY]"
+    Write-Host "    LmCompatibilityLevel = 5 [WOULD VERIFY]"
+    Write-Host "    NTLM: v2 only [WOULD VERIFY]"
+    Write-Host "    Credential Guard / DeviceGuard / LsaCfgFlags [CHECKED]"
 
     Write-Host ""
     Write-Host "[*] System modified: False"
@@ -446,7 +553,7 @@ if (-not $Apply) {
 }
 
 # ===========================================================================
-# APPLY safety
+# APPLY mode safeguards
 # ===========================================================================
 
 if (-not (Test-IsAdministrator)) {
@@ -454,41 +561,32 @@ if (-not (Test-IsAdministrator)) {
 }
 
 if (-not $GPOModuleAvailable) {
-    throw "GroupPolicy PowerShell module is required for Apply mode."
+    throw "GroupPolicy PowerShell module is required."
 }
 
 Import-Module GroupPolicy
 
 $DomainDN = $Domain.DistinguishedName
 
+# ===========================================================================
+# Disable DES on flagged service accounts
+# ===========================================================================
+
 Write-Host ""
 Write-Step "Remediating..."
 
-# ===========================================================================
-# Disable DES for flagged service accounts
-# ===========================================================================
-
 foreach ($Account in $DESAccounts) {
-
-    Write-Host `
-        "    $($Account.SamAccountName): Clearing DES flag..."
 
     Set-ADAccountControl `
         -Identity $Account.DistinguishedName `
         -UseDESKeyOnly $false
 
     Write-Host `
-        "    $($Account.SamAccountName): UseDESKeyOnly = False [DONE]"
+        "    $($Account.SamAccountName): Clearing DES flag [DONE]"
 }
 
 # ===========================================================================
-# Explicit AES support on SPN service accounts
-#
-# 24 decimal = AES128 (8) + AES256 (16)
-#
-# WARNING:
-# Legacy services that only support RC4 may fail authentication after this
-# change. This is why discovery is performed before remediation.
+# Set AES128 + AES256 on service accounts with SPNs
 # ===========================================================================
 
 foreach ($Account in $SPNAccounts) {
@@ -500,7 +598,7 @@ foreach ($Account in $SPNAccounts) {
         }
 
     Write-Host `
-        "    $($Account.SamAccountName): AES128 + AES256 [SET]"
+        "    $($Account.SamAccountName): Supported encryption = AES128 + AES256 [SET]"
 }
 
 # ===========================================================================
@@ -508,7 +606,6 @@ foreach ($Account in $SPNAccounts) {
 # ===========================================================================
 
 Write-Host ""
-
 Write-Step "Creating GPO: `"$GpoName`"..."
 
 $GPO = Get-GPO `
@@ -519,7 +616,7 @@ if ($null -eq $GPO) {
 
     $GPO = New-GPO `
         -Name $GpoName `
-        -Comment "MedDefense Kerberos AES-only and NTLMv2 authentication baseline."
+        -Comment "MedDefense AES-only Kerberos and NTLMv2 authentication baseline."
 
     Write-Host "    CREATED"
 }
@@ -529,11 +626,12 @@ else {
 }
 
 # ===========================================================================
-# Kerberos SupportedEncryptionTypes
+# Kerberos AES-only
 #
-# 0x18 = AES128 + AES256
+# SupportedEncryptionTypes:
+# 24 decimal = 0x18 = AES128 + AES256
 #
-# DES and RC4 are intentionally excluded.
+# DES and RC4 are omitted.
 # ===========================================================================
 
 Set-GPRegistryValue `
@@ -548,10 +646,9 @@ Write-Host "    DES: disabled [SET]"
 Write-Host "    RC4: disabled [SET]"
 
 # ===========================================================================
-# NTLMv1 hardening
+# NTLM hardening
 #
 # LmCompatibilityLevel = 5
-#
 # Send NTLMv2 response only.
 # Refuse LM.
 # Refuse NTLMv1.
@@ -562,19 +659,21 @@ Set-GPRegistryValue `
     -Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" `
     -ValueName "LmCompatibilityLevel" `
     -Type DWord `
-    -Value $LmCompatibilityLevel
+    -Value $TargetLmCompatibilityLevel
 
-Write-Host "    NTLMv1: Refused (LmCompatibilityLevel=5) [SET]"
-Write-Host "    NTLMv2: fallback allowed [SET]"
+Write-Host `
+    "    NTLMv1: Refused (LmCompatibilityLevel=5) [SET]"
+
+Write-Host `
+    "    NTLMv2: allowed as fallback [SET]"
 
 # ===========================================================================
 # Credential Guard awareness
 #
-# Credential Guard is assessed but not blindly enabled here because it
-# depends on VBS, virtualization and platform compatibility.
+# This task configures awareness/validation only.
 #
-# Enabling Credential Guard on infrastructure systems without validating
-# hypervisor/VBS support can create operational impact.
+# LsaCfgFlags is inspected, but Credential Guard is NOT blindly enabled
+# because VBS / hypervisor compatibility must be validated first.
 # ===========================================================================
 
 Write-Host ""
@@ -582,12 +681,30 @@ Write-Step "Configuring Credential Guard awareness..."
 
 $CredentialGuard = Get-CredentialGuardStatus
 
-Write-Host "    Credential Guard: $($CredentialGuard.credential_guard)"
-Write-Host "    VBS: $($CredentialGuard.virtualization_based_security)"
-Write-Host "    Credential Guard readiness/status recorded [OK]"
+Write-Host `
+    "    DeviceGuard available: $($CredentialGuard.deviceguard_available)"
+
+Write-Host `
+    "    Credential Guard: $($CredentialGuard.credential_guard)"
+
+Write-Host `
+    "    VBS: $($CredentialGuard.virtualization_based_security)"
+
+if ($null -eq $CredentialGuard.LsaCfgFlags) {
+
+    Write-Host "    LsaCfgFlags: NOT CONFIGURED"
+}
+else {
+
+    Write-Host `
+        "    LsaCfgFlags: $($CredentialGuard.LsaCfgFlags)"
+}
+
+Write-Host `
+    "    Credential Guard awareness recorded [OK]"
 
 # ===========================================================================
-# Link GPO
+# Link GPO to domain root
 # ===========================================================================
 
 Write-Host ""
@@ -641,7 +758,7 @@ Write-Step "VERIFY Kerberos and authentication configuration..."
 $VerificationFailures = 0
 
 # ---------------------------------------------------------------------------
-# Verify DES flags
+# VERIFY UseDESKeyOnly
 # ---------------------------------------------------------------------------
 
 foreach ($Account in $DESAccounts) {
@@ -650,7 +767,7 @@ foreach ($Account in $DESAccounts) {
         -Identity $Account.DistinguishedName `
         -Properties UseDESKeyOnly
 
-    if (-not $VerifiedAccount.UseDESKeyOnly) {
+    if ($VerifiedAccount.UseDESKeyOnly -eq $false) {
 
         Write-Host `
             "    $($Account.SamAccountName): UseDESKeyOnly = False [VERIFIED]"
@@ -665,7 +782,7 @@ foreach ($Account in $DESAccounts) {
 }
 
 # ---------------------------------------------------------------------------
-# Verify SPN service-account encryption
+# VERIFY AES128 + AES256 for SPN service accounts
 # ---------------------------------------------------------------------------
 
 foreach ($Account in $SPNAccounts) {
@@ -678,15 +795,23 @@ foreach ($Account in $SPNAccounts) {
         $VerifiedAccount.'msDS-SupportedEncryptionTypes'
     )
 
-    if ($EncryptionValue -eq $AESOnlyValue) {
+    $CurrentTypes = @(
+        Convert-KerberosEncryptionTypes `
+            $EncryptionValue
+    )
+
+    if (
+        $EncryptionValue -eq $AESOnlyValue -and
+        $CurrentTypes -contains "AES128" -and
+        $CurrentTypes -contains "AES256" -and
+        $CurrentTypes -notcontains "RC4" -and
+        $CurrentTypes -notmatch "DES"
+    ) {
 
         Write-Host `
             "    $($Account.SamAccountName): AES128, AES256 only [VERIFIED]"
     }
     else {
-
-        $CurrentTypes = Convert-KerberosEncryptionTypes `
-            $EncryptionValue
 
         Write-Host `
             "    $($Account.SamAccountName): $($CurrentTypes -join ', ') [NOT VERIFIED]"
@@ -696,7 +821,7 @@ foreach ($Account in $SPNAccounts) {
 }
 
 # ---------------------------------------------------------------------------
-# Verify effective Kerberos registry policy
+# VERIFY domain Kerberos policy
 # ---------------------------------------------------------------------------
 
 try {
@@ -706,27 +831,42 @@ try {
         -Name "SupportedEncryptionTypes" `
         -ErrorAction Stop
 
+    $KerberosValue = [int]$KerberosPolicy.SupportedEncryptionTypes
+
+    $KerberosTypes = @(
+        Convert-KerberosEncryptionTypes `
+            $KerberosValue
+    )
+
     if (
-        [int]$KerberosPolicy.SupportedEncryptionTypes -eq
-        $AESOnlyValue
+        $KerberosValue -eq $AESOnlyValue -and
+        $KerberosTypes -contains "AES128" -and
+        $KerberosTypes -contains "AES256" -and
+        $KerberosTypes -notcontains "RC4" -and
+        $KerberosTypes -notmatch "DES"
     ) {
 
-        Write-Host "    Kerberos: AES128, AES256 only [VERIFIED]"
+        Write-Host `
+            "    Kerberos: AES128, AES256 only [VERIFIED]"
     }
     else {
 
-        Write-Host "    Kerberos encryption policy [NOT VERIFIED]"
+        Write-Host `
+            "    Kerberos: $($KerberosTypes -join ', ') [NOT VERIFIED]"
+
         $VerificationFailures++
     }
 }
 catch {
 
-    Write-Host "    Kerberos encryption policy [NOT VERIFIED]"
+    Write-Host `
+        "    Kerberos SupportedEncryptionTypes [NOT VERIFIED]"
+
     $VerificationFailures++
 }
 
 # ---------------------------------------------------------------------------
-# Verify NTLM
+# VERIFY NTLMv1 / LmCompatibilityLevel
 # ---------------------------------------------------------------------------
 
 try {
@@ -737,10 +877,15 @@ try {
         -ErrorAction Stop
 
     if (
-        [int]$NTLMPolicy.LmCompatibilityLevel -eq 5
+        [int]$NTLMPolicy.LmCompatibilityLevel -eq
+        $TargetLmCompatibilityLevel
     ) {
 
-        Write-Host "    NTLM: v2 only / NTLMv1 refused [VERIFIED]"
+        Write-Host `
+            "    NTLM: v2 only / NTLMv1 refused [VERIFIED]"
+
+        Write-Host `
+            "    LmCompatibilityLevel = 5 [VERIFIED]"
     }
     else {
 
@@ -752,34 +897,58 @@ try {
 }
 catch {
 
-    Write-Host "    NTLM policy [NOT VERIFIED]"
+    Write-Host `
+        "    LmCompatibilityLevel [NOT VERIFIED]"
+
     $VerificationFailures++
 }
 
 # ---------------------------------------------------------------------------
-# Credential Guard verification
+# VERIFY Credential Guard awareness
 # ---------------------------------------------------------------------------
 
 $CredentialGuard = Get-CredentialGuardStatus
 
 Write-Host `
+    "    DeviceGuard: $($CredentialGuard.deviceguard_available) [CHECKED]"
+
+Write-Host `
     "    Credential Guard: $($CredentialGuard.credential_guard) [CHECKED]"
 
+Write-Host `
+    "    VBS: $($CredentialGuard.virtualization_based_security) [CHECKED]"
+
+if ($null -eq $CredentialGuard.LsaCfgFlags) {
+
+    Write-Host `
+        "    LsaCfgFlags: NOT CONFIGURED [CHECKED]"
+}
+else {
+
+    Write-Host `
+        "    LsaCfgFlags=$($CredentialGuard.LsaCfgFlags) [CHECKED]"
+}
+
 # ===========================================================================
-# Final result
+# Final verification result
 # ===========================================================================
 
 Write-Host ""
 
 if ($VerificationFailures -eq 0) {
 
-    Write-Host "[VERIFIED] Kerberos and authentication hardening: PASS"
+    Write-Host `
+        "[VERIFIED] Kerberos and authentication hardening: PASS"
+
     exit 0
 }
 else {
 
-    Write-Host "[NOT VERIFIED] Kerberos and authentication hardening: FAIL"
-    Write-Host "[!] Failed checks: $VerificationFailures"
+    Write-Host `
+        "[NOT VERIFIED] Kerberos and authentication hardening: FAIL"
+
+    Write-Host `
+        "[!] Failed checks: $VerificationFailures"
 
     exit 1
 }
