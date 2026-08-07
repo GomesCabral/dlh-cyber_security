@@ -31,6 +31,10 @@
 # VERIFY:
 # Every critical Windows Fortress control is independently checked.
 #
+# service accounts validation:
+# verify delegation restrictions, interactive logon denial,
+# privileged group membership and password age for all service accounts.
+
 # VERIFIED:
 # Script exits with code 0 only when all critical controls PASS.
 
@@ -1355,7 +1359,7 @@ catch {
 # Service Accounts
 # ===========================================================================
 
-Write-Section "Service Accounts"
+Write-Host "Validating service accounts..."
 
 $RestrictedDelegation = 0
 
