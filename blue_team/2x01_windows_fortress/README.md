@@ -3894,3 +3894,599 @@ The central principle is:
 
 > A service account should have only the privileges and authentication
 > capabilities required for the service it operates.
+
+---
+
+# Task 15 - Master Validation Script
+
+## Script
+
+`15-master_validation.ps1`
+
+## Goal
+
+Provide a read-only weekly compliance validation of all Windows Fortress
+hardening controls deployed throughout Tasks 4-14.
+
+The script is the Windows equivalent of the Linux:
+
+```text
+15-validation.sh
+```
+
+from project `2x00_locking_the_gates`.
+
+It does not remediate anything.
+
+It only:
+
+```text
+reads current state
+        ↓
+compares with expected baseline
+        ↓
+reports PASS / WARN / FAIL
+        ↓
+returns an exit code
+```
+
+## Validation Scope
+
+The master validator checks controls from:
+
+```text
+Task 4  - Password and Lockout Policy
+Task 5  - Advanced Audit Policy
+Task 6  - PowerShell Security
+Task 7  - Kerberos and Authentication Hardening
+Task 8  - SMB and Protocol Hardening
+Task 9  - Sysmon Deployment
+Task 10 - Sysmon Detection Tuning
+Task 11 - Windows Firewall Lockdown
+Task 12 - AppLocker Policy
+Task 13 - RDP and Remote Access Reduction
+Task 14 - Service Account Control
+```
+
+---
+
+## Password and Lockout Validation
+
+The script validates:
+
+```text
+Minimum password length = 14
+Complexity = Enabled
+Password history = 24
+Maximum password age = 0
+Minimum password age = 1 day
+Lockout threshold = 5
+Lockout duration = 15 minutes
+Reset counter = 15 minutes
+```
+
+The effective domain password policy is queried using:
+
+```powershell
+Get-ADDefaultDomainPasswordPolicy
+```
+
+Example:
+
+```text
+[PASS] Minimum length: 14
+[PASS] Lockout threshold: 5
+```
+
+---
+
+## Advanced Audit Policy Validation
+
+The validator checks the required audit subcategories including:
+
+```text
+Credential Validation
+Kerberos Authentication Service
+Logon
+Logoff
+Special Logon
+User Account Management
+Sensitive Privilege Use
+File System
+Registry
+Process Creation
+```
+
+It also validates:
+
+```text
+ProcessCreationIncludeCmdLine_Enabled = 1
+Security log size >= 1 GB
+```
+
+Example:
+
+```text
+[PASS] Process Creation: Success
+[PASS] Command-line logging: Enabled
+[PASS] Security log: 1 GB
+```
+
+---
+
+## PowerShell Security Validation
+
+The script verifies:
+
+```text
+EnableScriptBlockLogging = 1
+EnableModuleLogging = 1
+ModuleNames = *
+EnableTranscripting = 1
+OutputDirectory = C:\PSTranscripts
+AMSI available
+```
+
+Primary telemetry:
+
+```text
+4103 - Module Logging
+4104 - Script Block Logging
+```
+
+Example:
+
+```text
+[PASS] Script Block Logging: Enabled
+[PASS] Transcription: Enabled
+```
+
+---
+
+## Sysmon Validation
+
+The validator checks:
+
+```text
+Sysmon service running
+SysmonDrv loaded
+recent Sysmon events generated
+sysmonconfig.xml present
+five MedDefense custom rules present
+FileCreate telemetry present
+```
+
+The required custom detections are:
+
+```text
+Rule 1 - Rclone
+Rule 2 - PsExec
+Rule 3 - Encoded PowerShell
+Rule 4 - Shadow Deletion
+Rule 5 - Scheduled Task
+```
+
+Example:
+
+```text
+[PASS] Service: Running
+[PASS] Custom rules: 5 present
+```
+
+---
+
+## Kerberos and Authentication Validation
+
+The script checks that service accounts no longer use weak Kerberos
+encryption.
+
+Target:
+
+```text
+DES = Disabled
+RC4 = Disabled
+AES128 = Enabled
+AES256 = Enabled
+```
+
+The target encryption bitmask is:
+
+```text
+24 decimal
+0x18
+AES128 + AES256
+```
+
+The validator also checks:
+
+```text
+LmCompatibilityLevel = 5
+```
+
+which represents the MedDefense target of refusing LM and NTLMv1 while
+allowing NTLMv2 fallback.
+
+Credential Guard and:
+
+```text
+LsaCfgFlags
+```
+
+are reported as awareness / posture checks.
+
+Example:
+
+```text
+[PASS] DES: Disabled
+[PASS] RC4: Disabled
+```
+
+---
+
+## SMB and Legacy Protocol Validation
+
+The validator checks:
+
+```text
+SMBv1 = Disabled
+SMB signing = Required
+SMB encryption = Enabled
+LLMNR = Disabled
+NetBIOS over TCP/IP = Disabled
+```
+
+Example:
+
+```text
+[PASS] SMBv1: Disabled
+[PASS] Signing: Required
+```
+
+---
+
+## Windows Firewall Validation
+
+All three profiles must be:
+
+```text
+Domain  = ON
+Private = ON
+Public  = ON
+```
+
+with:
+
+```text
+DefaultInboundAction = Block
+```
+
+Dropped-packet logging must also be enabled.
+
+The script validates the MedDefense rules for:
+
+```text
+RDP
+DNS
+LDAP
+Kerberos
+SMB
+WinRM
+```
+
+Example:
+
+```text
+[PASS] All profiles: ON, DefaultInbound: Block
+```
+
+---
+
+## AppLocker Validation
+
+The validator checks:
+
+```text
+AppIDSvc = Running
+Executable collection = AuditOnly
+Script collection = AuditOnly
+```
+
+It also verifies that the effective policy contains rules for:
+
+```text
+Windows
+Program Files
+DicomViewer
+MedDefense_Lab
+```
+
+AppLocker remains:
+
+```text
+Audit Only
+```
+
+during the testing phase to avoid disrupting legitimate clinical software.
+
+---
+
+## RDP Validation
+
+The script validates:
+
+```text
+NLA = Required
+G_IT_Admins only
+Idle timeout = 15 minutes
+Maximum session = 8 hours
+Encryption = High/SSL
+Clipboard = Disabled
+Drive redirection = Disabled
+Remote Assistance = Disabled
+```
+
+Example:
+
+```text
+[PASS] NLA: Required
+[PASS] Access: G_IT_Admins only
+```
+
+---
+
+## Service Account Validation
+
+For:
+
+```text
+svc_backup
+svc_ehr
+svc_sql
+```
+
+the validator checks:
+
+```text
+AccountNotDelegated = True
+TrustedForDelegation = False
+interactive logon denied
+RDP logon denied
+no unauthorized privileged-group membership
+```
+
+Password age is also reported.
+
+Old passwords are treated as:
+
+```text
+[WARN]
+```
+
+rather than automatically as a critical failure because Task 14 did not
+perform automatic password rotation.
+
+Example:
+
+```text
+[PASS] Delegation restricted: 3/3
+[WARN] svc_backup password age: 113 days
+```
+
+---
+
+## PASS / WARN / FAIL Meaning
+
+### PASS
+
+The control matches the expected MedDefense baseline.
+
+```text
+[PASS]
+```
+
+Example:
+
+```text
+[PASS] SMBv1: Disabled
+```
+
+### WARN
+
+The issue requires review but does not automatically fail the weekly
+critical compliance check.
+
+```text
+[WARN]
+```
+
+Examples:
+
+```text
+old service-account password
+Credential Guard not running
+no recent Sysmon telemetry
+```
+
+### FAIL
+
+A required hardening control is not in the expected state.
+
+```text
+[FAIL]
+```
+
+Examples:
+
+```text
+NLA disabled
+SMBv1 enabled
+RC4 enabled
+firewall default inbound not Block
+service account still using unconstrained delegation
+```
+
+---
+
+## Exit Codes
+
+The script returns:
+
+```text
+0
+```
+
+when all critical checks pass.
+
+It returns:
+
+```text
+1
+```
+
+when at least one critical control fails.
+
+Example:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\15-master_validation.ps1
+
+$LASTEXITCODE
+```
+
+Interpretation:
+
+```text
+0 = critical baseline compliant
+1 = critical compliance failure detected
+```
+
+---
+
+## Compliance Dashboard
+
+At the end of each run the script produces a summary:
+
+```text
+PASS: <count>
+WARN: <count>
+FAIL: <count>
+Critical failures: <count>
+Compliance: <percentage>
+```
+
+This provides James Chen with a repeatable weekly compliance view.
+
+---
+
+## Read-Only Safety
+
+This validator is intentionally read-only.
+
+It does not:
+
+```text
+create GPOs
+modify Active Directory
+change passwords
+change Registry values
+change Firewall rules
+modify AppLocker
+modify Sysmon
+change service accounts
+change RDP
+change audit policy
+```
+
+Its purpose is validation, not remediation.
+
+---
+
+## Configuration Drift
+
+Hardening is not permanent.
+
+For example:
+
+```text
+Friday
+SMBv1 = Disabled
+        ↓
+[PASS]
+
+Tuesday
+administrator enables SMBv1
+for troubleshooting
+        ↓
+forgets to revert it
+
+Friday
+master validator runs
+        ↓
+[FAIL] SMBv1: Enabled
+```
+
+This is:
+
+```text
+configuration drift
+```
+
+The validator provides a way to detect that drift.
+
+---
+
+## SOC and Security Engineering Lesson
+
+This task demonstrates the difference between:
+
+```text
+configuration
+```
+
+and:
+
+```text
+continuous assurance
+```
+
+Deploying a security control once does not prove that the control remains
+effective.
+
+The security lifecycle is:
+
+```text
+Baseline
+    ↓
+Findings
+    ↓
+Hardening
+    ↓
+Verification
+    ↓
+Continuous validation
+    ↓
+Drift detection
+    ↓
+Remediation
+```
+
+For SOC work, this is important because detection capability depends on the
+underlying security configuration remaining healthy.
+
+For example:
+
+```text
+Script Block Logging disabled
+        ↓
+4104 disappears
+        ↓
+SIEM loses PowerShell visibility
+        ↓
+SOC detection becomes weaker
+```
+
+The central principle is:
+
+> A control that is not continuously validated can silently stop protecting
+> the environment.
+
