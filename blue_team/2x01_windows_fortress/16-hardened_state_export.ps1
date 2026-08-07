@@ -993,12 +993,26 @@ try {
 catch {
 }
 
+# RDP / NLA posture
+# NLA = Network Level Authentication
+# Expected state: NLA Required (UserAuthentication = 1)
+
+$NLAValue = Get-RegistryValueSafe `
+    -Path $RdpTcpPath `
+    -Name "UserAuthentication"
+
 $RdpPosture = [ordered]@{
-    nla_required = (
-        (Get-RegistryValueSafe `
-            -Path $RdpTcpPath `
-            -Name "UserAuthentication") -eq 1
-    )
+    NLA = [ordered]@{
+        required = ($NLAValue -eq 1)
+        UserAuthentication = $NLAValue
+        expected = 1
+        status = if ($NLAValue -eq 1) {
+            "Required"
+        }
+        else {
+            "Not Required"
+        }
+    }
 
     allowed_group = "G_IT_Admins"
 

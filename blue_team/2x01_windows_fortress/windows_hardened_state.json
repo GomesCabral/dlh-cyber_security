@@ -7,7 +7,7 @@
                             "forest_name":  "meddefense.local",
                             "domain_mode":  "Windows2016Domain",
                             "forest_mode":  "Windows2016Forest",
-                            "timestamp":  "2026-08-07T14:11:49.7724545+02:00",
+                            "timestamp":  "2026-08-07T14:14:23.6394302+02:00",
                             "script_runner":  "MEDDEFENSE\\analyst",
                             "script_name":  "16-hardened_state_export.ps1"
                         },
@@ -436,7 +436,12 @@
                               "exported_policy_path":  "\\\\VBOXSVR\\dlh-cyber_security\\blue_team\\2x01_windows_fortress\\applocker_policy.xml"
                           },
     "rdp_posture":  {
-                        "nla_required":  true,
+                        "NLA":  {
+                                    "required":  true,
+                                    "UserAuthentication":  1,
+                                    "expected":  1,
+                                    "status":  "Required"
+                                },
                         "allowed_group":  "G_IT_Admins",
                         "remote_desktop_users_members":  [
                                                              {
