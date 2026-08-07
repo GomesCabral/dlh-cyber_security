@@ -1456,3 +1456,293 @@ Task 3 documented what each telemetry source means.
 
 Task 5 begins closing those gaps by defining the audit configuration
 required to generate useful security evidence.
+
+---
+
+# Task 6 - PowerShell Security
+
+## Script
+
+`6-powershell_security.ps1`
+
+## Goal
+
+Configure PowerShell security logging through Group Policy so that
+PowerShell activity produces useful evidence for SOC detection and
+investigation.
+
+## GPO
+
+```text
+MedDefense - PowerShell Security
+```
+
+## Script Block Logging
+
+The policy enables:
+
+```text
+EnableScriptBlockLogging = 1
+```
+
+Primary event:
+
+```text
+Event ID 4104
+```
+
+Script Block Logging provides visibility into PowerShell script-block
+content, including commands supplied through encoded PowerShell execution.
+
+Example attack behavior:
+
+```text
+powershell.exe -EncodedCommand <base64>
+```
+
+The security objective is to provide investigators with visibility into the
+PowerShell code interpreted during execution.
+
+---
+
+## Module Logging
+
+The policy enables:
+
+```text
+EnableModuleLogging = 1
+ModuleNames = *
+```
+
+Primary event:
+
+```text
+Event ID 4103
+```
+
+Module Logging records PowerShell module and pipeline activity and provides
+additional context about the capabilities used during a PowerShell session.
+
+---
+
+## PowerShell Transcription
+
+The policy enables PowerShell transcription with:
+
+```text
+EnableTranscripting = 1
+OutputDirectory = C:\PSTranscripts
+EnableInvocationHeader = 1
+```
+
+Transcription provides a text record of PowerShell session activity.
+
+The combined visibility model is:
+
+```text
+PowerShell
+   │
+   ├── 4103 → Module Logging
+   │
+   ├── 4104 → Script Block Logging
+   │
+   └── Transcript → Session record
+```
+
+---
+
+## AMSI
+
+AMSI stands for:
+
+```text
+Antimalware Scan Interface
+```
+
+PowerShell integrates with AMSI so that script content can be submitted to
+an installed antimalware provider for inspection.
+
+The script verifies the presence of:
+
+```text
+amsi.dll
+```
+
+and attempts to confirm its presence in the current PowerShell process.
+
+AMSI and Script Block Logging provide different defensive capabilities:
+
+```text
+AMSI
+↓
+content inspection
+
+4104
+↓
+security telemetry / investigation
+```
+
+---
+
+## Controlled Event ID 4104 Test
+
+The script performs a harmless controlled validation.
+
+Original command:
+
+```powershell
+Write-Host "MEDDEFENSE_PS4104_TEST"
+```
+
+The command is encoded using UTF-16LE Base64 and executed through:
+
+```powershell
+powershell.exe -EncodedCommand
+```
+
+The script then queries:
+
+```text
+Microsoft-Windows-PowerShell/Operational
+```
+
+for:
+
+```text
+Event ID 4104
+```
+
+and searches for the original decoded marker.
+
+Successful validation produces:
+
+```text
+Event ID 4104 found
+Decoded content found [VERIFIED]
+```
+
+This proves that PowerShell security telemetry is working rather than merely
+assuming that the policy was configured successfully.
+
+---
+
+## Crimson Tide Relevance
+
+The Crimson Tide attack chain included encoded PowerShell execution during
+post-exploitation.
+
+Without sufficient PowerShell telemetry:
+
+```text
+Attacker
+   ↓
+powershell.exe -EncodedCommand ...
+   ↓
+execution
+   ↓
+limited investigation evidence
+```
+
+With the MedDefense controls:
+
+```text
+Encoded PowerShell
+       ↓
+Script Block Logging
+       ↓
+Event ID 4104
+       ↓
+decoded/interpreted script evidence
+       ↓
+SIEM
+       ↓
+SOC investigation
+```
+
+---
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe assessment:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\6-powershell_security.ps1
+```
+
+Actual changes require:
+
+```powershell
+-Apply
+```
+
+Apply mode refuses to continue unless the machine belongs to:
+
+```text
+meddefense.local
+```
+
+The script must therefore be applied only to the authorized MedDefense lab
+environment.
+
+---
+
+## Deployment
+
+After creating a VirtualBox snapshot, run on DC01:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\6-powershell_security.ps1 -Apply
+```
+
+The workflow is:
+
+```text
+Create GPO
+    ↓
+Enable Script Block Logging
+    ↓
+Enable Module Logging
+    ↓
+Enable Transcription
+    ↓
+Link GPO
+    ↓
+gpupdate /force
+    ↓
+VERIFY effective settings
+    ↓
+Run controlled encoded command
+    ↓
+Query Event ID 4104
+    ↓
+VERIFIED
+```
+
+---
+
+## SOC Lesson
+
+PowerShell is both an administrative tool and a common attacker
+post-exploitation tool.
+
+For a SOC analyst, suspicious PowerShell should be investigated using
+multiple telemetry sources:
+
+```text
+4688       Windows process creation
+4103       PowerShell Module Logging
+4104       PowerShell Script Block Logging
+Sysmon 1   detailed process creation
+Sysmon 3   process network activity
+```
+
+The important lesson is:
+
+> Logging the execution of powershell.exe is useful, but understanding what
+> PowerShell actually executed provides much stronger investigation evidence.
