@@ -344,12 +344,53 @@ function Add-MedDefenseRules {
     [void]$ProcessCreateTask.AppendChild($Rule5)
     [void]$RuleGroup.AppendChild($ProcessCreateTask)
 
+        # =======================================================================
+    # Supplemental FileCreate telemetry
+    # Detect file creation in Windows Startup directories.
+    # Sysmon Event ID 11 - FileCreate
+    # =======================================================================
+
+    $FileCreateStartup = $Xml.CreateElement("FileCreate")
+    $FileCreateStartup.SetAttribute("onmatch", "include")
+
+    $StartupRule = $Xml.CreateElement("Rule")
+    $StartupRule.SetAttribute(
+        "name",
+        "MedDefense Supplemental - Startup FileCreate"
+    )
+    $StartupRule.SetAttribute(
+        "groupRelation",
+        "or"
+    )
+
+    $TargetFilename1 = $Xml.CreateElement("TargetFilename")
+    $TargetFilename1.SetAttribute(
+        "condition",
+        "contains"
+    )
+    $TargetFilename1.InnerText = "\Start Menu\Programs\Startup\"
+
+    $TargetFilename2 = $Xml.CreateElement("TargetFilename")
+    $TargetFilename2.SetAttribute(
+        "condition",
+        "contains"
+    )
+    $TargetFilename2.InnerText = "\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\"
+
+    [void]$StartupRule.AppendChild($TargetFilename1)
+    [void]$StartupRule.AppendChild($TargetFilename2)
+
+    [void]$FileCreateStartup.AppendChild($StartupRule)
+    [void]$RuleGroup.AppendChild($FileCreateStartup)
+
     [void]$EventFiltering.AppendChild(
         $RuleGroup
     )
+    
 
     return $Xml
 }
+
 
 function Cleanup-TestArtifacts {
 
