@@ -3617,3 +3617,280 @@ The core principle is:
 
 > Remote administration should be accessible only from authorized networks
 > and usable only by explicitly authorized administrators.
+
+---
+
+# Task 14 - Service Account Control
+
+## Script
+
+`14-service_accounts.ps1`
+
+## Goal
+
+Audit and harden MedDefense Active Directory service accounts to reduce
+credential theft, privilege escalation, delegation abuse and interactive
+logon risk.
+
+## Service Account Discovery
+
+The assessment identifies MedDefense service accounts using:
+
+```text
+svc_*
+```
+
+and accounts stored in a Service Accounts OU.
+
+For each account the script records:
+
+```text
+MemberOf
+PasswordLastSet
+Password age
+PasswordNeverExpires
+TrustedForDelegation
+AccountNotDelegated
+UseDESKeyOnly
+ServicePrincipalName
+LastLogonDate
+```
+
+## Security Findings
+
+The script flags:
+
+```text
+old passwords
+excessive privileged memberships
+unconstrained delegation
+delegatable accounts
+DES-only Kerberos
+suspicious service-account logons
+```
+
+A password older than:
+
+```text
+90 days
+```
+
+is highlighted for review.
+
+## Delegation Hardening
+
+All MedDefense service accounts are configured with:
+
+```text
+AccountNotDelegated = True
+```
+
+This corresponds to:
+
+```text
+Account is sensitive and cannot be delegated
+```
+
+Unconstrained delegation is removed:
+
+```text
+TrustedForDelegation = False
+```
+
+The target state is therefore:
+
+```text
+service account
+      ↓
+cannot be delegated
+      ↓
+reduced impersonation exposure
+```
+
+## Interactive Logon
+
+Service accounts should be used by services rather than humans.
+
+The hardening baseline adds their SIDs to:
+
+```text
+SeDenyInteractiveLogonRight
+```
+
+and:
+
+```text
+SeDenyRemoteInteractiveLogonRight
+```
+
+This prevents normal local interactive logon and Remote Desktop interactive
+logon with service-account credentials.
+
+## Privileged Groups
+
+The script checks for unauthorized membership in high-privilege groups such
+as:
+
+```text
+Domain Admins
+Enterprise Admins
+Administrators
+Account Operators
+Server Operators
+G_IT_Admins
+```
+
+Unauthorized service-account memberships are removed using:
+
+```powershell
+Remove-ADGroupMember
+```
+
+This implements least privilege.
+
+## svc_ehr Investigation
+
+The MedDefense scenario identifies unusual activity involving:
+
+```text
+svc_ehr
+```
+
+including an approximately:
+
+```text
+03:17 AM
+```
+
+logon.
+
+An unusual logon time is not proof of compromise.
+
+A SOC investigation should correlate the service account with:
+
+```text
+4624 - successful logon
+4648 - explicit credentials
+4672 - privileged logon
+4768 - Kerberos TGT
+4769 - Kerberos service ticket
+4688 - process creation
+Sysmon Event ID 1
+Sysmon Event ID 3
+```
+
+The analyst should determine:
+
+```text
+Where did the logon originate?
+What Logon Type was used?
+Was the source host expected?
+What processes followed?
+Were new network connections created?
+Was the account used interactively?
+```
+
+## Kerberoasting Relationship
+
+Service accounts may have SPNs such as:
+
+```text
+svc_backup
+svc_ehr
+svc_sql
+```
+
+An SPN allows the account to receive Kerberos service tickets.
+
+Risk increases when combined with:
+
+```text
+SPN
++
+weak or old password
++
+RC4/DES
++
+excessive privileges
+```
+
+Task 7 addresses Kerberos encryption.
+
+Task 14 addresses the service-account identity itself.
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe assessment:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\14-service_accounts.ps1
+```
+
+Actual remediation requires:
+
+```powershell
+-Apply
+```
+
+The audit phase should always be reviewed before changing service-account
+privileges or authentication behavior.
+
+## Verification
+
+The validator confirms:
+
+```text
+AccountNotDelegated = True
+TrustedForDelegation = False
+SeDenyInteractiveLogonRight applied
+SeDenyRemoteInteractiveLogonRight applied
+unauthorized privileged memberships removed
+```
+
+Successful checks are reported as:
+
+```text
+[VERIFIED]
+```
+
+## SOC Lesson
+
+Service accounts are attractive attacker targets because they often have:
+
+```text
+long-lived passwords
+SPNs
+privileged access
+non-human usage
+limited monitoring
+```
+
+A compromised service account can provide long-term persistence and lateral
+movement without behaving like a normal user.
+
+The defensive model is:
+
+```text
+strong service-account password
+        +
+AES Kerberos
+        +
+no unnecessary privilege
+        +
+no unconstrained delegation
+        +
+no interactive logon
+        +
+continuous monitoring
+```
+
+The central principle is:
+
+> A service account should have only the privileges and authentication
+> capabilities required for the service it operates.
