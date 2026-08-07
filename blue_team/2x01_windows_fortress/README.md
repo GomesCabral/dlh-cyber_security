@@ -3092,3 +3092,284 @@ The central principle is:
 > A service should be reachable only from the systems and networks that
 > genuinely require it.
 
+---
+
+# Task 12 - AppLocker Policy
+
+## Script
+
+`12-applocker_config.ps1`
+
+## Deliverables
+
+```text
+12-applocker_config.ps1
+applocker_policy.xml
+```
+
+## Goal
+
+Deploy AppLocker application allow-listing to prevent unauthorized
+executables and scripts from running on MedDefense systems.
+
+The policy directly addresses ransomware deployment through unauthorized
+payload execution.
+
+## GPO
+
+```text
+MedDefense - AppLocker Policy
+```
+
+## Executable Rules
+
+AppLocker executable rules cover:
+
+```text
+.exe
+.com
+```
+
+Allowed paths:
+
+```text
+C:\Windows\*
+C:\Program Files\*
+C:\Program Files (x86)\*
+```
+
+The approved clinical application is explicitly allowed:
+
+```text
+DicomViewer.exe
+```
+
+Expected MedDefense path:
+
+```text
+C:\Program Files\MedImage Corp\DicomViewer\DicomViewer.exe
+```
+
+All other executable locations are implicitly denied by the allow-list
+model.
+
+## Script Rules
+
+AppLocker script rules cover:
+
+```text
+.ps1
+.bat
+.cmd
+.vbs
+```
+
+Allowed paths:
+
+```text
+C:\Windows\*
+C:\MedDefense_Lab\Scripts\*
+```
+
+Scripts outside the approved paths are implicitly denied.
+
+## Default Deny
+
+AppLocker uses allow-list behavior.
+
+Once Allow rules exist in a collection:
+
+```text
+matches Allow
+    ↓
+permitted
+
+does not match Allow
+    ↓
+implicit deny
+```
+
+An explicit global `Deny *` rule is not used because AppLocker Deny rules
+take precedence over Allow rules.
+
+## Audit Only Mode
+
+The policy is configured with:
+
+```text
+EnforcementMode="AuditOnly"
+```
+
+This is deliberate.
+
+During the testing phase:
+
+```text
+unauthorized application
+        ↓
+AppLocker evaluates
+        ↓
+WOULD BLOCK
+        ↓
+event generated
+        ↓
+application still runs
+```
+
+This allows MedDefense to identify legitimate applications that require
+exceptions before moving to enforcement.
+
+## Clinical Constraint
+
+MedDefense physicians depend on:
+
+```text
+DicomViewer.exe
+```
+
+A security policy that accidentally blocks an approved medical application
+could affect clinical availability.
+
+The deployment workflow is therefore:
+
+```text
+Build allow-list
+      ↓
+Audit Only
+      ↓
+Collect AppLocker telemetry
+      ↓
+Identify legitimate exceptions
+      ↓
+Tune policy
+      ↓
+Validate
+      ↓
+Future enforcement
+```
+
+## Application Identity
+
+AppLocker depends on the Application Identity service:
+
+```text
+AppIDSvc
+```
+
+The script ensures the service is:
+
+```text
+Running
+```
+
+before validating the policy.
+
+## Controlled Testing
+
+An approved executable is tested:
+
+```text
+C:\Windows\System32\notepad.exe
+```
+
+Expected:
+
+```text
+ALLOWED
+```
+
+The script also copies `calc.exe` to:
+
+```text
+C:\Temp\calc.exe
+```
+
+but does **not execute it**.
+
+`Test-AppLockerPolicy` evaluates the path.
+
+Expected:
+
+```text
+WOULD BLOCK
+```
+
+The temporary executable is removed after validation.
+
+## Policy Export
+
+The resulting policy is exported to:
+
+```text
+applocker_policy.xml
+```
+
+This provides machine-readable compliance evidence and allows the policy
+to be inspected or version-controlled.
+
+## Safety
+
+The script defaults to preview / audit mode:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\12-applocker_config.ps1
+```
+
+Actual Group Policy and service changes require:
+
+```powershell
+-Apply
+```
+
+## Crimson Tide Relevance
+
+The Crimson Tide ransomware deployment model was:
+
+```text
+Compromised Domain Controller
+        ↓
+malicious GPO
+        ↓
+ransomware executable distributed
+        ↓
+endpoint executes payload
+        ↓
+encryption
+```
+
+AppLocker introduces another defensive layer:
+
+```text
+malicious executable
+        ↓
+execution requested
+        ↓
+AppLocker
+        ↓
+not on allow-list
+        ↓
+BLOCK
+```
+
+During this project the policy remains in `AuditOnly`, so the same event is
+recorded as `WOULD BLOCK` while policy tuning is performed.
+
+## SOC Lesson
+
+AppLocker is both a prevention control and a telemetry source.
+
+A SOC analyst should investigate AppLocker events showing executables or
+scripts that would be blocked because they can reveal:
+
+```text
+malware execution
+user-writable-path execution
+unauthorized PowerShell scripts
+ransomware payloads
+administrative-policy violations
+```
+
+The key principle is:
+
+> Application allow-listing reduces the attacker's ability to execute
+> arbitrary payloads even after obtaining access to the system.

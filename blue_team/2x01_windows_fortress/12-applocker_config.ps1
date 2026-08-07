@@ -612,17 +612,20 @@ Start-Sleep -Seconds 3
 Write-Host ""
 Write-Step "Exporting AppLocker policy..."
 
-$EffectivePolicy = Get-AppLockerPolicy `
+# Export-AppLockerPolicy creates the machine-readable XML deliverable.
+Export-AppLockerPolicy `
     -Effective `
-    -Xml
+    -Path $PolicyFile
 
-[System.IO.File]::WriteAllText(
-    $PolicyFile,
-    [string]$EffectivePolicy,
-    [System.Text.UTF8Encoding]::new($false)
-)
+if (Test-Path $PolicyFile) {
 
-Write-Host "    applocker_policy.xml [EXPORTED]"
+    Write-Host "    applocker_policy.xml [EXPORTED]"
+}
+else {
+
+    Write-Host "    applocker_policy.xml [NOT VERIFIED]"
+    $VerificationFailures++
+}
 
 # ===========================================================================
 # Controlled tests - NO unauthorized executable is actually executed
