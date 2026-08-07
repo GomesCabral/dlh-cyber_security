@@ -549,8 +549,50 @@ foreach ($Subcategory in $RequiredAuditSubcategories) {
 
 $AuditPolicy = [ordered]@{
     raw_auditpol_output = $AuditRaw
+
     required_subcategories = $AuditStatuses
+
     required_subcategory_count = $AuditStatuses.Count
+
+    # Expected Windows Security telemetry for Module 3 analysts.
+    expected_event_ids = @(
+        [PSCustomObject]@{
+            event_id = 4624
+            name = "Successful Logon"
+        },
+        [PSCustomObject]@{
+            event_id = 4625
+            name = "Failed Logon"
+        },
+        [PSCustomObject]@{
+            event_id = 4648
+            name = "Logon Using Explicit Credentials"
+        },
+        [PSCustomObject]@{
+            event_id = 4672
+            name = "Special Privileges Assigned to New Logon"
+        },
+        [PSCustomObject]@{
+            event_id = 4688
+            name = "Process Creation"
+        },
+        [PSCustomObject]@{
+            event_id = 4720
+            name = "User Account Created"
+        },
+        [PSCustomObject]@{
+            event_id = 4726
+            name = "User Account Deleted"
+        },
+        [PSCustomObject]@{
+            event_id = 4732
+            name = "Member Added to Security-Enabled Local Group"
+        },
+        [PSCustomObject]@{
+            event_id = 1102
+            name = "Audit Log Cleared"
+        }
+    )
 
     process_command_line_logging = Get-RegistryValueSafe `
         -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit" `

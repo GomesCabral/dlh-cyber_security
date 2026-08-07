@@ -7,7 +7,7 @@
                             "forest_name":  "meddefense.local",
                             "domain_mode":  "Windows2016Domain",
                             "forest_mode":  "Windows2016Forest",
-                            "timestamp":  "2026-08-07T14:08:13.3603421+02:00",
+                            "timestamp":  "2026-08-07T14:11:49.7724545+02:00",
                             "script_runner":  "MEDDEFENSE\\analyst",
                             "script_name":  "16-hardened_state_export.ps1"
                         },
@@ -266,6 +266,44 @@
                                                         }
                                                     ],
                          "required_subcategory_count":  11,
+                         "expected_event_ids":  [
+                                                    {
+                                                        "event_id":  4624,
+                                                        "name":  "Successful Logon"
+                                                    },
+                                                    {
+                                                        "event_id":  4625,
+                                                        "name":  "Failed Logon"
+                                                    },
+                                                    {
+                                                        "event_id":  4648,
+                                                        "name":  "Logon Using Explicit Credentials"
+                                                    },
+                                                    {
+                                                        "event_id":  4672,
+                                                        "name":  "Special Privileges Assigned to New Logon"
+                                                    },
+                                                    {
+                                                        "event_id":  4688,
+                                                        "name":  "Process Creation"
+                                                    },
+                                                    {
+                                                        "event_id":  4720,
+                                                        "name":  "User Account Created"
+                                                    },
+                                                    {
+                                                        "event_id":  4726,
+                                                        "name":  "User Account Deleted"
+                                                    },
+                                                    {
+                                                        "event_id":  4732,
+                                                        "name":  "Member Added to Security-Enabled Local Group"
+                                                    },
+                                                    {
+                                                        "event_id":  1102,
+                                                        "name":  "Audit Log Cleared"
+                                                    }
+                                                ],
                          "process_command_line_logging":  null,
                          "security_log_max_size_bytes":  134217728
                      },
