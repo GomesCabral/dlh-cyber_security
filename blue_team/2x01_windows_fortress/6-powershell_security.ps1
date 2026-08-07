@@ -578,10 +578,12 @@ $TestStartTime = Get-Date
 Write-Host "    Decoded input: $DecodedCommand"
 Write-Host "    Encoded input: $EncodedCommand"
 
+# Controlled test using the common attacker-style short switch: -enc
+# Equivalent to -EncodedCommand.
 powershell.exe `
     -NoProfile `
     -NonInteractive `
-    -EncodedCommand $EncodedCommand |
+    -enc $EncodedCommand |
 Out-Null
 
 Start-Sleep -Seconds 3
