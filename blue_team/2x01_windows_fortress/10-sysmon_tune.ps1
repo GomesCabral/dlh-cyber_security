@@ -32,6 +32,14 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Native Windows tools such as cmd.exe and schtasks.exe do not support
+# UNC paths as their current working directory.
+#
+# The project itself may remain on \\VBOXSVR, but native commands are
+# executed from a local Windows directory.
+$OriginalLocation = Get-Location
+Set-Location $env:WINDIR
+
 # ===========================================================================
 # Paths and constants
 # ===========================================================================
@@ -396,23 +404,32 @@ function Cleanup-TestArtifacts {
 
     Write-Host "[*] Cleaning controlled test artifacts..."
 
-    Remove-Item `
-        -Path $PsExecTestKey `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
+    # Remove temporary PsExec-style registry key.
+    if (Test-Path $PsExecTestKey) {
 
-    schtasks.exe `
-        /delete `
-        /tn $ScheduledTaskName `
-        /f `
-        *> $null
+        Remove-Item `
+            -Path $PsExecTestKey `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
 
-    Remove-Item `
-        -Path $TestDirectory `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
+    # Remove temporary scheduled task only if it exists.
+    # cmd.exe handles schtasks stderr so cleanup never aborts the script.
+    cmd.exe /c "schtasks.exe /query /tn `"$ScheduledTaskName`" >nul 2>&1 && schtasks.exe /delete /tn `"$ScheduledTaskName`" /f >nul 2>&1" |
+        Out-Null
+
+    # Remove temporary test directory.
+    if (Test-Path $TestDirectory) {
+
+        Remove-Item `
+            -Path $TestDirectory `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+
+    Write-Host "    Cleanup complete [OK]"
 }
 
 # ===========================================================================
@@ -600,17 +617,39 @@ try {
 
     $StartRule1 = Get-Date
 
-    Copy-Item `
-        -Path "$env:WINDIR\System32\cmd.exe" `
-        -Destination $FakeRclone `
-        -Force
+# Build a harmless standalone executable named rclone.exe.
+# This avoids copying/renaming cmd.exe and prevents MUI/resource errors.
+$RcloneSource = @'
+using System;
 
-    & $FakeRclone `
-        /c `
-        "echo $Marker" `
-        *> $null
+public class MedDefenseRcloneTest
+{
+    public static int Main(string[] args)
+    {
+        Console.WriteLine("MEDDEFENSE_SYSMON_RULE_TEST");
+        return 0;
+    }
+}
+'@
 
-    Start-Sleep -Seconds 2
+if (Test-Path $FakeRclone) {
+    Remove-Item $FakeRclone -Force
+}
+
+Add-Type `
+    -TypeDefinition $RcloneSource `
+    -Language CSharp `
+    -OutputAssembly $FakeRclone `
+    -OutputType ConsoleApplication
+
+Start-Process `
+    -FilePath $FakeRclone `
+    -ArgumentList "--meddefense-test" `
+    -WorkingDirectory $TestDirectory `
+    -Wait `
+    -WindowStyle Hidden
+
+Start-Sleep -Seconds 2
 
     $Rule1Event = Get-RecentSysmonEvent `
         -EventId 1 `
@@ -784,14 +823,41 @@ try {
 
     $StartRule5 = Get-Date
 
-    schtasks.exe `
-        /create `
-        /tn $ScheduledTaskName `
-        /tr "cmd.exe /c exit" `
-        /sc ONCE `
-        /st 23:59 `
-        /f `
-        *> $null
+# Schedule harmless test task 10 minutes in the future.
+# The task is created only to generate schtasks /create telemetry
+# and is deleted during cleanup before it executes.
+$TaskTime = (Get-Date).AddMinutes(10).ToString("HH:mm")
+
+cmd.exe /c "schtasks.exe /create /tn `"$ScheduledTaskName`" /tr `"cmd.exe /c exit`" /sc ONCE /st $TaskTime /f >nul 2>&1"
+
+if ($LASTEXITCODE -ne 0) {
+
+    Write-Host "    Rule 5: schtasks /create failed [FAIL]"
+    $Failed++
+}
+else {
+
+    Start-Sleep -Seconds 2
+
+    $Rule5Event = Get-RecentSysmonEvent `
+        -EventId 1 `
+        -StartTime $StartRule5 `
+        -Patterns @(
+            "schtasks.exe",
+            "/create"
+        )
+
+    if ($null -ne $Rule5Event) {
+
+        Write-Host "    Rule 5: schtasks /create            [PASS]"
+        $Passed++
+    }
+    else {
+
+        Write-Host "    Rule 5: schtasks /create            [FAIL]"
+        $Failed++
+    }
+}
 
     Start-Sleep -Seconds 2
 
