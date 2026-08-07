@@ -2519,3 +2519,330 @@ The central lesson is:
 > Installing a sensor is not enough. A security engineer must prove that
 > the expected events are actually being generated.
 
+---
+
+# Task 10 - Sysmon Detection Tuning
+
+## Script
+
+`10-sysmon_tune.ps1`
+
+## Deliverable
+
+The existing:
+
+```text
+sysmonconfig.xml
+```
+
+is updated with MedDefense-specific detection rules.
+
+## Goal
+
+Extend the generic Sysmon baseline with detection rules derived directly
+from the MedDefense Crimson Tide threat model.
+
+The task moves from generic endpoint telemetry to threat-informed detection.
+
+## Custom Rules
+
+### Rule 1 - Rclone Execution
+
+Threat:
+
+```text
+Data exfiltration
+```
+
+Detection:
+
+```text
+Sysmon Event ID 1
+Image ends with:
+\rclone.exe
+```
+
+Rclone is a legitimate file synchronization utility but may be abused to
+transfer stolen data to external cloud storage.
+
+---
+
+### Rule 2 - PsExec Service Installation
+
+Threat:
+
+```text
+Lateral movement
+```
+
+Detection:
+
+```text
+Sysmon Event ID 13
+TargetObject contains:
+\Services\PSEXESVC
+```
+
+PsExec commonly creates a temporary Windows service named:
+
+```text
+PSEXESVC
+```
+
+Monitoring this Registry activity can therefore provide evidence of PsExec
+usage.
+
+---
+
+### Rule 3 - Encoded PowerShell
+
+Threat:
+
+```text
+Execution / Defense Evasion
+```
+
+Detection:
+
+```text
+Sysmon Event ID 1
+Image ends with:
+\powershell.exe
+
+CommandLine contains:
+-enc
+```
+
+The Crimson Tide scenario used encoded PowerShell during post-exploitation.
+
+The rule identifies the common short form:
+
+```powershell
+powershell.exe -enc <base64>
+```
+
+The associated PowerShell Event ID `4104` can provide additional decoded
+script content.
+
+---
+
+### Rule 4 - Shadow Copy Deletion
+
+Threat:
+
+```text
+Ransomware pre-encryption activity
+```
+
+Detection:
+
+```text
+Sysmon Event ID 1
+Image:
+vssadmin.exe
+
+CommandLine:
+delete shadows
+```
+
+Ransomware may remove Volume Shadow Copies to make local recovery more
+difficult.
+
+The validation trigger uses a deliberately non-existent volume so that the
+command line can be observed without deleting real shadow copies.
+
+---
+
+### Rule 5 - Scheduled Task Creation
+
+Threat:
+
+```text
+Persistence
+```
+
+Detection:
+
+```text
+Sysmon Event ID 1
+Image:
+schtasks.exe
+
+CommandLine contains:
+/create
+```
+
+Unexpected scheduled-task creation should be correlated with:
+
+- user identity;
+- parent process;
+- task name;
+- executable path;
+- timing;
+- surrounding authentication activity.
+
+---
+
+## Detection Pipeline
+
+The workflow is:
+
+```text
+Threat model
+    ↓
+Specific attacker behavior
+    ↓
+Sysmon rule
+    ↓
+Endpoint event
+    ↓
+SIEM
+    ↓
+Detection rule
+    ↓
+SOC triage
+```
+
+The difference between Task 9 and Task 10 is:
+
+```text
+Task 9:
+Collect useful endpoint telemetry
+
+Task 10:
+Tune that telemetry for MedDefense-specific threats
+```
+
+## Controlled Validation
+
+Every rule has a safe controlled trigger.
+
+### Rclone
+
+A harmless copy of:
+
+```text
+cmd.exe
+```
+
+is temporarily named:
+
+```text
+rclone.exe
+```
+
+and executes only a benign `echo` command.
+
+No real Rclone transfer occurs.
+
+### PsExec
+
+A temporary Registry key containing:
+
+```text
+PSEXESVC
+```
+
+is created and removed after validation.
+
+No PsExec remote execution occurs.
+
+### Encoded PowerShell
+
+A harmless command is Base64 encoded and executed using:
+
+```powershell
+-enc
+```
+
+### vssadmin
+
+The test references an unused drive letter so that no real shadow copies
+are removed.
+
+### Scheduled Task
+
+A temporary harmless scheduled task is created and immediately removed by
+cleanup logic.
+
+## Cleanup
+
+The script removes:
+
+```text
+temporary rclone.exe
+temporary PSEXESVC test Registry key
+temporary scheduled task
+temporary test directory
+```
+
+after testing.
+
+## Validation
+
+Expected result:
+
+```text
+Rule 1: rclone.exe detection        [PASS]
+Rule 2: PsExec registry key         [PASS]
+Rule 3: Encoded PowerShell          [PASS]
+Rule 4: vssadmin execution          [PASS]
+Rule 5: schtasks /create            [PASS]
+
+Custom rules: 5 added | Tests: 5/5 PASS
+```
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\10-sysmon_tune.ps1
+```
+
+Actual configuration changes and controlled triggers require:
+
+```powershell
+-Apply
+```
+
+The original Sysmon configuration is backed up to:
+
+```text
+sysmonconfig.pre-task10.xml
+```
+
+before modification.
+
+If Sysmon rejects the updated configuration, the script restores the
+previous XML.
+
+## SOC Lesson
+
+More telemetry is not automatically better telemetry.
+
+A generic Sysmon configuration may generate thousands of events, but the
+most useful detections are those tied to realistic attacker behavior.
+
+Threat-informed detection asks:
+
+```text
+What does the attacker do?
+        ↓
+Which telemetry records it?
+        ↓
+Which fields identify the behavior?
+        ↓
+How do I validate the rule?
+        ↓
+How will the SOC triage the alert?
+```
+
+This is the beginning of practical detection engineering.
+
