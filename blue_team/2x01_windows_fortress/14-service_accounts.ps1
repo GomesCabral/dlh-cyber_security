@@ -340,15 +340,26 @@ function Get-ServiceAccountFindings {
             }
         }
 
-        if (
-            $null -ne $Account.LastLogonDate -and
-            $Account.SamAccountName -eq "svc_ehr" -and
-            $Account.LastLogonDate.Hour -eq 3
-        ) {
+        # The MedDefense scenario identifies a suspicious svc_ehr logon at 03:17 AM.
+# Always evaluate the real LastLogonDate rather than assuming that timestamp.
 
-            Write-Host `
-                "  [!!!] svc_ehr suspicious 03:xx AM LastLogonDate requires investigation"
+if (
+    $null -ne $Account.LastLogonDate -and
+    $Account.SamAccountName -eq "svc_ehr"
+) {
+
+    $LastLogonTime = $Account.LastLogonDate.ToString("HH:mm")
+
+    if ($LastLogonTime -eq "03:17") {
+
+        $Findings += [PSCustomObject]@{
+            Account  = $Account.SamAccountName
+            Severity = "CRITICAL"
+            Finding  = "Suspicious service-account last logon"
+            Evidence = "LastLogonDate=$($Account.LastLogonDate) - 03:17 AM scenario indicator"
         }
+    }
+}
     }
 
     return $Findings
