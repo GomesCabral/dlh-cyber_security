@@ -3373,3 +3373,247 @@ The key principle is:
 
 > Application allow-listing reduces the attacker's ability to execute
 > arbitrary payloads even after obtaining access to the system.
+
+---
+
+# Task 13 - RDP and Remote Access Reduction
+
+## Script
+
+`13-rdp_hardening.ps1`
+
+## Goal
+
+Reduce Remote Desktop attack surface and lateral-movement risk by restricting
+RDP to authorized administrators and enforcing stronger session controls.
+
+## Network Level Authentication
+
+The target configuration is:
+
+```text
+UserAuthentication = 1
+```
+
+This enables Network Level Authentication (NLA).
+
+NLA requires authentication before a complete Remote Desktop session is
+established.
+
+## Authorized RDP Users
+
+RDP access is restricted to:
+
+```text
+G_IT_Admins
+```
+
+The script reviews:
+
+```text
+Remote Desktop Users
+```
+
+and removes:
+
+```text
+Domain Users
+```
+
+if present.
+
+It then ensures:
+
+```text
+G_IT_Admins
+```
+
+is a member.
+
+## Session Controls
+
+Idle sessions are limited to:
+
+```text
+15 minutes
+```
+
+Registry policy:
+
+```text
+MaxIdleTime = 900000
+```
+
+Maximum session duration is:
+
+```text
+8 hours
+```
+
+Registry policy:
+
+```text
+MaxConnectionTime = 28800000
+```
+
+## Encryption
+
+RDP is configured for high encryption and TLS:
+
+```text
+MinEncryptionLevel = 3
+SecurityLayer = 2
+```
+
+Target:
+
+```text
+High / SSL
+```
+
+## Clipboard Redirection
+
+Clipboard redirection is disabled:
+
+```text
+fDisableClip = 1
+```
+
+This reduces the ability to transfer data through an RDP clipboard session.
+
+## Drive Redirection
+
+Drive redirection is disabled:
+
+```text
+fDisableCdm = 1
+```
+
+This reduces the risk of copying files between the remote system and local
+drives through RDP.
+
+## Remote Assistance
+
+Remote Assistance is disabled:
+
+```text
+fAllowToGetHelp = 0
+```
+
+Unsolicited Remote Assistance is also disabled.
+
+## Defense-in-Depth
+
+Task 11 restricts network access:
+
+```text
+TCP 3389
+↓
+10.10.3.0/24 only
+```
+
+Task 13 restricts authentication and session behavior:
+
+```text
+RDP
+↓
+NLA
+↓
+G_IT_Admins
+↓
+restricted session
+```
+
+The combined protection is:
+
+```text
+Network restriction
+       +
+Identity restriction
+       +
+Strong authentication
+       +
+Session controls
+       +
+Data redirection controls
+```
+
+## Crimson Tide Relevance
+
+Crimson Tide used remote access during lateral movement.
+
+An exposed RDP service can provide an attacker with:
+
+```text
+interactive remote access
+privileged session access
+clipboard transfer
+drive redirection
+lateral movement
+```
+
+The MedDefense controls reduce these opportunities.
+
+## Safety
+
+The script defaults to:
+
+```text
+AUDIT ONLY
+```
+
+Safe execution:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\13-rdp_hardening.ps1
+```
+
+Actual remediation requires:
+
+```powershell
+-Apply
+```
+
+## Verification
+
+The script checks:
+
+```text
+NLA = Required
+G_IT_Admins = authorized
+Domain Users = removed
+Idle timeout = 15 minutes
+Maximum session = 8 hours
+Encryption = High/SSL
+Clipboard = Disabled
+Drive redirection = Disabled
+Remote Assistance = Disabled
+```
+
+Successful checks are reported as:
+
+```text
+[VERIFIED]
+```
+
+## SOC Lesson
+
+RDP is both a legitimate administration mechanism and a common lateral
+movement channel.
+
+A SOC analyst should correlate RDP activity with:
+
+```text
+4624  successful logon
+4625  failed logon
+4648  explicit credentials
+4672  privileged logon
+1149  Remote Desktop authentication
+Sysmon network telemetry
+Windows Firewall logs
+```
+
+The core principle is:
+
+> Remote administration should be accessible only from authorized networks
+> and usable only by explicitly authorized administrators.
