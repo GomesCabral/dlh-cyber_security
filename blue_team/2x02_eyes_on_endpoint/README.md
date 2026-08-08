@@ -666,3 +666,284 @@ The central principle is:
 
 > Telemetry coverage should be measured against attacker behavior rather
 > than against the simple presence of a logging tool.
+
+---
+
+# Task 2 - PowerShell Logging Validation
+
+## Script
+
+```text
+2-powershell_logging_validation.ps1
+```
+
+## Goal
+
+Validate that the PowerShell logging controls deployed during Windows
+hardening produce sufficient telemetry for security investigation.
+
+The validation covers:
+
+```text
+Script Block Logging
+Module Logging
+Transcription
+```
+
+The objective is not simply to confirm that the settings are enabled.
+
+The objective is to prove that real PowerShell activity produces usable
+evidence.
+
+## PowerShell Event IDs
+
+The primary events validated are:
+
+```text
+4103 - Module Logging
+4104 - Script Block Logging
+```
+
+## Test 1 - Simple Command
+
+Controlled command:
+
+```powershell
+Get-Process
+```
+
+Expected telemetry:
+
+```text
+Event ID 4104
+```
+
+The validator checks that the command appears in the Script Block Log.
+
+A real attacker may use commands such as:
+
+```powershell
+Get-Process
+Get-Service
+Get-ChildItem
+```
+
+during host discovery.
+
+## Test 2 - Encoded PowerShell
+
+Controlled execution:
+
+```text
+powershell.exe -enc <Base64>
+```
+
+The encoded payload contains:
+
+```powershell
+Write-Host "Test"
+```
+
+The validator checks that Event ID `4104` contains the decoded script
+content rather than only the Base64 input.
+
+This matters because attackers frequently use encoded PowerShell to make
+command lines harder to read.
+
+The telemetry chain is:
+
+```text
+powershell.exe -enc ...
+        ↓
+encoded command
+        ↓
+PowerShell decodes it
+        ↓
+Script Block Logging
+        ↓
+4104
+        ↓
+decoded script visible to SOC
+```
+
+## Test 3 - Module Logging
+
+Controlled action:
+
+```powershell
+Import-Module ActiveDirectory
+Get-ADDomain
+```
+
+Expected telemetry:
+
+```text
+Event ID 4103
+```
+
+Module Logging helps analysts understand which PowerShell capabilities were
+used during a session.
+
+For example, unexpected use of the ActiveDirectory module may indicate
+domain reconnaissance.
+
+## Test 4 - Multi-Line Script Block
+
+The validator executes a controlled twelve-line script.
+
+It verifies that Event ID `4104` contains the complete script block or enough
+of the expected content to determine its detail level.
+
+This matters because attacker scripts frequently perform several operations
+within a single script block.
+
+Partial logging can remove important context from an investigation.
+
+## Test 5 - Transcription
+
+PowerShell Transcription should generate text files under:
+
+```text
+C:\PSTranscripts\
+```
+
+The validator launches a controlled PowerShell session containing a unique
+marker and searches newly created transcript files for that marker.
+
+Expected result:
+
+```text
+C:\PSTranscripts\*.txt
+```
+
+with the session content recorded.
+
+## CAPTURED and MISSED
+
+Each telemetry test is classified based on whether the expected evidence was
+observed.
+
+```text
+CAPTURED
+MISSED
+```
+
+Console validation is represented as:
+
+```text
+[PASS]
+[FAIL]
+```
+
+The script also identifies the level of detail:
+
+```text
+full content
+partial content
+```
+
+## Real-World Example
+
+An attacker executes:
+
+```text
+powershell.exe -enc <encoded payload>
+```
+
+A process event may reveal only:
+
+```text
+powershell.exe
+-enc
+Base64 data
+```
+
+Script Block Logging may reveal:
+
+```text
+Invoke-WebRequest
+Invoke-Expression
+credential discovery
+network discovery
+```
+
+This changes the SOC analyst's question from:
+
+```text
+"PowerShell ran."
+```
+
+to:
+
+```text
+"What exactly did PowerShell do?"
+```
+
+## Detection Workflow
+
+```text
+PowerShell execution
+       ↓
+4104 Script Block Logging
+       +
+4103 Module Logging
+       +
+Transcription
+       ↓
+SIEM
+       ↓
+Detection
+       ↓
+SOC triage
+       ↓
+Incident investigation
+```
+
+## Safety
+
+The validation uses only benign commands.
+
+It does not:
+
+```text
+modify Group Policy
+change PowerShell logging configuration
+modify Active Directory
+change security controls
+download payloads
+execute malware
+```
+
+## Expected Summary
+
+```text
+Tests: 5 | Captured: 5 | Missed: 0
+```
+
+If a test reports:
+
+```text
+MISSED
+```
+
+the result should be investigated as a telemetry coverage gap rather than
+changed artificially to PASS.
+
+## SOC Lesson
+
+PowerShell being logged is not the same as PowerShell being logged well.
+
+A useful telemetry source must answer:
+
+```text
+What command ran?
+Was encoded content decoded?
+Which module was used?
+Was the complete script visible?
+Was the session transcribed?
+```
+
+The central principle is:
+
+> Logging configuration is only valuable when controlled testing proves that
+> the evidence required for investigation is actually produced.
