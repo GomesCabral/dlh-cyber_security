@@ -1265,3 +1265,324 @@ The central principle is:
 
 > Security telemetry becomes significantly more valuable when events from
 > different sources can be queried and correlated using a consistent schema.
+
+---
+
+# Task 4 - Windows Telemetry Quality Gate
+
+## Script
+
+```text
+4-windows_telemetry_quality.ps1
+```
+
+## Deliverable
+
+```text
+windows_telemetry_quality.json
+```
+
+## Goal
+
+Assess whether the normalized Windows telemetry export is sufficiently
+complete, continuous and useful for SOC analyst handoff.
+
+The script reads:
+
+```text
+windows_events_export.json
+```
+
+and evaluates several telemetry quality dimensions.
+
+## Event Distribution
+
+The report calculates:
+
+```text
+count per Event ID
+percentage of total events
+```
+
+This identifies dominant or noisy event types.
+
+A large number of events does not automatically indicate high telemetry
+quality.
+
+## Channel Distribution
+
+The quality gate measures telemetry from:
+
+```text
+Security
+Sysmon
+PowerShell
+```
+
+The report records both event count and percentage for each source.
+
+## Time Coverage
+
+Telemetry is grouped by hour.
+
+The report records:
+
+```text
+events per hour
+hours with events
+hours without events
+```
+
+This makes time-based visibility gaps easier to identify.
+
+## Gap Detection
+
+A telemetry gap is reported when:
+
+```text
+no events are observed for more than 30 minutes
+```
+
+Potential causes include:
+
+```text
+collector failure
+endpoint shutdown
+logging service failure
+network interruption
+security control failure
+attacker log suppression
+```
+
+The report records:
+
+```text
+gap start
+gap end
+duration
+largest gap
+```
+
+## Command-Line Completeness
+
+Process telemetry is evaluated for:
+
+```text
+Security 4688
+Sysmon Event ID 1
+```
+
+The quality gate checks whether:
+
+```text
+command_line
+```
+
+is populated.
+
+Example:
+
+```text
+powershell.exe
+```
+
+without a command line provides limited context.
+
+By contrast:
+
+```text
+powershell.exe -enc ...
+```
+
+gives analysts much stronger evidence.
+
+## Source IP Completeness
+
+Authentication telemetry is evaluated for:
+
+```text
+4624
+4625
+```
+
+The report measures whether:
+
+```text
+source_ip
+```
+
+is populated.
+
+Source IP information is essential for:
+
+```text
+brute-force analysis
+remote access investigation
+lateral movement detection
+network correlation
+blocking decisions
+```
+
+## Script Block Completeness
+
+PowerShell Event ID:
+
+```text
+4104
+```
+
+is checked for:
+
+```text
+script_block_text
+```
+
+The quality gate measures how often the decoded PowerShell content is
+available to analysts.
+
+## Required Field Completeness
+
+The report also evaluates event-specific fields for:
+
+```text
+4624
+4625
+4672
+4688
+4104
+Sysmon 1
+Sysmon 3
+Sysmon 11
+Sysmon 13
+Sysmon 22
+```
+
+For every required field the report records:
+
+```text
+total events
+populated fields
+empty or null fields
+completeness percentage
+```
+
+## Quality Score
+
+The final quality score ranges from:
+
+```text
+0 to 100
+```
+
+The lab uses the following weighted model:
+
+```text
+25% Time coverage
+20% Gap continuity
+20% Command-line completeness
+15% Source IP completeness
+15% Script block completeness
+5%  Channel presence
+```
+
+## Assessment
+
+The score is classified as:
+
+```text
+good
+acceptable
+poor
+```
+
+Thresholds:
+
+```text
+85-100  good
+65-84   acceptable
+0-64    poor
+```
+
+## Real-World Example
+
+A SOC may receive:
+
+```text
+500,000 Windows events
+```
+
+but discover:
+
+```text
+Command-line completeness = 20%
+Source IP completeness = 40%
+4104 telemetry = missing
+4-hour telemetry gap
+```
+
+Despite the high event volume, the dataset is poor for investigation.
+
+The quality gate therefore evaluates:
+
+```text
+quantity
++
+continuity
++
+field completeness
++
+source diversity
+```
+
+rather than event volume alone.
+
+## Noise Analysis
+
+The report identifies whether one Event ID represents a very large percentage
+of the entire dataset.
+
+Possible classifications:
+
+```text
+balanced
+moderate_concentration
+high_concentration
+```
+
+High event concentration may indicate noisy telemetry that requires tuning.
+
+## SOC Workflow
+
+```text
+Raw Windows events
+      ↓
+Task 3 normalization
+      ↓
+windows_events_export.json
+      ↓
+Task 4 quality gate
+      ↓
+good / acceptable / poor
+      ↓
+analyst handoff
+```
+
+## Security Engineering Lesson
+
+A logging pipeline should not be judged only by whether events are arriving.
+
+A mature telemetry pipeline asks:
+
+```text
+Are events continuous?
+Are important fields populated?
+Are all important channels present?
+Are there unexplained gaps?
+Is the dataset dominated by noise?
+Can an analyst reconstruct attacker activity?
+```
+
+The central principle is:
+
+> Telemetry should be measured by investigative usefulness, not simply by
+> event volume.
