@@ -101,6 +101,7 @@ function Convert-SysmonEventToObject {
 
     return [PSCustomObject]@{
         EventId     = $Event.Id
+        timestamp   = $Event.TimeCreated
         TimeCreated = $Event.TimeCreated
         RecordId    = $Event.RecordId
         Fields      = [PSCustomObject]$Fields
