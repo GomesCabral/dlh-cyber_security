@@ -441,3 +441,228 @@ The central principle of this task is:
 > Deployment does not equal coverage. A telemetry source is only useful when
 > the expected security events are proven to exist with enough context for
 > detection and investigation.
+
+---
+
+# Task 1 - Sysmon ATT&CK Coverage Matrix
+
+## Script
+
+```text
+1-sysmon_coverage_matrix.ps1
+```
+
+## Deliverable
+
+```text
+sysmon_coverage_matrix.json
+```
+
+## Goal
+
+Measure whether the current Sysmon configuration provides sufficient
+telemetry to observe attacker techniques defined in MITRE ATT&CK.
+
+The task evaluates coverage using three dimensions:
+
+```text
+Event ID enabled
+        +
+filter behavior
+        +
+useful evidence fields
+```
+
+## Coverage States
+
+Each ATT&CK technique is classified as:
+
+```text
+covered
+partial
+blind
+```
+
+### Covered
+
+All required Event IDs are enabled and no obvious filtering conflict was
+identified.
+
+### Partial
+
+Only part of the required telemetry exists or filtering could suppress
+relevant activity.
+
+### Blind
+
+None of the required Event IDs are available.
+
+## ATT&CK Mappings
+
+The matrix includes:
+
+```text
+T1059     Command and Scripting Interpreter
+T1053     Scheduled Task/Job
+T1547     Boot or Logon Autostart Execution
+T1055     Process Injection
+T1071     Application Layer Protocol
+T1574.002 DLL Side-Loading
+T1027     Obfuscated or Compressed Files
+```
+
+## Sysmon Event Mapping
+
+Important Sysmon events include:
+
+```text
+1  - ProcessCreate
+3  - NetworkConnect
+7  - ImageLoad
+8  - CreateRemoteThread
+10 - ProcessAccess
+11 - FileCreate
+13 - Registry value modification
+15 - FileCreateStreamHash
+22 - DNSQuery
+```
+
+## Filter Analysis
+
+An enabled Event ID does not automatically guarantee visibility.
+
+For example:
+
+```text
+NetworkConnect enabled
+        ↓
+onmatch="exclude"
+        ↓
+attacker connection matches exclusion
+        ↓
+event suppressed
+```
+
+The coverage matrix therefore inspects both:
+
+```text
+include rules
+exclude rules
+```
+
+that may suppress relevant attacker activity.
+
+## Evidence Fields
+
+Coverage also depends on useful event detail.
+
+Examples include:
+
+```text
+CommandLine
+ParentImage
+DestinationIp
+DestinationPort
+TargetFilename
+TargetObject
+QueryName
+QueryResults
+Hashes
+GrantedAccess
+```
+
+These fields allow SOC analysts to investigate the context of an event.
+
+## Real-World Example
+
+A malicious document launches:
+
+```text
+WINWORD.EXE
+      ↓
+powershell.exe -enc ...
+```
+
+If Sysmon Event ID 1 is available, analysts may observe:
+
+```text
+Image
+CommandLine
+ParentImage
+User
+Hashes
+```
+
+This provides evidence for:
+
+```text
+T1059 - Command and Scripting Interpreter
+```
+
+Without ProcessCreate telemetry, the endpoint may be blind to that execution
+chain.
+
+## Detection Engineering Workflow
+
+```text
+ATT&CK behavior
+      ↓
+required telemetry
+      ↓
+Sysmon Event ID
+      ↓
+filter analysis
+      ↓
+field quality
+      ↓
+covered / partial / blind
+      ↓
+tuning recommendation
+```
+
+## Output
+
+The script generates:
+
+```text
+sysmon_coverage_matrix.json
+```
+
+Each row contains:
+
+```text
+technique_id
+technique_name
+required_event_ids
+enabled_event_ids
+filter_conflicts
+coverage_status
+evidence_fields_expected
+recommendation
+```
+
+Additional context includes the reason for the coverage status and a
+threat example.
+
+## SOC Lesson
+
+Installing Sysmon does not prove that an attack technique is observable.
+
+A mature SOC asks:
+
+```text
+What attacker behavior do we care about?
+        ↓
+What telemetry should record it?
+        ↓
+Is that telemetry enabled?
+        ↓
+Are filters suppressing it?
+        ↓
+Does the event contain enough evidence?
+```
+
+The central principle is:
+
+> Telemetry coverage should be measured against attacker behavior rather
+> than against the simple presence of a logging tool.

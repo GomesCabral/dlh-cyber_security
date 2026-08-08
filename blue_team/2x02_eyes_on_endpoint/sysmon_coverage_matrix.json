@@ -1,0 +1,227 @@
+﻿{
+    "metadata":  {
+                     "project":  "2x02_eyes_on_endpoint",
+                     "task":  "1 - Sysmon ATT\u0026CK Coverage Matrix",
+                     "timestamp":  "2026-08-08T13:03:55.5004727+02:00",
+                     "computer":  "DC01",
+                     "script":  "1-sysmon_coverage_matrix.ps1"
+                 },
+    "summary":  {
+                    "timestamp":  "2026-08-08T13:03:55.5004727+02:00",
+                    "source_config":  "Z:\\blue_team\\2x02_eyes_on_endpoint\\sysmonconfig.xml",
+                    "enabled_event_ids":  [
+                                              1,
+                                              2,
+                                              3,
+                                              5,
+                                              6,
+                                              7,
+                                              8,
+                                              9,
+                                              10,
+                                              11,
+                                              12,
+                                              13,
+                                              14,
+                                              15,
+                                              17,
+                                              18,
+                                              19,
+                                              20,
+                                              21
+                                          ],
+                    "techniques_assessed":  7,
+                    "covered":  1,
+                    "partial":  6,
+                    "blind":  0
+                },
+    "coverage_matrix":  [
+                            {
+                                "technique_id":  "T1059",
+                                "technique_name":  "Command and Scripting Interpreter",
+                                "required_event_ids":  [
+                                                           1
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          1
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 1 / ProcessCreate has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 1 / ProcessCreate uses include filtering; unmatched attacker activity may be suppressed"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "Image",
+                                                                 "CommandLine",
+                                                                 "ParentImage",
+                                                                 "ParentCommandLine",
+                                                                 "User",
+                                                                 "ProcessId",
+                                                                 "ParentProcessId",
+                                                                 "Hashes"
+                                                             ],
+                                "recommendation":  "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "PowerShell, cmd.exe, wscript.exe or another interpreter used for attacker execution."
+                            },
+                            {
+                                "technique_id":  "T1053",
+                                "technique_name":  "Scheduled Task/Job",
+                                "required_event_ids":  [
+                                                           1
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          1
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 1 / ProcessCreate has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 1 / ProcessCreate uses include filtering; unmatched attacker activity may be suppressed"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "Image",
+                                                                 "CommandLine",
+                                                                 "ParentImage",
+                                                                 "User",
+                                                                 "ProcessId"
+                                                             ],
+                                "recommendation":  "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "schtasks.exe /create used by an attacker to establish persistence."
+                            },
+                            {
+                                "technique_id":  "T1547",
+                                "technique_name":  "Boot or Logon Autostart Execution",
+                                "required_event_ids":  [
+                                                           13
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          13
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 13 / RegistryEvent has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 13 / RegistryEvent uses include filtering; unmatched attacker activity may be suppressed"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "TargetObject",
+                                                                 "Details",
+                                                                 "Image",
+                                                                 "User",
+                                                                 "ProcessId"
+                                                             ],
+                                "recommendation":  "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "Registry Run or RunOnce keys modified to launch malware after user logon."
+                            },
+                            {
+                                "technique_id":  "T1055",
+                                "technique_name":  "Process Injection",
+                                "required_event_ids":  [
+                                                           8,
+                                                           10
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          8,
+                                                          10
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 8 / CreateRemoteThread has an onmatch=exclude rule that may suppress relevant telemetry"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "SourceImage",
+                                                                 "TargetImage",
+                                                                 "SourceProcessId",
+                                                                 "TargetProcessId",
+                                                                 "GrantedAccess",
+                                                                 "StartAddress"
+                                                             ],
+                                "recommendation":  "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "Malicious process accesses or creates a remote thread inside another process."
+                            },
+                            {
+                                "technique_id":  "T1071",
+                                "technique_name":  "Application Layer Protocol",
+                                "required_event_ids":  [
+                                                           3,
+                                                           22
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          3
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 3 / NetworkConnect has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 3 / NetworkConnect uses include filtering; unmatched attacker activity may be suppressed"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Missing required Event ID(s): 22; Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "Image",
+                                                                 "DestinationIp",
+                                                                 "DestinationPort",
+                                                                 "Protocol",
+                                                                 "QueryName",
+                                                                 "QueryResults",
+                                                                 "User"
+                                                             ],
+                                "recommendation":  "Enable missing Sysmon Event ID(s): 22; Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "Malware resolves a command-and-control domain and connects to it over TCP."
+                            },
+                            {
+                                "technique_id":  "T1574.002",
+                                "technique_name":  "DLL Side-Loading",
+                                "required_event_ids":  [
+                                                           7
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          7
+                                                      ],
+                                "filter_conflicts":  [
+
+                                                     ],
+                                "coverage_status":  "covered",
+                                "reason":  "All required Sysmon Event IDs are enabled and no obvious conflicting filters were identified.",
+                                "evidence_fields_expected":  [
+                                                                 "Image",
+                                                                 "ImageLoaded",
+                                                                 "Hashes",
+                                                                 "Signed",
+                                                                 "Signature",
+                                                                 "SignatureStatus"
+                                                             ],
+                                "recommendation":  "Maintain current Sysmon coverage and validate the event fields with controlled telemetry tests.",
+                                "threat_example":  "A trusted executable loads a malicious DLL from an unexpected directory."
+                            },
+                            {
+                                "technique_id":  "T1027",
+                                "technique_name":  "Obfuscated or Compressed Files",
+                                "required_event_ids":  [
+                                                           11,
+                                                           15
+                                                       ],
+                                "enabled_event_ids":  [
+                                                          11,
+                                                          15
+                                                      ],
+                                "filter_conflicts":  [
+                                                         "EID 11 / FileCreate has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 11 / FileCreate uses include filtering; unmatched attacker activity may be suppressed",
+                                                         "EID 15 / FileCreateStreamHash has an onmatch=exclude rule that may suppress relevant telemetry",
+                                                         "EID 15 / FileCreateStreamHash uses include filtering; unmatched attacker activity may be suppressed"
+                                                     ],
+                                "coverage_status":  "partial",
+                                "reason":  "Filtering may suppress relevant telemetry",
+                                "evidence_fields_expected":  [
+                                                                 "Image",
+                                                                 "TargetFilename",
+                                                                 "Hash",
+                                                                 "Contents"
+                                                             ],
+                                "recommendation":  "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity; Validate that required evidence fields are populated during a controlled test",
+                                "threat_example":  "Malware writes encoded, packed or alternate-data-stream content to disk."
+                            }
+                        ]
+}
+
