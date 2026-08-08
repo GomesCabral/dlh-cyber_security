@@ -279,8 +279,10 @@ catch {
 }
 
 # ===========================================================================
-# EVENT DISTRIBUTION
+# Event Distribution
 # ===========================================================================
+
+Write-Host "[*] Event Distribution..."
 
 $EventDistribution = @()
 
@@ -306,8 +308,10 @@ foreach ($Group in $EventGroups) {
 }
 
 # ===========================================================================
-# CHANNEL DISTRIBUTION
+# Channel Distribution
 # ===========================================================================
+
+Write-Host "[*] Event Distribution..."
 
 $ChannelDistribution = @()
 
@@ -336,8 +340,10 @@ foreach ($Source in $ExpectedChannels) {
 }
 
 # ===========================================================================
-# TIME COVERAGE - events per hour
+# Time Coverage
 # ===========================================================================
+
+Write-Host "[*] Time Coverage..."
 
 $HourlyBuckets = @()
 
@@ -398,8 +404,10 @@ $TimeCoveragePercent = Get-Percentage `
     -Total $TotalHours
 
 # ===========================================================================
-# GAP DETECTION
+# Gap Detection
 # ===========================================================================
+
+Write-Host "[*] Gap Detection..."
 
 $SortedEvents = @(
     $Events |
@@ -496,8 +504,10 @@ $LargestGapMinutes = [math]::Round(
 )
 
 # ===========================================================================
-# FIELD COMPLETENESS - process command lines
+# Field Completeness - process command lines
 # ===========================================================================
+
+Write-Host "[*] Field Completeness..."
 
 $ProcessEvents = @(
     $Events |
@@ -532,8 +542,10 @@ $CommandLineCompleteness = Get-Percentage `
     -Total $ProcessEvents.Count
 
 # ===========================================================================
-# FIELD COMPLETENESS - source IP for logon events
+# Field Completeness - source IP for logon events
 # ===========================================================================
+
+Write-Host "[*] Field Completeness..."
 
 $LogonEvents = @(
     $Events |
@@ -569,8 +581,10 @@ $SourceIpCompleteness = Get-Percentage `
     -Total $LogonEvents.Count
 
 # ===========================================================================
-# FIELD COMPLETENESS - PowerShell ScriptBlock
+# Field Completeness - PowerShell ScriptBlock
 # ===========================================================================
+
+Write-Host "[*] Field Completeness..."
 
 $ScriptBlockEvents = @(
     $Events |
@@ -803,8 +817,10 @@ if ($ScriptBlockEvents.Count -eq 0) {
 }
 
 # ===========================================================================
-# QUALITY SCORE
+# Quality Score
 # ===========================================================================
+
+Write-Host "[*] Quality Score..."
 
 $QualityScore = (
     ($TimeCoveragePercent / 100) * $WeightTimeCoverage +
