@@ -4,6 +4,7 @@
 
 ### Blue Team - Telemetry Engineering
 
+
 This project focuses on endpoint observability and telemetry validation across
 the hardened MedDefense environment.
 

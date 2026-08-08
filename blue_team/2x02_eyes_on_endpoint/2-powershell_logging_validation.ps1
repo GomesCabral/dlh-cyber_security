@@ -1,24 +1,28 @@
 # name: 2-powershell_logging_validation.ps1
-# purpose: Validate PowerShell Script Block Logging, Module Logging and Transcription using controlled commands.
+# purpose: Validate PowerShell ScriptBlock Logging, ModuleLogging and Transcription using controlled commands.
 # author: Pedro Cabral
 #
 # Project: 2x02 - Eyes on Endpoint
 # Task: 2 - PowerShell Logging Validation
 #
 # Required validation:
-# 1. Simple command Get-Process -> Event ID 4104
-# 2. Encoded command -> decoded content in Event ID 4104
-# 3. Import-Module ActiveDirectory -> Event ID 4103
-# 4. Multi-line script block -> full content in Event ID 4104
-# 5. PowerShell transcription -> C:\PSTranscripts\*.txt
+# 1. Simple command Get-Process -> Event ID 4104 ScriptBlock
+# 2. Encoded command using powershell -enc -> decoded content in Event ID 4104
+# 3. Import-Module ActiveDirectory -> Event ID 4103 ModuleLogging
+# 4. Multi-line ScriptBlock -> full content in Event ID 4104
+# 5. Transcription -> C:\PSTranscripts\*.txt
 #
-# Event IDs:
-# 4103 = PowerShell Module Logging
-# 4104 = PowerShell Script Block Logging
+# Result states:
+# - CAPTURED
+# - MISSED
+#
+# Detail levels:
+# - full content
+# - partial
 #
 # Safety:
-# READ-ONLY with respect to security configuration.
-# The script only executes benign validation commands and reads logs/transcripts.
+# This script does not change PowerShell logging configuration.
+# It only executes benign commands and validates telemetry.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -27,28 +31,32 @@ $ErrorActionPreference = "Stop"
 # Configuration
 # ===========================================================================
 
-$PowerShellLog = "Microsoft-Windows-PowerShell/Operational"
-$TranscriptRoot = "C:\PSTranscripts"
+$PowerShellOperationalLog = "Microsoft-Windows-PowerShell/Operational"
+
+$ScriptBlockEventId = 4104
+$ModuleLoggingEventId = 4103
+
+$TranscriptDirectory = "C:\PSTranscripts"
 
 $TotalTests = 5
 $CapturedTests = 0
 $MissedTests = 0
 
-$ScriptStartTimestamp = Get-Date
+$ValidationStartTimestamp = Get-Date
 
-# Unique markers prevent old log entries from producing false PASS results.
+# Unique run marker prevents matching old log events.
 $RunId = [guid]::NewGuid().ToString("N")
 
 $SimpleMarker = "MEDDEFENSE_SIMPLE_$RunId"
 $EncodedMarker = "MEDDEFENSE_ENCODED_$RunId"
 $ModuleMarker = "MEDDEFENSE_MODULE_$RunId"
-$MultiLineMarkerStart = "MEDDEFENSE_MULTILINE_START_$RunId"
-$MultiLineMarkerEnd = "MEDDEFENSE_MULTILINE_END_$RunId"
+$MultiLineStartMarker = "MEDDEFENSE_MULTILINE_START_$RunId"
+$MultiLineEndMarker = "MEDDEFENSE_MULTILINE_END_$RunId"
 $TranscriptMarker = "MEDDEFENSE_TRANSCRIPT_$RunId"
 
-# Literal encoded command requested in the project example:
+# Literal project example:
 # Write-Host "Test"
-$ExpectedExampleEncodedCommand = `
+$ExampleEncodedCommand = `
     "VwByAGkAdABlAC0ASABvAHMAdAAgACIAVABlAHMAdAAi"
 
 # ===========================================================================
@@ -59,23 +67,29 @@ function Write-TestResult {
 
     param(
         [Parameter(Mandatory = $true)]
-        [bool]$Passed,
+        [bool]$Captured,
 
         [Parameter(Mandatory = $true)]
-        [string]$Message
+        [string]$Message,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("full content", "partial", "none")]
+        [string]$DetailLevel
     )
 
-    if ($Passed) {
+    if ($Captured) {
 
         $script:CapturedTests++
 
-        Write-Host "          $Message [PASS]"
+        Write-Host `
+            "          $Message | CAPTURED | Detail: $DetailLevel [PASS]"
     }
     else {
 
         $script:MissedTests++
 
-        Write-Host "          $Message [FAIL]"
+        Write-Host `
+            "          $Message | MISSED | Detail: $DetailLevel [FAIL]"
     }
 }
 
@@ -85,7 +99,7 @@ function Test-PowerShellOperationalLog {
     try {
 
         $Log = Get-WinEvent `
-            -ListLog $PowerShellLog `
+            -ListLog $PowerShellOperationalLog `
             -ErrorAction Stop
 
         return [bool]$Log.IsEnabled
@@ -110,7 +124,7 @@ function Get-PowerShellEvents {
     return @(
         Get-WinEvent `
             -FilterHashtable @{
-                LogName   = $PowerShellLog
+                LogName   = $PowerShellOperationalLog
                 Id        = $EventId
                 StartTime = $StartTime
             } `
@@ -119,7 +133,7 @@ function Get-PowerShellEvents {
 }
 
 
-function Wait-ForEventMatch {
+function Wait-ForEvent {
 
     param(
         [Parameter(Mandatory = $true)]
@@ -129,12 +143,15 @@ function Wait-ForEventMatch {
         [datetime]$StartTime,
 
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [string[]]$RequiredPatterns,
 
-        [int]$TimeoutSeconds = 12
+        [int]$TimeoutSeconds = 15
     )
 
-    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $Deadline = (Get-Date).AddSeconds(
+        $TimeoutSeconds
+    )
 
     do {
 
@@ -176,17 +193,19 @@ function Wait-ForEventMatch {
 }
 
 
-function Convert-ToEncodedPowerShellCommand {
+function Convert-ToPowerShellEncodedCommand {
 
     param(
         [Parameter(Mandatory = $true)]
         [string]$Command
     )
 
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes(
+        $Command
+    )
+
     return [Convert]::ToBase64String(
-        [System.Text.Encoding]::Unicode.GetBytes(
-            $Command
-        )
+        $Bytes
     )
 }
 
@@ -198,15 +217,16 @@ function Get-NewTranscriptFiles {
         [datetime]$StartTime
     )
 
-    if (-not (Test-Path $TranscriptRoot)) {
+    if (-not (Test-Path $TranscriptDirectory)) {
+
         return @()
     }
 
     return @(
         Get-ChildItem `
-            -Path $TranscriptRoot `
-            -Filter "*.txt" `
+            -Path $TranscriptDirectory `
             -File `
+            -Filter "*.txt" `
             -Recurse `
             -ErrorAction SilentlyContinue |
         Where-Object {
@@ -217,7 +237,7 @@ function Get-NewTranscriptFiles {
 }
 
 
-function Find-TranscriptMarker {
+function Wait-ForTranscript {
 
     param(
         [Parameter(Mandatory = $true)]
@@ -226,24 +246,26 @@ function Find-TranscriptMarker {
         [Parameter(Mandatory = $true)]
         [string]$Marker,
 
-        [int]$TimeoutSeconds = 12
+        [int]$TimeoutSeconds = 15
     )
 
-    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $Deadline = (Get-Date).AddSeconds(
+        $TimeoutSeconds
+    )
 
     do {
 
-        $TranscriptFiles = @(
+        $Files = @(
             Get-NewTranscriptFiles `
                 -StartTime $StartTime
         )
 
-        foreach ($Transcript in $TranscriptFiles) {
+        foreach ($File in $Files) {
 
             try {
 
                 $Content = Get-Content `
-                    -Path $Transcript.FullName `
+                    -Path $File.FullName `
                     -Raw `
                     -ErrorAction Stop
 
@@ -252,11 +274,11 @@ function Find-TranscriptMarker {
                     [regex]::Escape($Marker)
                 ) {
 
-                    return $Transcript
+                    return $File
                 }
             }
             catch {
-                # Transcript may still be open; retry until timeout.
+                # Transcript may still be open.
             }
         }
 
@@ -278,20 +300,24 @@ Write-Host "=============================================="
 Write-Host ""
 
 Write-Host "[*] Testing PowerShell logging coverage..."
-Write-Host "    timestamp: $($ScriptStartTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
+
+Write-Host `
+    "    timestamp: $($ValidationStartTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
 # ===========================================================================
-# Validate PowerShell Operational log
+# Prerequisite check
 # ===========================================================================
 
 if (-not (Test-PowerShellOperationalLog)) {
 
-    Write-Host "[FAIL] PowerShell Operational log is unavailable or disabled."
+    Write-Host `
+        "[FAIL] Microsoft-Windows-PowerShell/Operational is unavailable or disabled."
+
     exit 1
 }
 
 # ===========================================================================
-# [1/5] Simple command - Event ID 4104
+# [1/5] Simple command - Get-Process - ScriptBlock Event ID 4104
 # ===========================================================================
 
 Write-Host ""
@@ -302,22 +328,22 @@ $SimpleTimestamp = Get-Date
 Write-Host `
     "          timestamp: $($SimpleTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
-$SimpleCommand = @"
-`$null = Get-Process
-Write-Output '$SimpleMarker'
+$SimpleScriptBlock = @"
+Get-Process | Out-Null
+Write-Output "$SimpleMarker"
 "@
 
-$SimpleEncoded = Convert-ToEncodedPowerShellCommand `
-    -Command $SimpleCommand
+$SimpleEncodedCommand = Convert-ToPowerShellEncodedCommand `
+    -Command $SimpleScriptBlock
 
 & powershell.exe `
     -NoProfile `
     -NonInteractive `
-    -EncodedCommand $SimpleEncoded `
+    -EncodedCommand $SimpleEncodedCommand `
     *> $null
 
-$SimpleEvent = Wait-ForEventMatch `
-    -EventId 4104 `
+$SimpleEvent = Wait-ForEvent `
+    -EventId $ScriptBlockEventId `
     -StartTime $SimpleTimestamp `
     -RequiredPatterns @(
         "Get-Process",
@@ -327,18 +353,20 @@ $SimpleEvent = Wait-ForEventMatch `
 if ($null -ne $SimpleEvent) {
 
     Write-TestResult `
-        -Passed $true `
-        -Message 'EID 4104: "Get-Process" captured - full content'
+        -Captured $true `
+        -Message 'EID 4104 ScriptBlock: "Get-Process" captured' `
+        -DetailLevel "full content"
 }
 else {
 
     Write-TestResult `
-        -Passed $false `
-        -Message 'EID 4104: "Get-Process" MISSED'
+        -Captured $false `
+        -Message 'EID 4104 ScriptBlock: "Get-Process"' `
+        -DetailLevel "none"
 }
 
 # ===========================================================================
-# [2/5] Encoded command - Event ID 4104
+# [2/5] Encoded command - decoded ScriptBlock Event ID 4104
 # ===========================================================================
 
 Write-Host ""
@@ -349,22 +377,19 @@ $EncodedTimestamp = Get-Date
 Write-Host `
     "          timestamp: $($EncodedTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
-# Requirement:
-# powershell -enc [base64 of Write-Host "Test"]
-#
-# A unique marker is added so this run cannot match an old Event ID 4104.
-
 $DecodedCommand = @"
 Write-Host "Test"
 Write-Output "$EncodedMarker"
 "@
 
-$EncodedCommand = Convert-ToEncodedPowerShellCommand `
+$EncodedCommand = Convert-ToPowerShellEncodedCommand `
     -Command $DecodedCommand
 
-Write-Host "          Input: -enc $EncodedCommand"
 Write-Host `
-    "          Reference example: -enc $ExpectedExampleEncodedCommand"
+    "          Input: powershell -enc $EncodedCommand"
+
+Write-Host `
+    "          Reference: -enc $ExampleEncodedCommand"
 
 & powershell.exe `
     -NoProfile `
@@ -372,8 +397,8 @@ Write-Host `
     -enc $EncodedCommand `
     *> $null
 
-$EncodedEvent = Wait-ForEventMatch `
-    -EventId 4104 `
+$EncodedEvent = Wait-ForEvent `
+    -EventId $ScriptBlockEventId `
     -StartTime $EncodedTimestamp `
     -RequiredPatterns @(
         'Write-Host "Test"',
@@ -383,18 +408,20 @@ $EncodedEvent = Wait-ForEventMatch `
 if ($null -ne $EncodedEvent) {
 
     Write-TestResult `
-        -Passed $true `
-        -Message 'EID 4104: "Write-Host `"Test`"" decoded content captured - full content'
+        -Captured $true `
+        -Message 'EID 4104 ScriptBlock: decoded "Write-Host `"Test`"" captured' `
+        -DetailLevel "full content"
 }
 else {
 
     Write-TestResult `
-        -Passed $false `
-        -Message "EID 4104: encoded command decoded content MISSED"
+        -Captured $false `
+        -Message "EID 4104 ScriptBlock: decoded encoded command" `
+        -DetailLevel "none"
 }
 
 # ===========================================================================
-# [3/5] Module Logging - Event ID 4103
+# [3/5] ModuleLogging - Import-Module ActiveDirectory - Event ID 4103
 # ===========================================================================
 
 Write-Host ""
@@ -405,27 +432,23 @@ $ModuleTimestamp = Get-Date
 Write-Host `
     "          timestamp: $($ModuleTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
-# Execute a real ActiveDirectory module command after import.
-# This improves the probability of Module Logging generating useful 4103 data.
-
-$ModuleCommand = @"
+$ModuleScript = @"
 Import-Module ActiveDirectory
-`$null = Get-ADDomain
+Get-ADDomain | Out-Null
 Write-Output "$ModuleMarker"
 "@
 
-$ModuleEncoded = Convert-ToEncodedPowerShellCommand `
-    -Command $ModuleCommand
+$ModuleEncodedCommand = Convert-ToPowerShellEncodedCommand `
+    -Command $ModuleScript
 
 & powershell.exe `
     -NoProfile `
     -NonInteractive `
-    -EncodedCommand $ModuleEncoded `
+    -EncodedCommand $ModuleEncodedCommand `
     *> $null
 
-# First attempt: exact Import-Module ActiveDirectory evidence.
-$ModuleEvent = Wait-ForEventMatch `
-    -EventId 4103 `
+$ModuleEvent = Wait-ForEvent `
+    -EventId $ModuleLoggingEventId `
     -StartTime $ModuleTimestamp `
     -RequiredPatterns @(
         "ActiveDirectory"
@@ -436,130 +459,136 @@ if ($null -ne $ModuleEvent) {
     $ModuleMessage = [string]$ModuleEvent.Message
 
     if (
-        $ModuleMessage -match
-        "(?i)Import-Module"
+        $ModuleMessage -match "(?i)Import-Module" -and
+        $ModuleMessage -match "(?i)ActiveDirectory"
     ) {
 
         Write-TestResult `
-            -Passed $true `
-            -Message 'EID 4103: "Import-Module ActiveDirectory" captured - full detail'
+            -Captured $true `
+            -Message 'EID 4103 ModuleLogging: "Import-Module ActiveDirectory" captured' `
+            -DetailLevel "full content"
     }
     else {
 
         Write-TestResult `
-            -Passed $true `
-            -Message "EID 4103: ActiveDirectory module activity captured - partial command detail"
+            -Captured $true `
+            -Message "EID 4103 ModuleLogging: ActiveDirectory module activity captured" `
+            -DetailLevel "partial"
     }
 }
 else {
 
     Write-TestResult `
-        -Passed $false `
-        -Message 'EID 4103: "Import-Module ActiveDirectory" MISSED'
+        -Captured $false `
+        -Message 'EID 4103 ModuleLogging: "Import-Module ActiveDirectory"' `
+        -DetailLevel "none"
 }
 
 # ===========================================================================
-# [4/5] Multi-line Script Block - Event ID 4104
+# [4/5] Multi-line ScriptBlock - Event ID 4104
 # ===========================================================================
 
 Write-Host ""
-Write-Host "    [4/5] Multi-line script block..."
+Write-Host "    [4/5] Multi-line ScriptBlock..."
 
 $MultiLineTimestamp = Get-Date
 
 Write-Host `
     "          timestamp: $($MultiLineTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
-# Exactly 12 controlled script lines.
-$MultiLineScript = @"
-Write-Output "$MultiLineMarkerStart"
+# 12 controlled lines.
+$MultiLineScriptBlock = @"
+Write-Output "$MultiLineStartMarker"
 `$ProcessCount = (Get-Process).Count
 `$ServiceCount = (Get-Service).Count
 `$ComputerName = `$env:COMPUTERNAME
 `$CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 `$CurrentDate = Get-Date
 `$PowerShellVersion = `$PSVersionTable.PSVersion.ToString()
-`$Domain = `$env:USERDOMAIN
+`$DomainName = `$env:USERDOMAIN
 `$PathValue = `$env:PATH
-`$Result = "`$ComputerName|`$ProcessCount|`$ServiceCount"
-Write-Output `$Result
-Write-Output "$MultiLineMarkerEnd"
+`$Summary = "`$ComputerName|`$ProcessCount|`$ServiceCount"
+Write-Output `$Summary
+Write-Output "$MultiLineEndMarker"
 "@
 
-$MultiLineEncoded = Convert-ToEncodedPowerShellCommand `
-    -Command $MultiLineScript
+$MultiLineEncodedCommand = Convert-ToPowerShellEncodedCommand `
+    -Command $MultiLineScriptBlock
 
 & powershell.exe `
     -NoProfile `
     -NonInteractive `
-    -EncodedCommand $MultiLineEncoded `
+    -EncodedCommand $MultiLineEncodedCommand `
     *> $null
 
-$MultiLineEvent = Wait-ForEventMatch `
-    -EventId 4104 `
+$MultiLineEvent = Wait-ForEvent `
+    -EventId $ScriptBlockEventId `
     -StartTime $MultiLineTimestamp `
     -RequiredPatterns @(
-        $MultiLineMarkerStart,
+        $MultiLineStartMarker,
         '$ProcessCount',
         '$ServiceCount',
         '$ComputerName',
-        $MultiLineMarkerEnd
+        $MultiLineEndMarker
     )
 
 if ($null -ne $MultiLineEvent) {
 
-    $CapturedScriptText = [string]$MultiLineEvent.Message
+    $MultiLineMessage = [string]$MultiLineEvent.Message
 
-    $ImportantLines = @(
-        $MultiLineMarkerStart,
+    $ExpectedElements = @(
+        $MultiLineStartMarker,
         '$ProcessCount',
         '$ServiceCount',
         '$ComputerName',
         '$CurrentUser',
         '$CurrentDate',
         '$PowerShellVersion',
-        '$Domain',
+        '$DomainName',
         '$PathValue',
-        '$Result',
-        'Write-Output $Result',
-        $MultiLineMarkerEnd
+        '$Summary',
+        'Write-Output $Summary',
+        $MultiLineEndMarker
     )
 
-    $FoundLineCount = 0
+    $FoundElements = 0
 
-    foreach ($ExpectedLine in $ImportantLines) {
+    foreach ($ExpectedElement in $ExpectedElements) {
 
         if (
-            $CapturedScriptText -match
-            [regex]::Escape($ExpectedLine)
+            $MultiLineMessage -match
+            [regex]::Escape($ExpectedElement)
         ) {
 
-            $FoundLineCount++
+            $FoundElements++
         }
     }
 
-    if ($FoundLineCount -eq 12) {
+    if ($FoundElements -eq 12) {
 
         Write-TestResult `
-            -Passed $true `
-            -Message "EID 4104: Full block captured (12 lines) - full content"
+            -Captured $true `
+            -Message "EID 4104 ScriptBlock: Full block captured (12 lines)" `
+            -DetailLevel "full content"
     }
     else {
 
         Write-TestResult `
-            -Passed $true `
-            -Message "EID 4104: Block captured ($FoundLineCount/12 expected elements) - partial content"
+            -Captured $true `
+            -Message "EID 4104 ScriptBlock: block captured ($FoundElements/12 expected elements)" `
+            -DetailLevel "partial"
     }
 }
 else {
 
     Write-TestResult `
-        -Passed $false `
-        -Message "EID 4104: Multi-line script block MISSED"
+        -Captured $false `
+        -Message "EID 4104 ScriptBlock: multi-line block" `
+        -DetailLevel "none"
 }
 
 # ===========================================================================
-# [5/5] PowerShell Transcription
+# [5/5] Transcription
 # ===========================================================================
 
 Write-Host ""
@@ -570,55 +599,54 @@ $TranscriptTimestamp = Get-Date
 Write-Host `
     "          timestamp: $($TranscriptTimestamp.ToString('yyyy-MM-dd HH:mm:ss'))"
 
-# A separate PowerShell session is intentionally started after the timestamp.
-# If transcription is configured by policy, this child session should create
-# a transcript containing this unique marker.
-
-$TranscriptCommand = @"
+$TranscriptScript = @"
 Write-Output "$TranscriptMarker"
 Get-Date
-Get-Process -Id `$PID | Select-Object Id, ProcessName
+Get-Process -Id `$PID | Select-Object Id,ProcessName
 "@
 
-$TranscriptEncoded = Convert-ToEncodedPowerShellCommand `
-    -Command $TranscriptCommand
+$TranscriptEncodedCommand = Convert-ToPowerShellEncodedCommand `
+    -Command $TranscriptScript
 
 & powershell.exe `
     -NoProfile `
-    -EncodedCommand $TranscriptEncoded `
+    -EncodedCommand $TranscriptEncodedCommand `
     *> $null
 
-$TranscriptFile = Find-TranscriptMarker `
+$TranscriptFile = Wait-ForTranscript `
     -StartTime $TranscriptTimestamp `
     -Marker $TranscriptMarker
 
 if ($null -ne $TranscriptFile) {
 
     Write-TestResult `
-        -Passed $true `
-        -Message "C:\PSTranscripts\*.txt exists, session recorded - full content"
+        -Captured $true `
+        -Message "C:\PSTranscripts\*.txt exists, session recorded" `
+        -DetailLevel "full content"
 
     Write-Host `
         "          Transcript: $($TranscriptFile.FullName)"
 }
 else {
 
-    $NewTranscripts = @(
+    $NewTranscriptFiles = @(
         Get-NewTranscriptFiles `
             -StartTime $TranscriptTimestamp
     )
 
-    if ($NewTranscripts.Count -gt 0) {
+    if ($NewTranscriptFiles.Count -gt 0) {
 
         Write-TestResult `
-            -Passed $true `
-            -Message "C:\PSTranscripts\*.txt created - transcript present, marker detail partial"
+            -Captured $true `
+            -Message "C:\PSTranscripts\*.txt created but session marker not confirmed" `
+            -DetailLevel "partial"
     }
     else {
 
         Write-TestResult `
-            -Passed $false `
-            -Message "C:\PSTranscripts\*.txt MISSED"
+            -Captured $false `
+            -Message "C:\PSTranscripts\*.txt" `
+            -DetailLevel "none"
     }
 }
 
@@ -647,6 +675,8 @@ if (
 }
 else {
 
-    Write-Host "[FAIL] One or more PowerShell logging layers missed expected telemetry."
+    Write-Host `
+        "[FAIL] One or more PowerShell logging tests were MISSED."
+
     exit 1
 }
