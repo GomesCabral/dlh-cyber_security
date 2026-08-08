@@ -1,5 +1,5 @@
 # Name: 0-sysmon_validation.ps1
-# Purpose: Trigger and validate five security-relevant Sysmon telemetry events.
+# purpose: Trigger and validate five security-relevant Sysmon telemetry events.
 # Author: Pedro Cabral
 #
 # Project: 2x02 - Eyes on Endpoint
