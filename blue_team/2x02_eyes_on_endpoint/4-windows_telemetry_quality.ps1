@@ -30,6 +30,36 @@
 # Safety:
 # READ-ONLY with respect to Windows telemetry and configuration.
 # The script reads JSON and writes a quality report only.
+# ===========================================================================
+# Task 4 Required Quality Metrics
+# ===========================================================================
+
+# Event Distribution
+# count per Event ID
+# percentage of total
+
+# Channel Distribution
+# Security
+# Sysmon
+# PowerShell
+
+# Time Coverage
+# events per hour
+# hours with events
+# hours without events
+
+# Gap Detection
+# time periods longer than 30 minutes with no events
+
+# Field Completeness
+# required fields populated vs empty/null per event type
+# CommandLine completeness for process events
+# SourceIP completeness for logon events
+# ScriptBlockText completeness for PowerShell events
+
+# Quality Score
+# weighted score from 0-100
+# assessment: good, acceptable, poor
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -509,6 +539,11 @@ $LargestGapMinutes = [math]::Round(
 # Field Completeness - process command lines
 # ===========================================================================
 
+# Required telemetry fields:
+# CommandLine - process command-line completeness
+# SourceIP - source IP completeness for logon events
+# ScriptBlockText - PowerShell script block completeness
+
 Write-Host "[*] Field Completeness..."
 
 $ProcessEvents = @(
@@ -546,6 +581,11 @@ $CommandLineCompleteness = Get-Percentage `
 # ===========================================================================
 # Field Completeness - source IP for logon events
 # ===========================================================================
+
+# Required telemetry fields:
+# CommandLine - process command-line completeness
+# SourceIP - source IP completeness for logon events
+# ScriptBlockText - PowerShell script block completeness
 
 Write-Host "[*] Field Completeness..."
 
@@ -585,6 +625,11 @@ $SourceIpCompleteness = Get-Percentage `
 # ===========================================================================
 # Field Completeness - PowerShell ScriptBlock
 # ===========================================================================
+
+# Required telemetry fields:
+# CommandLine - process command-line completeness
+# SourceIP - source IP completeness for logon events
+# ScriptBlockText - PowerShell script block completeness
 
 Write-Host "[*] Field Completeness..."
 
