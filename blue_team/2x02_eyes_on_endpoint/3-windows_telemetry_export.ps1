@@ -8,6 +8,10 @@
 # Default time window:
 # - Last 24 hours
 #
+# Time window:
+# - StartTime
+# - EndTime
+#
 # Input channels:
 # - Security
 # - Microsoft-Windows-Sysmon/Operational
@@ -27,26 +31,25 @@
 # - provider
 # - raw_message
 #
-# Enriched event types:
-# Security:
-# - 4624
-# - 4625
-# - 4672
-# - 4688
+# Enriched Security Event IDs:
+# - 4624 successful logon
+# - 4625 failed logon
+# - 4672 privileged logon
+# - 4688 process creation
 #
-# PowerShell:
-# - 4104
+# Enriched PowerShell Event ID:
+# - 4104 ScriptBlock
 #
-# Sysmon:
-# - 1
-# - 3
-# - 11
-# - 13
-# - 22
+# Enriched Sysmon Event IDs:
+# - 1 process creation
+# - 3 network connection
+# - 11 file creation
+# - 13 registry modification
+# - 22 DNS query
 #
 # Safety:
 # READ-ONLY.
-# The script reads Windows Event Logs and writes a JSON export only.
+# The script reads Windows Event Logs and writes JSON only.
 
 [CmdletBinding()]
 param(
@@ -57,12 +60,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ===========================================================================
-# Configuration
+# Validate time window
 # ===========================================================================
 
 if ($Hours -le 0) {
     throw "Hours must be greater than 0."
 }
+
+# ===========================================================================
+# Paths and time range
+# ===========================================================================
 
 $ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 
@@ -70,15 +77,25 @@ $OutputPath = Join-Path `
     $ScriptDirectory `
     "windows_events_export.json"
 
-$HostnameValue = $env:COMPUTERNAME
+$EndTime = Get-Date
 
-$PlatformValue = "Windows"
-
-$StartTime = (Get-Date).AddHours(
+$StartTime = $EndTime.AddHours(
     -1 * $Hours
 )
 
 $ExportTimestamp = Get-Date
+
+# ===========================================================================
+# General metadata
+# ===========================================================================
+
+$HostnameValue = $env:COMPUTERNAME
+
+$PlatformValue = "Windows"
+
+# ===========================================================================
+# Channels
+# ===========================================================================
 
 $SecurityChannel = "Security"
 
@@ -87,7 +104,7 @@ $SysmonChannel = "Microsoft-Windows-Sysmon/Operational"
 $PowerShellChannel = "Microsoft-Windows-PowerShell/Operational"
 
 # ===========================================================================
-# Helper: XML EventData extraction
+# Helper: EventData
 # ===========================================================================
 
 function Get-EventDataMap {
@@ -125,54 +142,10 @@ function Get-EventDataMap {
 }
 
 # ===========================================================================
-# Helper: UserData extraction
-# ===========================================================================
-
-function Get-UserDataMap {
-
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Diagnostics.Eventing.Reader.EventRecord]$Event
-    )
-
-    $Fields = [ordered]@{}
-
-    try {
-
-        [xml]$EventXml = $Event.ToXml()
-
-        if ($null -ne $EventXml.Event.UserData) {
-
-            $Nodes = @(
-                $EventXml.Event.UserData.SelectNodes(
-                    ".//*[not(*)]"
-                )
-            )
-
-            foreach ($Node in $Nodes) {
-
-                $Name = [string]$Node.LocalName
-
-                if (
-                    -not [string]::IsNullOrWhiteSpace($Name)
-                ) {
-
-                    $Fields[$Name] = [string]$Node.InnerText
-                }
-            }
-        }
-    }
-    catch {
-    }
-
-    return $Fields
-}
-
-# ===========================================================================
 # Helper: safe field lookup
 # ===========================================================================
 
-function Get-Field {
+function Get-FieldValue {
 
     param(
         [Parameter(Mandatory = $true)]
@@ -216,63 +189,67 @@ function Get-EventCategory {
         [int]$EventId
     )
 
-    if ($SourceType -eq "Security") {
+    switch ($SourceType) {
 
-        switch ($EventId) {
+        "Security" {
 
-            4624 { return "authentication_success" }
-            4625 { return "authentication_failure" }
-            4672 { return "privileged_logon" }
-            4688 { return "process_creation" }
+            switch ($EventId) {
 
-            4720 { return "account_created" }
-            4726 { return "account_deleted" }
-            4732 { return "group_membership_change" }
-            1102 { return "audit_log_cleared" }
+                4624 { return "authentication_success" }
+                4625 { return "authentication_failure" }
+                4672 { return "privileged_logon" }
+                4688 { return "process_creation" }
+                4720 { return "account_created" }
+                4726 { return "account_deleted" }
+                4732 { return "group_membership_change" }
+                1102 { return "audit_log_cleared" }
 
-            default {
-                return "windows_security"
+                default {
+                    return "windows_security"
+                }
             }
         }
-    }
 
-    if ($SourceType -eq "PowerShell") {
+        "PowerShell" {
 
-        switch ($EventId) {
+            switch ($EventId) {
 
-            4103 { return "powershell_module_logging" }
-            4104 { return "powershell_script_block" }
+                4103 { return "powershell_module_logging" }
+                4104 { return "powershell_script_block" }
 
-            default {
-                return "powershell"
+                default {
+                    return "powershell"
+                }
             }
         }
-    }
 
-    if ($SourceType -eq "Sysmon") {
+        "Sysmon" {
 
-        switch ($EventId) {
+            switch ($EventId) {
 
-            1  { return "process_creation" }
-            3  { return "network_connection" }
-            7  { return "image_load" }
-            8  { return "remote_thread_creation" }
-            10 { return "process_access" }
-            11 { return "file_creation" }
-            13 { return "registry_modification" }
-            22 { return "dns_query" }
+                1  { return "process_creation" }
+                3  { return "network_connection" }
+                7  { return "image_load" }
+                8  { return "remote_thread_creation" }
+                10 { return "process_access" }
+                11 { return "file_creation" }
+                13 { return "registry_modification" }
+                22 { return "dns_query" }
 
-            default {
-                return "sysmon"
+                default {
+                    return "sysmon"
+                }
             }
         }
-    }
 
-    return "unknown"
+        default {
+            return "unknown"
+        }
+    }
 }
 
 # ===========================================================================
-# Helper: common normalized event
+# Helper: normalized common event
 # ===========================================================================
 
 function New-NormalizedEvent {
@@ -285,13 +262,18 @@ function New-NormalizedEvent {
         [string]$SourceType
     )
 
+    $TimestampValue = if ($null -ne $Event.TimeCreated) {
+
+        $Event.TimeCreated.ToUniversalTime().ToString("o")
+    }
+    else {
+
+        $null
+    }
+
     return [ordered]@{
-        timestamp = if ($null -ne $Event.TimeCreated) {
-            $Event.TimeCreated.ToUniversalTime().ToString("o")
-        }
-        else {
-            $null
-        }
+
+        timestamp = $TimestampValue
 
         hostname = $HostnameValue
 
@@ -314,7 +296,7 @@ function New-NormalizedEvent {
 }
 
 # ===========================================================================
-# Helper: Security event enrichment
+# Security enrichment
 # ===========================================================================
 
 function Add-SecurityEnrichment {
@@ -332,32 +314,32 @@ function Add-SecurityEnrichment {
 
     switch ($Event.Id) {
 
-        # -------------------------------------------------------------------
+        # ===================================================================
         # 4624 - Successful logon
-        # -------------------------------------------------------------------
+        # ===================================================================
 
         4624 {
 
-            $Normalized.target_user = Get-Field `
+            $Normalized.target_user = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "TargetUserName"
                 )
 
-            $Normalized.logon_type = Get-Field `
+            $Normalized.logon_type = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "LogonType"
                 )
 
-            $Normalized.source_ip = Get-Field `
+            $Normalized.source_ip = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "IpAddress",
                     "SourceNetworkAddress"
                 )
 
-            $Normalized.workstation = Get-Field `
+            $Normalized.workstation = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "WorkstationName"
@@ -366,25 +348,27 @@ function Add-SecurityEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
+        # ===================================================================
         # 4625 - Failed logon
-        # -------------------------------------------------------------------
+        # ===================================================================
 
         4625 {
 
-            $Normalized.target_user = Get-Field `
+            $Normalized.target_user = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "TargetUserName"
                 )
 
-            $Normalized.failure_reason = Get-Field `
+            $Normalized.failure_reason = Get-FieldValue `
                 -Map $Data `
                 -Names @(
-                    "FailureReason"
+                    "FailureReason",
+                    "Status",
+                    "SubStatus"
                 )
 
-            $Normalized.source_ip = Get-Field `
+            $Normalized.source_ip = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "IpAddress",
@@ -394,13 +378,13 @@ function Add-SecurityEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
-        # 4672 - Special privileges assigned
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # 4672 - Special privileges
+        # ===================================================================
 
         4672 {
 
-            $Normalized.privileged_account = Get-Field `
+            $Normalized.privileged_account = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "SubjectUserName"
@@ -409,26 +393,26 @@ function Add-SecurityEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
+        # ===================================================================
         # 4688 - Process creation
-        # -------------------------------------------------------------------
+        # ===================================================================
 
         4688 {
 
-            $Normalized.process_name = Get-Field `
+            $Normalized.process_name = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "NewProcessName"
                 )
 
-            $Normalized.command_line = Get-Field `
+            $Normalized.command_line = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "CommandLine",
                     "ProcessCommandLine"
                 )
 
-            $Normalized.parent_process = Get-Field `
+            $Normalized.parent_process = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "ParentProcessName",
@@ -441,7 +425,7 @@ function Add-SecurityEnrichment {
 }
 
 # ===========================================================================
-# Helper: PowerShell enrichment
+# PowerShell enrichment
 # ===========================================================================
 
 function Add-PowerShellEnrichment {
@@ -459,8 +443,8 @@ function Add-PowerShellEnrichment {
 
     if ($Event.Id -eq 4104) {
 
-        # Script Block Logging stores the decoded script block text.
-        $Normalized.script_block_text = Get-Field `
+        # ScriptBlock Event ID 4104 contains decoded script content.
+        $ScriptBlockText = Get-FieldValue `
             -Map $Data `
             -Names @(
                 "ScriptBlockText",
@@ -469,21 +453,21 @@ function Add-PowerShellEnrichment {
 
         if (
             [string]::IsNullOrWhiteSpace(
-                [string]$Normalized.script_block_text
+                [string]$ScriptBlockText
             )
         ) {
 
-            # Fallback to the rendered event message if ScriptBlockText
-            # was not exposed as a named EventData field.
-            $Normalized.script_block_text = [string]$Event.Message
+            $ScriptBlockText = [string]$Event.Message
         }
+
+        $Normalized.script_block_text = $ScriptBlockText
 
         $Normalized.script_block_decoded = $true
     }
 }
 
 # ===========================================================================
-# Helper: Sysmon enrichment
+# Sysmon enrichment
 # ===========================================================================
 
 function Add-SysmonEnrichment {
@@ -501,31 +485,31 @@ function Add-SysmonEnrichment {
 
     switch ($Event.Id) {
 
-        # -------------------------------------------------------------------
-        # Sysmon 1 - ProcessCreate
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # Sysmon Event ID 1 - ProcessCreate
+        # ===================================================================
 
         1 {
 
-            $Normalized.image = Get-Field `
+            $Normalized.image = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "Image"
                 )
 
-            $Normalized.command_line = Get-Field `
+            $Normalized.command_line = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "CommandLine"
                 )
 
-            $Normalized.parent_image = Get-Field `
+            $Normalized.parent_image = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "ParentImage"
                 )
 
-            $Normalized.hashes = Get-Field `
+            $Normalized.hashes = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "Hashes"
@@ -534,25 +518,25 @@ function Add-SysmonEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
-        # Sysmon 3 - NetworkConnect
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # Sysmon Event ID 3 - NetworkConnect
+        # ===================================================================
 
         3 {
 
-            $Normalized.destination_ip = Get-Field `
+            $Normalized.destination_ip = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "DestinationIp"
                 )
 
-            $Normalized.destination_port = Get-Field `
+            $Normalized.destination_port = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "DestinationPort"
                 )
 
-            $Normalized.process = Get-Field `
+            $Normalized.process = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "Image"
@@ -561,19 +545,19 @@ function Add-SysmonEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
-        # Sysmon 11 - FileCreate
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # Sysmon Event ID 11 - FileCreate
+        # ===================================================================
 
         11 {
 
-            $Normalized.target_filename = Get-Field `
+            $Normalized.target_filename = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "TargetFilename"
                 )
 
-            $Normalized.creating_process = Get-Field `
+            $Normalized.creating_process = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "Image"
@@ -582,13 +566,13 @@ function Add-SysmonEnrichment {
             break
         }
 
-        # -------------------------------------------------------------------
-        # Sysmon 13 - RegistryEvent / Value Set
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # Sysmon Event ID 13 - Registry modification
+        # ===================================================================
 
         13 {
 
-            $TargetObject = Get-Field `
+            $TargetObject = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "TargetObject"
@@ -596,19 +580,25 @@ function Add-SysmonEnrichment {
 
             $Normalized.registry_key = $TargetObject
 
+            $Normalized.registry_operation = Get-FieldValue `
+                -Map $Data `
+                -Names @(
+                    "EventType"
+                )
+
             if (
                 -not [string]::IsNullOrWhiteSpace(
                     [string]$TargetObject
                 )
             ) {
 
-                $LastSeparator = $TargetObject.LastIndexOf("\")
+                $LastSlash = $TargetObject.LastIndexOf("\")
 
-                if ($LastSeparator -ge 0) {
+                if ($LastSlash -ge 0) {
 
                     $Normalized.registry_value_name = `
                         $TargetObject.Substring(
-                            $LastSeparator + 1
+                            $LastSlash + 1
                         )
                 }
                 else {
@@ -621,28 +611,22 @@ function Add-SysmonEnrichment {
                 $Normalized.registry_value_name = $null
             }
 
-            $Normalized.registry_operation = Get-Field `
-                -Map $Data `
-                -Names @(
-                    "EventType"
-                )
-
             break
         }
 
-        # -------------------------------------------------------------------
-        # Sysmon 22 - DNSQuery
-        # -------------------------------------------------------------------
+        # ===================================================================
+        # Sysmon Event ID 22 - DNSQuery
+        # ===================================================================
 
         22 {
 
-            $Normalized.query_name = Get-Field `
+            $Normalized.query_name = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "QueryName"
                 )
 
-            $Normalized.query_results = Get-Field `
+            $Normalized.query_results = Get-FieldValue `
                 -Map $Data `
                 -Names @(
                     "QueryResults"
@@ -654,7 +638,7 @@ function Add-SysmonEnrichment {
 }
 
 # ===========================================================================
-# Helper: retrieve channel
+# Read one event channel
 # ===========================================================================
 
 function Get-ChannelEvents {
@@ -664,7 +648,10 @@ function Get-ChannelEvents {
         [string]$LogName,
 
         [Parameter(Mandatory = $true)]
-        [datetime]$StartTime
+        [datetime]$StartTime,
+
+        [Parameter(Mandatory = $true)]
+        [datetime]$EndTime
     )
 
     try {
@@ -686,6 +673,7 @@ function Get-ChannelEvents {
                 -FilterHashtable @{
                     LogName   = $LogName
                     StartTime = $StartTime
+                    EndTime   = $EndTime
                 } `
                 -ErrorAction SilentlyContinue
         )
@@ -700,7 +688,7 @@ function Get-ChannelEvents {
 }
 
 # ===========================================================================
-# Start
+# Begin export
 # ===========================================================================
 
 Write-Host ""
@@ -721,49 +709,52 @@ else {
 }
 
 Write-Host `
-    "    Start timestamp: $($StartTime.ToString('o'))"
+    "    StartTime: $($StartTime.ToString('o'))"
 
 Write-Host `
-    "    Export timestamp: $($ExportTimestamp.ToString('o'))"
+    "    EndTime:   $($EndTime.ToString('o'))"
 
 # ===========================================================================
-# Read Security
+# Security
 # ===========================================================================
 
 $SecurityEvents = @(
     Get-ChannelEvents `
         -LogName $SecurityChannel `
-        -StartTime $StartTime
+        -StartTime $StartTime `
+        -EndTime $EndTime
 )
 
 # ===========================================================================
-# Read Sysmon
+# Sysmon
 # ===========================================================================
 
 $SysmonEvents = @(
     Get-ChannelEvents `
         -LogName $SysmonChannel `
-        -StartTime $StartTime
+        -StartTime $StartTime `
+        -EndTime $EndTime
 )
 
 # ===========================================================================
-# Read PowerShell
+# PowerShell
 # ===========================================================================
 
 $PowerShellEvents = @(
     Get-ChannelEvents `
         -LogName $PowerShellChannel `
-        -StartTime $StartTime
+        -StartTime $StartTime `
+        -EndTime $EndTime
 )
 
 # ===========================================================================
-# Normalize events
+# Normalize all events
 # ===========================================================================
 
 $NormalizedEvents = @()
 
 # ---------------------------------------------------------------------------
-# Security
+# Security events
 # ---------------------------------------------------------------------------
 
 foreach ($Event in $SecurityEvents) {
@@ -780,7 +771,7 @@ foreach ($Event in $SecurityEvents) {
 }
 
 # ---------------------------------------------------------------------------
-# Sysmon
+# Sysmon events
 # ---------------------------------------------------------------------------
 
 foreach ($Event in $SysmonEvents) {
@@ -797,7 +788,7 @@ foreach ($Event in $SysmonEvents) {
 }
 
 # ---------------------------------------------------------------------------
-# PowerShell
+# PowerShell events
 # ---------------------------------------------------------------------------
 
 foreach ($Event in $PowerShellEvents) {
@@ -814,7 +805,7 @@ foreach ($Event in $PowerShellEvents) {
 }
 
 # ===========================================================================
-# Sort into analyst timeline
+# Sort by normalized timestamp
 # ===========================================================================
 
 $NormalizedEvents = @(
@@ -823,11 +814,13 @@ $NormalizedEvents = @(
 )
 
 # ===========================================================================
-# Count per channel
+# Counts
 # ===========================================================================
 
 $SecurityCount = $SecurityEvents.Count
+
 $SysmonCount = $SysmonEvents.Count
+
 $PowerShellCount = $PowerShellEvents.Count
 
 $TotalEvents = $NormalizedEvents.Count
@@ -836,7 +829,7 @@ $TotalEvents = $NormalizedEvents.Count
 # Top Event IDs
 # ===========================================================================
 
-$TopEventGroups = @(
+$TopGroups = @(
     $NormalizedEvents |
     Group-Object source_type,event_id |
     Sort-Object Count -Descending |
@@ -845,51 +838,72 @@ $TopEventGroups = @(
 
 $TopEventIds = @()
 
-foreach ($Group in $TopEventGroups) {
+foreach ($Group in $TopGroups) {
 
     $Sample = $Group.Group |
         Select-Object -First 1
 
-    $DisplayId = if ($Sample.source_type -eq "Sysmon") {
+    if ($Sample.source_type -eq "Sysmon") {
 
-        "Sysmon-$($Sample.event_id)"
-    }
-    elseif ($Sample.source_type -eq "PowerShell") {
-
-        [string]$Sample.event_id
+        $DisplayName = "Sysmon-$($Sample.event_id)"
     }
     else {
 
-        [string]$Sample.event_id
+        $DisplayName = [string]$Sample.event_id
     }
 
     $TopEventIds += [PSCustomObject]@{
-        event = $DisplayId
+
+        event = $DisplayName
+
         source_type = $Sample.source_type
+
         event_id = [int]$Sample.event_id
+
         count = $Group.Count
     }
 }
 
 # ===========================================================================
-# JSON document
+# Build JSON report
 # ===========================================================================
 
 $Report = [ordered]@{
 
     metadata = [ordered]@{
-        generated_at = $ExportTimestamp.ToUniversalTime().ToString("o")
+
+        generated_at = `
+            $ExportTimestamp.ToUniversalTime().ToString("o")
+
         hostname = $HostnameValue
+
         platform = $PlatformValue
+
         time_window_hours = $Hours
-        window_start = $StartTime.ToUniversalTime().ToString("o")
+
+        StartTime = `
+            $StartTime.ToUniversalTime().ToString("o")
+
+        EndTime = `
+            $EndTime.ToUniversalTime().ToString("o")
+
+        window_start = `
+            $StartTime.ToUniversalTime().ToString("o")
+
+        window_end = `
+            $EndTime.ToUniversalTime().ToString("o")
+
         output_file = "windows_events_export.json"
     }
 
     channel_counts = [ordered]@{
+
         Security = $SecurityCount
+
         Sysmon = $SysmonCount
+
         PowerShell = $PowerShellCount
+
         total = $TotalEvents
     }
 
@@ -899,7 +913,7 @@ $Report = [ordered]@{
 }
 
 # ===========================================================================
-# Write windows_events_export.json
+# Export JSON
 # ===========================================================================
 
 try {
@@ -916,7 +930,7 @@ try {
 catch {
 
     Write-Host `
-        "[FAIL] Unable to write windows_events_export.json"
+        "[FAIL] Unable to create windows_events_export.json"
 
     throw
 }
@@ -929,19 +943,20 @@ try {
 
     $null = Get-Content `
         -Path $OutputPath `
-        -Raw |
+        -Raw `
+        -ErrorAction Stop |
         ConvertFrom-Json
 }
 catch {
 
     Write-Host `
-        "[FAIL] windows_events_export.json is not valid JSON."
+        "[FAIL] windows_events_export.json is invalid."
 
     exit 1
 }
 
 # ===========================================================================
-# Console output
+# Console summary
 # ===========================================================================
 
 Write-Host ""
@@ -954,7 +969,7 @@ Write-Host ""
 
 if ($TopEventIds.Count -gt 0) {
 
-    $TopDisplay = @(
+    $TopFour = @(
         $TopEventIds |
         Select-Object -First 4 |
         ForEach-Object {
@@ -963,7 +978,7 @@ if ($TopEventIds.Count -gt 0) {
     )
 
     Write-Host `
-        "Top Event IDs: $($TopDisplay -join ', ')"
+        "Top Event IDs: $($TopFour -join ', ')"
 }
 else {
 
