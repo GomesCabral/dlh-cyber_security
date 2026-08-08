@@ -341,9 +341,11 @@ foreach ($Source in $ExpectedChannels) {
 
 # ===========================================================================
 # Time Coverage
+# Calculate events per hour, hours with events and hours without events.
 # ===========================================================================
 
 Write-Host "[*] Time Coverage..."
+Write-Host "    Calculating events per hour..."
 
 $HourlyBuckets = @()
 
