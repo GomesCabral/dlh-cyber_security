@@ -233,6 +233,12 @@ function Cleanup-TestArtifacts {
 
     if (Test-Path $RegistryTestPath) {
 
+        Remove-ItemProperty `
+            -Path $RegistryTestPath `
+            -Name $RegistryValueName `
+            -Force `
+            -ErrorAction SilentlyContinue
+
         Remove-Item `
             -Path $RegistryTestPath `
             -Recurse `
