@@ -36,7 +36,9 @@
 # Controlled validation artifacts are removed after testing.
 # Existing audit rules are preserved.
 
-set -euo pipefail
+set -e
+set -u
+set -o pipefail
 
 # =============================================================================
 # Configuration
