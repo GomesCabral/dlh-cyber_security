@@ -1,5 +1,5 @@
 # name: 1-sysmon_coverage_matrix.ps1
-# purpose: Parse the active Sysmon configuration and generate an ATT&CK-aligned telemetry coverage matrix.
+# purpose: Parse sysmonconfig.xml and generate an ATT&CK-aligned Sysmon telemetry coverage matrix.
 # author: Pedro Cabral
 #
 # Project: 2x02 - Eyes on Endpoint
@@ -11,21 +11,26 @@
 # Output:
 # - sysmon_coverage_matrix.json
 #
-# Required coverage statuses:
+# The script evaluates Sysmon coverage in three dimensions:
+# 1. Whether the required Event IDs are enabled
+# 2. Whether EventFiltering include/exclude rules may suppress activity
+# 3. Whether the event type provides the evidence fields required for triage
+#
+# Coverage states:
 # - covered
 # - partial
 # - blind
 #
 # Required ATT&CK mappings:
-# - T1059 Command and Scripting Interpreter -> Sysmon EID 1
-# - T1053 Scheduled Task/Job -> Sysmon EID 1
-# - T1547 Boot or Logon Autostart Execution -> Sysmon EID 13
-# - T1055 Process Injection -> Sysmon EID 8, 10
-# - T1071 Application Layer Protocol -> Sysmon EID 3, 22
-# - T1574.002 DLL Side-Loading -> Sysmon EID 7
-# - T1027 Obfuscated or Compressed Files -> Sysmon EID 11, 15
+# T1059     Command and Scripting Interpreter    -> Sysmon EID 1
+# T1053     Scheduled Task/Job                   -> Sysmon EID 1
+# T1547     Boot or Logon Autostart Execution    -> Sysmon EID 13
+# T1055     Process Injection                    -> Sysmon EID 8, 10
+# T1071     Application Layer Protocol           -> Sysmon EID 3, 22
+# T1574.002 DLL Side-Loading                     -> Sysmon EID 7
+# T1027     Obfuscated or Compressed Files       -> Sysmon EID 11, 15
 #
-# Each matrix row includes:
+# Required matrix fields:
 # - technique_id
 # - technique_name
 # - required_event_ids
@@ -36,8 +41,8 @@
 # - recommendation
 #
 # Safety:
-# READ-ONLY.
-# This script does not modify Sysmon configuration or Windows security settings.
+# READ-ONLY. The script does not modify Sysmon, Windows, Registry,
+# Group Policy or security configuration.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -57,62 +62,145 @@ $OutputPath = Join-Path `
     "sysmon_coverage_matrix.json"
 
 # ===========================================================================
-# Sysmon event map
+# Sysmon Event ID mapping
 # ===========================================================================
 
-# XML event type -> Sysmon Event ID
+# Sysmon configuration XML uses event names rather than Event IDs.
 #
-# RegistryEvent represents multiple Sysmon Event IDs:
+# RegistryEvent represents:
 # 12 = Registry object create/delete
 # 13 = Registry value set
 # 14 = Registry object rename
+#
+# PipeEvent represents:
+# 17 = Pipe created
+# 18 = Pipe connected
+#
+# WmiEvent represents:
+# 19 = WMI filter
+# 20 = WMI consumer
+# 21 = WMI consumer-to-filter binding
 
 $SysmonEventMap = [ordered]@{
-    ProcessCreate          = @(1)
-    FileCreateTime         = @(2)
-    NetworkConnect         = @(3)
+
+    ProcessCreate            = @(1)
+    FileCreateTime           = @(2)
+    NetworkConnect           = @(3)
     SysmonServiceStateChange = @(4)
-    ProcessTerminate       = @(5)
-    DriverLoad             = @(6)
-    ImageLoad              = @(7)
-    CreateRemoteThread     = @(8)
-    RawAccessRead          = @(9)
-    ProcessAccess          = @(10)
-    FileCreate             = @(11)
-    RegistryEvent          = @(12,13,14)
-    FileCreateStreamHash   = @(15)
-    PipeEvent              = @(17,18)
-    WmiEvent               = @(19,20,21)
-    DNSQuery               = @(22)
-    FileDelete             = @(23)
-    ClipboardChange        = @(24)
-    ProcessTampering       = @(25)
-    FileDeleteDetected     = @(26)
+    ProcessTerminate         = @(5)
+    DriverLoad               = @(6)
+    ImageLoad                = @(7)
+    CreateRemoteThread       = @(8)
+    RawAccessRead            = @(9)
+    ProcessAccess            = @(10)
+    FileCreate               = @(11)
+    RegistryEvent            = @(12, 13, 14)
+    FileCreateStreamHash     = @(15)
+    PipeEvent                = @(17, 18)
+    WmiEvent                 = @(19, 20, 21)
+    DNSQuery                 = @(22)
+    FileDelete               = @(23)
+    ClipboardChange          = @(24)
+    ProcessTampering         = @(25)
+    FileDeleteDetected       = @(26)
 }
 
 # ===========================================================================
-# ATT&CK coverage requirements
+# Expected Sysmon evidence fields
+# ===========================================================================
+
+$SysmonEvidenceFields = @{
+
+    1 = @(
+        "Image",
+        "CommandLine",
+        "ParentImage",
+        "ParentCommandLine",
+        "User",
+        "ProcessId",
+        "ParentProcessId",
+        "Hashes"
+    )
+
+    3 = @(
+        "Image",
+        "User",
+        "Protocol",
+        "SourceIp",
+        "SourcePort",
+        "DestinationIp",
+        "DestinationPort"
+    )
+
+    7 = @(
+        "Image",
+        "ImageLoaded",
+        "Hashes",
+        "Signed",
+        "Signature",
+        "SignatureStatus"
+    )
+
+    8 = @(
+        "SourceImage",
+        "TargetImage",
+        "SourceProcessId",
+        "TargetProcessId",
+        "StartAddress"
+    )
+
+    10 = @(
+        "SourceImage",
+        "TargetImage",
+        "SourceProcessId",
+        "TargetProcessId",
+        "GrantedAccess"
+    )
+
+    11 = @(
+        "Image",
+        "TargetFilename",
+        "CreationUtcTime"
+    )
+
+    13 = @(
+        "EventType",
+        "TargetObject",
+        "Details",
+        "Image",
+        "User"
+    )
+
+    15 = @(
+        "Image",
+        "TargetFilename",
+        "Hash",
+        "Contents"
+    )
+
+    22 = @(
+        "Image",
+        "QueryName",
+        "QueryStatus",
+        "QueryResults"
+    )
+}
+
+# ===========================================================================
+# ATT&CK mappings
 # ===========================================================================
 
 $AttackMappings = @(
+
     [PSCustomObject]@{
         technique_id = "T1059"
         technique_name = "Command and Scripting Interpreter"
         required_event_ids = @(1)
 
-        evidence_fields_expected = @(
-            "Image",
-            "CommandLine",
-            "ParentImage",
-            "ParentCommandLine",
-            "User",
-            "ProcessId",
-            "ParentProcessId",
-            "Hashes"
+        threat_example = (
+            "PowerShell, cmd.exe, wscript.exe or another command " +
+            "interpreter used for attacker execution."
         )
-
-        threat_example = `
-            "PowerShell, cmd.exe, wscript.exe or another interpreter used for attacker execution."
     },
 
     [PSCustomObject]@{
@@ -120,16 +208,10 @@ $AttackMappings = @(
         technique_name = "Scheduled Task/Job"
         required_event_ids = @(1)
 
-        evidence_fields_expected = @(
-            "Image",
-            "CommandLine",
-            "ParentImage",
-            "User",
-            "ProcessId"
+        threat_example = (
+            "schtasks.exe /create used to establish persistence " +
+            "or execute a payload."
         )
-
-        threat_example = `
-            "schtasks.exe /create used by an attacker to establish persistence."
     },
 
     [PSCustomObject]@{
@@ -137,53 +219,32 @@ $AttackMappings = @(
         technique_name = "Boot or Logon Autostart Execution"
         required_event_ids = @(13)
 
-        evidence_fields_expected = @(
-            "TargetObject",
-            "Details",
-            "Image",
-            "User",
-            "ProcessId"
+        threat_example = (
+            "Registry Run or RunOnce key modified so malware " +
+            "executes during user logon."
         )
-
-        threat_example = `
-            "Registry Run or RunOnce keys modified to launch malware after user logon."
     },
 
     [PSCustomObject]@{
         technique_id = "T1055"
         technique_name = "Process Injection"
-        required_event_ids = @(8,10)
+        required_event_ids = @(8, 10)
 
-        evidence_fields_expected = @(
-            "SourceImage",
-            "TargetImage",
-            "SourceProcessId",
-            "TargetProcessId",
-            "GrantedAccess",
-            "StartAddress"
+        threat_example = (
+            "A malicious process accesses another process or creates " +
+            "a remote thread for code injection."
         )
-
-        threat_example = `
-            "Malicious process accesses or creates a remote thread inside another process."
     },
 
     [PSCustomObject]@{
         technique_id = "T1071"
         technique_name = "Application Layer Protocol"
-        required_event_ids = @(3,22)
+        required_event_ids = @(3, 22)
 
-        evidence_fields_expected = @(
-            "Image",
-            "DestinationIp",
-            "DestinationPort",
-            "Protocol",
-            "QueryName",
-            "QueryResults",
-            "User"
+        threat_example = (
+            "Malware performs a DNS query for command-and-control " +
+            "infrastructure and then establishes a network connection."
         )
-
-        threat_example = `
-            "Malware resolves a command-and-control domain and connects to it over TCP."
     },
 
     [PSCustomObject]@{
@@ -191,69 +252,86 @@ $AttackMappings = @(
         technique_name = "DLL Side-Loading"
         required_event_ids = @(7)
 
-        evidence_fields_expected = @(
-            "Image",
-            "ImageLoaded",
-            "Hashes",
-            "Signed",
-            "Signature",
-            "SignatureStatus"
+        threat_example = (
+            "A trusted application loads a malicious DLL from an " +
+            "unexpected directory."
         )
-
-        threat_example = `
-            "A trusted executable loads a malicious DLL from an unexpected directory."
     },
 
     [PSCustomObject]@{
         technique_id = "T1027"
         technique_name = "Obfuscated or Compressed Files"
-        required_event_ids = @(11,15)
+        required_event_ids = @(11, 15)
 
-        evidence_fields_expected = @(
-            "Image",
-            "TargetFilename",
-            "Hash",
-            "Contents"
+        threat_example = (
+            "An attacker writes encoded, packed or alternate-data-stream " +
+            "content to disk."
         )
-
-        threat_example = `
-            "Malware writes encoded, packed or alternate-data-stream content to disk."
     }
 )
 
 # ===========================================================================
-# Helper functions
+# Helper: find EventFiltering
 # ===========================================================================
 
-function Get-EventElementNames {
+function Get-EventFilteringNode {
 
     param(
         [Parameter(Mandatory = $true)]
         [xml]$Xml
     )
 
-    $Found = @()
+    # Sysmon rules are stored under the EventFiltering element.
+    $EventFiltering = $Xml.SelectSingleNode(
+        "//*[local-name()='EventFiltering']"
+    )
+
+    return $EventFiltering
+}
+
+# ===========================================================================
+# Helper: get XML event names
+# ===========================================================================
+
+function Get-ConfiguredEventTypes {
+
+    param(
+        [Parameter(Mandatory = $true)]
+        [xml]$Xml
+    )
+
+    $EventFiltering = Get-EventFilteringNode `
+        -Xml $Xml
+
+    if ($null -eq $EventFiltering) {
+        return @()
+    }
+
+    $FoundEventTypes = @()
 
     foreach ($EventType in $SysmonEventMap.Keys) {
 
         $Nodes = @(
-            $Xml.SelectNodes(
-                "//*[local-name()='$EventType']"
+            $EventFiltering.SelectNodes(
+                ".//*[local-name()='$EventType']"
             )
         )
 
         if ($Nodes.Count -gt 0) {
 
-            $Found += $EventType
+            $FoundEventTypes += $EventType
         }
     }
 
     return @(
-        $Found |
+        $FoundEventTypes |
         Sort-Object -Unique
     )
 }
 
+# ===========================================================================
+# Helper: enabled Event IDs
+# ===========================================================================
 
 function Get-EnabledEventIds {
 
@@ -262,29 +340,32 @@ function Get-EnabledEventIds {
         [xml]$Xml
     )
 
-    $EventNames = @(
-        Get-EventElementNames `
+    $ConfiguredEventTypes = @(
+        Get-ConfiguredEventTypes `
             -Xml $Xml
     )
 
-    $Ids = @()
+    $EnabledIds = @()
 
-    foreach ($EventName in $EventNames) {
+    foreach ($EventType in $ConfiguredEventTypes) {
 
-        foreach ($Id in $SysmonEventMap[$EventName]) {
+        foreach ($EventId in @($SysmonEventMap[$EventType])) {
 
-            $Ids += [int]$Id
+            $EnabledIds += [int]$EventId
         }
     }
 
     return @(
-        $Ids |
+        $EnabledIds |
         Sort-Object -Unique
     )
 }
 
+# ===========================================================================
+# Helper: Event ID -> XML event name
+# ===========================================================================
 
-function Get-EventNamesForId {
+function Get-EventTypesForId {
 
     param(
         [Parameter(Mandatory = $true)]
@@ -293,22 +374,25 @@ function Get-EventNamesForId {
 
     $Names = @()
 
-    foreach ($Name in $SysmonEventMap.Keys) {
+    foreach ($EventType in $SysmonEventMap.Keys) {
 
         if (
-            @($SysmonEventMap[$Name]) -contains
+            @($SysmonEventMap[$EventType]) -contains
             $EventId
         ) {
 
-            $Names += $Name
+            $Names += $EventType
         }
     }
 
-    return $Names
+    return @($Names)
 }
 
+# ===========================================================================
+# Helper: collect filter information
+# ===========================================================================
 
-function Get-FilterConflicts {
+function Get-FilterAssessment {
 
     param(
         [Parameter(Mandatory = $true)]
@@ -318,94 +402,186 @@ function Get-FilterConflicts {
         [int[]]$RequiredEventIds
     )
 
+    $EventFiltering = Get-EventFilteringNode `
+        -Xml $Xml
+
+    $FilterInventory = @()
     $Conflicts = @()
+
+    if ($null -eq $EventFiltering) {
+
+        return [PSCustomObject]@{
+            filters = @()
+            conflicts = @(
+                "EventFiltering section is missing"
+            )
+        }
+    }
 
     foreach ($EventId in $RequiredEventIds) {
 
-        $EventNames = @(
-            Get-EventNamesForId `
+        $EventTypes = @(
+            Get-EventTypesForId `
                 -EventId $EventId
         )
 
-        foreach ($EventName in $EventNames) {
+        foreach ($EventType in $EventTypes) {
 
             $Nodes = @(
-                $Xml.SelectNodes(
-                    "//*[local-name()='$EventName']"
+                $EventFiltering.SelectNodes(
+                    ".//*[local-name()='$EventType']"
                 )
             )
 
             foreach ($Node in $Nodes) {
 
-                $OnMatch = [string]$Node.GetAttribute("onmatch")
+                $OnMatch = [string]$Node.GetAttribute(
+                    "onmatch"
+                )
 
-                # -----------------------------------------------------------
-                # Exclude rules
-                #
-                # Any exclude rule may suppress relevant activity if the
-                # attack matches the excluded condition.
-                # -----------------------------------------------------------
-
-                if (
-                    $OnMatch -match "(?i)^exclude$"
-                ) {
-
-                    $RuleNames = @(
-                        $Node.SelectNodes(".//*[@name]") |
-                        ForEach-Object {
-                            [string]$_.GetAttribute("name")
-                        } |
-                        Where-Object {
-                            -not [string]::IsNullOrWhiteSpace($_)
-                        }
-                    )
-
-                    if ($RuleNames.Count -gt 0) {
-
-                        foreach ($RuleName in $RuleNames) {
-
-                            $Conflicts += `
-                                "EID $EventId / $EventName has exclude filtering: $RuleName"
-                        }
-                    }
-                    else {
-
-                        $Conflicts += `
-                            "EID $EventId / $EventName has an onmatch=exclude rule that may suppress relevant telemetry"
-                    }
+                if ([string]::IsNullOrWhiteSpace($OnMatch)) {
+                    $OnMatch = "not_specified"
                 }
 
                 # -----------------------------------------------------------
-                # Include-only filtering
-                #
-                # If include rules exist, events not matching the included
-                # conditions may not be logged.
+                # Record all include/exclude filters for evidence.
                 # -----------------------------------------------------------
 
-                if (
-                    $OnMatch -match "(?i)^include$"
-                ) {
+                $Conditions = @(
+                    $Node.SelectNodes(
+                        ".//*[not(*)]"
+                    )
+                )
 
-                    $ChildConditions = @(
-                        $Node.SelectNodes(".//*")
+                if ($Conditions.Count -eq 0) {
+
+                    $FilterInventory += [PSCustomObject]@{
+                        event_id = $EventId
+                        event_type = $EventType
+                        onmatch = $OnMatch
+                        field = $null
+                        condition = $null
+                        value = $null
+                    }
+                }
+
+                foreach ($ConditionNode in $Conditions) {
+
+                    $ConditionName = [string]$ConditionNode.LocalName
+
+                    # Ignore Rule wrapper elements.
+                    if ($ConditionName -eq "Rule") {
+                        continue
+                    }
+
+                    $ConditionType = [string]$ConditionNode.GetAttribute(
+                        "condition"
                     )
 
-                    if ($ChildConditions.Count -gt 0) {
+                    $ConditionValue = [string]$ConditionNode.InnerText
 
-                        $Conflicts += `
-                            "EID $EventId / $EventName uses include filtering; unmatched attacker activity may be suppressed"
+                    $FilterInventory += [PSCustomObject]@{
+                        event_id = $EventId
+                        event_type = $EventType
+                        onmatch = $OnMatch
+                        field = $ConditionName
+                        condition = $ConditionType
+                        value = $ConditionValue
+                    }
+
+                    # -------------------------------------------------------
+                    # Detect potentially dangerous broad exclusions.
+                    #
+                    # We do NOT classify every normal exclude rule as a
+                    # conflict because high-quality Sysmon configs contain
+                    # many noise-reduction exclusions.
+                    #
+                    # Broad/wildcard exclusions are considered conflicts.
+                    # -------------------------------------------------------
+
+                    if ($OnMatch -ieq "exclude") {
+
+                        $BroadExclusion = $false
+
+                        if (
+                            [string]::IsNullOrWhiteSpace(
+                                $ConditionValue
+                            )
+                        ) {
+
+                            $BroadExclusion = $true
+                        }
+
+                        if ($ConditionValue -eq "*") {
+
+                            $BroadExclusion = $true
+                        }
+
+                        if (
+                            $ConditionType -match
+                            "(?i)^is any$"
+                        ) {
+
+                            $BroadExclusion = $true
+                        }
+
+                        if ($BroadExclusion) {
+
+                            $Conflicts += (
+                                "EID $EventId / $EventType has a broad " +
+                                "exclude rule that may suppress security-relevant activity."
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
+    return [PSCustomObject]@{
+        filters = @(
+            $FilterInventory
+        )
+
+        conflicts = @(
+            $Conflicts |
+            Sort-Object -Unique
+        )
+    }
+}
+
+# ===========================================================================
+# Helper: expected evidence fields
+# ===========================================================================
+
+function Get-EvidenceFields {
+
+    param(
+        [Parameter(Mandatory = $true)]
+        [int[]]$RequiredEventIds
+    )
+
+    $Fields = @()
+
+    foreach ($EventId in $RequiredEventIds) {
+
+        if ($SysmonEvidenceFields.ContainsKey($EventId)) {
+
+            $Fields += @(
+                $SysmonEvidenceFields[$EventId]
+            )
+        }
+    }
+
     return @(
-        $Conflicts |
+        $Fields |
         Sort-Object -Unique
     )
 }
 
+# ===========================================================================
+# Helper: calculate coverage
+# ===========================================================================
 
 function Get-CoverageStatus {
 
@@ -414,6 +590,7 @@ function Get-CoverageStatus {
         [int[]]$RequiredEventIds,
 
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [int[]]$EnabledEventIds,
 
         [Parameter(Mandatory = $true)]
@@ -421,30 +598,107 @@ function Get-CoverageStatus {
         [string[]]$FilterConflicts
     )
 
-    $RequiredCount = $RequiredEventIds.Count
-
-    $EnabledRequired = @(
+    $EnabledRequiredIds = @(
         $RequiredEventIds |
         Where-Object {
             $EnabledEventIds -contains $_
         }
     )
 
-    if ($EnabledRequired.Count -eq 0) {
+    # No required telemetry at all.
+    if ($EnabledRequiredIds.Count -eq 0) {
+
         return "blind"
     }
 
-    if ($EnabledRequired.Count -lt $RequiredCount) {
+    # Some required telemetry is missing.
+    if (
+        $EnabledRequiredIds.Count -lt
+        $RequiredEventIds.Count
+    ) {
+
         return "partial"
     }
 
+    # All required telemetry exists, but an obvious filter conflict exists.
     if ($FilterConflicts.Count -gt 0) {
+
         return "partial"
     }
 
     return "covered"
 }
 
+# ===========================================================================
+# Helper: reason
+# ===========================================================================
+
+function Get-CoverageReason {
+
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CoverageStatus,
+
+        [Parameter(Mandatory = $true)]
+        [int[]]$RequiredEventIds,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [int[]]$EnabledEventIds,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$FilterConflicts
+    )
+
+    $MissingIds = @(
+        $RequiredEventIds |
+        Where-Object {
+            $EnabledEventIds -notcontains $_
+        }
+    )
+
+    if ($CoverageStatus -eq "covered") {
+
+        return (
+            "All required Sysmon Event IDs are enabled and no broad " +
+            "filter conflict was identified. Expected event fields " +
+            "are available in the Sysmon event schema for triage."
+        )
+    }
+
+    if ($CoverageStatus -eq "blind") {
+
+        return (
+            "None of the required Sysmon Event IDs are enabled. " +
+            "The technique currently has no required Sysmon telemetry."
+        )
+    }
+
+    $Reasons = @()
+
+    if ($MissingIds.Count -gt 0) {
+
+        $Reasons += (
+            "Missing required Sysmon Event ID(s): " +
+            ($MissingIds -join ", ")
+        )
+    }
+
+    if ($FilterConflicts.Count -gt 0) {
+
+        $Reasons += (
+            "One or more EventFiltering rules may suppress " +
+            "security-relevant telemetry."
+        )
+    }
+
+    return ($Reasons -join "; ")
+}
+
+# ===========================================================================
+# Helper: recommendation
+# ===========================================================================
 
 function Get-Recommendation {
 
@@ -456,34 +710,28 @@ function Get-Recommendation {
         [int[]]$RequiredEventIds,
 
         [Parameter(Mandatory = $true)]
-        [int[]]$EnabledRequiredIds,
+        [AllowEmptyCollection()]
+        [int[]]$EnabledEventIds,
 
         [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
         [string[]]$FilterConflicts
     )
 
+    if ($CoverageStatus -eq "covered") {
+
+        return (
+            "Maintain the current Sysmon configuration and periodically " +
+            "validate the telemetry with controlled ATT&CK-aligned tests."
+        )
+    }
+
     $MissingIds = @(
         $RequiredEventIds |
         Where-Object {
-            $EnabledRequiredIds -notcontains $_
+            $EnabledEventIds -notcontains $_
         }
     )
-
-    if ($CoverageStatus -eq "covered") {
-
-        return `
-            "Maintain current Sysmon coverage and validate the event fields with controlled telemetry tests."
-    }
-
-    if ($CoverageStatus -eq "blind") {
-
-        return (
-            "Enable Sysmon Event ID(s) " +
-            ($RequiredEventIds -join ", ") +
-            " and validate the resulting telemetry with a controlled trigger."
-        )
-    }
 
     $Actions = @()
 
@@ -497,84 +745,22 @@ function Get-Recommendation {
 
     if ($FilterConflicts.Count -gt 0) {
 
-        $Actions += `
-            "Review include/exclude filters and remove or narrow rules that suppress security-relevant attacker activity"
+        $Actions += (
+            "Review EventFiltering include/exclude rules and narrow " +
+            "filters that may suppress attacker activity"
+        )
     }
 
-    $Actions += `
-        "Validate that required evidence fields are populated during a controlled test"
+    $Actions += (
+        "Run a controlled trigger and verify that the expected " +
+        "evidence fields are present"
+    )
 
     return ($Actions -join "; ")
 }
 
-
-function Get-CoverageReason {
-
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$CoverageStatus,
-
-        [Parameter(Mandatory = $true)]
-        [int[]]$RequiredEventIds,
-
-        [Parameter(Mandatory = $true)]
-        [int[]]$EnabledRequiredIds,
-
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [string[]]$FilterConflicts
-    )
-
-    $MissingIds = @(
-        $RequiredEventIds |
-        Where-Object {
-            $EnabledRequiredIds -notcontains $_
-        }
-    )
-
-    switch ($CoverageStatus) {
-
-        "covered" {
-
-            return (
-                "All required Sysmon Event IDs are enabled and no obvious conflicting filters were identified."
-            )
-        }
-
-        "partial" {
-
-            $Reasons = @()
-
-            if ($MissingIds.Count -gt 0) {
-
-                $Reasons += (
-                    "Missing required Event ID(s): " +
-                    ($MissingIds -join ", ")
-                )
-            }
-
-            if ($FilterConflicts.Count -gt 0) {
-
-                $Reasons += `
-                    "Filtering may suppress relevant telemetry"
-            }
-
-            return ($Reasons -join "; ")
-        }
-
-        "blind" {
-
-            return (
-                "None of the required Sysmon Event IDs are enabled for this ATT&CK technique."
-            )
-        }
-    }
-
-    return "Unknown coverage state."
-}
-
 # ===========================================================================
-# Validate input
+# Start
 # ===========================================================================
 
 Write-Host ""
@@ -585,10 +771,14 @@ Write-Host ""
 
 Write-Host "[*] Parsing Sysmon config: sysmonconfig.xml"
 
+# ===========================================================================
+# Validate input
+# ===========================================================================
+
 if (-not (Test-Path $SysmonConfigPath)) {
 
-    Write-Host "[FAIL] sysmonconfig.xml not found:"
-    Write-Host "       $SysmonConfigPath"
+    Write-Host "[FAIL] sysmonconfig.xml not found."
+    Write-Host "       Expected path: $SysmonConfigPath"
 
     exit 1
 }
@@ -606,23 +796,56 @@ try {
 }
 catch {
 
-    Write-Host `
-        "[FAIL] Unable to parse sysmonconfig.xml: $($_.Exception.Message)"
+    Write-Host (
+        "[FAIL] Unable to parse sysmonconfig.xml: " +
+        $_.Exception.Message
+    )
 
     exit 1
 }
 
 # ===========================================================================
-# Enabled event types
+# Validate EventFiltering
 # ===========================================================================
+
+$EventFiltering = Get-EventFilteringNode `
+    -Xml $SysmonConfig
+
+if ($null -eq $EventFiltering) {
+
+    Write-Host `
+        "[FAIL] EventFiltering section not found in sysmonconfig.xml"
+
+    exit 1
+}
+
+Write-Host "[*] EventFiltering section found."
+
+# ===========================================================================
+# Discover configured events
+# ===========================================================================
+
+$ConfiguredEventTypes = @(
+    Get-ConfiguredEventTypes `
+        -Xml $SysmonConfig
+)
 
 $EnabledEventIds = @(
     Get-EnabledEventIds `
         -Xml $SysmonConfig
 )
 
-Write-Host `
-    "Enabled Event IDs: $($EnabledEventIds -join ', ')"
+if ($EnabledEventIds.Count -eq 0) {
+
+    Write-Host "[WARN] No recognized Sysmon Event IDs found."
+}
+else {
+
+    Write-Host (
+        "Enabled Event IDs: " +
+        ($EnabledEventIds -join ", ")
+    )
+}
 
 # ===========================================================================
 # Build coverage matrix
@@ -643,27 +866,34 @@ foreach ($Technique in $AttackMappings) {
         }
     )
 
+    $FilterAssessment = Get-FilterAssessment `
+        -Xml $SysmonConfig `
+        -RequiredEventIds $RequiredIds
+
     $FilterConflicts = @(
-        Get-FilterConflicts `
-            -Xml $SysmonConfig `
+        $FilterAssessment.conflicts
+    )
+
+    $EvidenceFields = @(
+        Get-EvidenceFields `
             -RequiredEventIds $RequiredIds
     )
 
     $CoverageStatus = Get-CoverageStatus `
         -RequiredEventIds $RequiredIds `
-        -EnabledEventIds $EnabledEventIds `
+        -EnabledEventIds $EnabledRequiredIds `
         -FilterConflicts $FilterConflicts
 
     $Reason = Get-CoverageReason `
         -CoverageStatus $CoverageStatus `
         -RequiredEventIds $RequiredIds `
-        -EnabledRequiredIds $EnabledRequiredIds `
+        -EnabledEventIds $EnabledRequiredIds `
         -FilterConflicts $FilterConflicts
 
     $Recommendation = Get-Recommendation `
         -CoverageStatus $CoverageStatus `
         -RequiredEventIds $RequiredIds `
-        -EnabledRequiredIds $EnabledRequiredIds `
+        -EnabledEventIds $EnabledRequiredIds `
         -FilterConflicts $FilterConflicts
 
     $CoverageMatrix += [PSCustomObject]@{
@@ -682,17 +912,20 @@ foreach ($Technique in $AttackMappings) {
 
         reason = $Reason
 
-        evidence_fields_expected = `
-            $Technique.evidence_fields_expected
+        evidence_fields_expected = $EvidenceFields
 
         recommendation = $Recommendation
 
         threat_example = $Technique.threat_example
+
+        filter_inventory = @(
+            $FilterAssessment.filters
+        )
     }
 }
 
 # ===========================================================================
-# Summary
+# Coverage summary
 # ===========================================================================
 
 $CoveredCount = @(
@@ -717,9 +950,14 @@ $BlindCount = @(
 ).Count
 
 $Summary = [ordered]@{
+
     timestamp = (Get-Date).ToString("o")
 
-    source_config = $SysmonConfigPath
+    source_config = "sysmonconfig.xml"
+
+    EventFiltering_found = $true
+
+    configured_event_types = $ConfiguredEventTypes
 
     enabled_event_ids = $EnabledEventIds
 
@@ -733,16 +971,26 @@ $Summary = [ordered]@{
 }
 
 # ===========================================================================
-# Final JSON document
+# Build report
 # ===========================================================================
 
 $Report = [ordered]@{
+
     metadata = [ordered]@{
+
         project = "2x02_eyes_on_endpoint"
+
         task = "1 - Sysmon ATT&CK Coverage Matrix"
+
         timestamp = (Get-Date).ToString("o")
+
         computer = $env:COMPUTERNAME
+
         script = "1-sysmon_coverage_matrix.ps1"
+
+        input_file = "sysmonconfig.xml"
+
+        output_file = "sysmon_coverage_matrix.json"
     }
 
     summary = $Summary
@@ -754,17 +1002,27 @@ $Report = [ordered]@{
 # Write JSON
 # ===========================================================================
 
-$Report |
-    ConvertTo-Json `
-        -Depth 12 |
+try {
+
+    $Json = $Report |
+        ConvertTo-Json `
+            -Depth 15
+
+    # Set-Content terminates the file with a newline.
     Set-Content `
         -Path $OutputPath `
+        -Value $Json `
         -Encoding UTF8
+}
+catch {
 
-# Ensure a newline exists at the end of the JSON file.
-Add-Content `
-    -Path $OutputPath `
-    -Value ""
+    Write-Host (
+        "[FAIL] Could not write sysmon_coverage_matrix.json: " +
+        $_.Exception.Message
+    )
+
+    exit 1
+}
 
 # ===========================================================================
 # Validate generated JSON
@@ -774,12 +1032,14 @@ try {
 
     $null = Get-Content `
         -Path $OutputPath `
-        -Raw |
+        -Raw `
+        -ErrorAction Stop |
         ConvertFrom-Json
 }
 catch {
 
-    Write-Host "[FAIL] Generated JSON is invalid."
+    Write-Host `
+        "[FAIL] sysmon_coverage_matrix.json is not valid JSON."
 
     exit 1
 }
