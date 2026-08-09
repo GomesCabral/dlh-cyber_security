@@ -2,7 +2,7 @@
 
 # name: 6-log_source_map.sh
 # purpose: Inventory active Linux log sources and document path, format, rotation policy, file size, events per hour, security relevance, and missing or inactive sources.
-# author: Pedro Cabral
+# author: Pedro Cabra
 #
 # Project: 2x02 - Eyes on Endpoint
 # Task: 6 - Linux Log Source Mapping
