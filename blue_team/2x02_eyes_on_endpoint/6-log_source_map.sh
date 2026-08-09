@@ -1,248 +1,97 @@
 #!/bin/bash
 
 # name: 6-log_source_map.sh
-# purpose: Inventory active Linux log sources and document path, format, rotation policy, file size, events per hour, security relevance, and missing or inactive sources.
+# purpose: Inventory active Linux log sources, formats, rotation policies, file sizes, event rates, security relevance, and missing or inactive sources.
 # author: Pedro Cabral
 #
 # Project: 2x02 - Eyes on Endpoint
 # Task: 6 - Linux Log Source Mapping
 #
-# Required Linux log sources:
-# - auth.log
-# - syslog
-# - audit.log
-# - kern.log
-# - dpkg.log
-# - apache2 access log
-# - apache2 error log
-# - other security-relevant sources
+# Required sources:
+# auth.log
+# syslog
+# audit.log
+# kern.log
+# dpkg.log
+# apache2 access log
+# apache2 error log
+#
+# Required format types:
+# syslog
+# JSON
+# audit
+# custom
 #
 # Required metadata:
-# - file path
-# - format type: syslog, JSON, audit, custom
-# - rotation policy
-# - current file size
-# - estimated events per hour
-# - security relevance: critical, high, medium, low
+# file path
+# format
+# rotation policy
+# current file size
+# estimated events per hour
+# security relevance
 #
-# Rotation sources:
-# - /etc/logrotate.conf
-# - /etc/logrotate.d/
-# - /etc/audit/auditd.conf
+# Relevance levels:
+# critical
+# high
+# medium
+# low
 #
-# Missing or inactive telemetry states:
-# - MISSING
-# - INACTIVE
-# - not generating events
+# Missing or inactive sources are explicitly reported.
+#
+# Rotation policy is discovered from:
+# /etc/logrotate.conf
+# /etc/logrotate.d/
 #
 # Safety:
 # READ-ONLY.
-# This script does not modify logs, services, logrotate, auditd, or system
-# configuration.
+# The script does not change system logging configuration.
 
 set -e
 set -u
 set -o pipefail
 
-# Explicit grader-visible declaration of the required bash shebang.
-REQUIRED_BASH_SHEBANG='#!/bin/bash'
-readonly REQUIRED_BASH_SHEBANG
-
 # =============================================================================
 # Configuration
 # =============================================================================
-
-OBSERVATION_HOURS=24
 
 FOUND_COUNT=0
 MISSING_COUNT=0
 INACTIVE_COUNT=0
 
-TMP_DIR="$(mktemp -d)"
-RESULT_FILE="${TMP_DIR}/log_sources.tsv"
+TMP_FILE="$(mktemp)"
 
-trap 'rm -rf "${TMP_DIR}"' EXIT
+trap 'rm -f "${TMP_FILE}"' EXIT
 
 # =============================================================================
-# Helper: human-readable file size
+# File Size
 # =============================================================================
 
 get_file_size() {
-    local file_path="$1"
+    local path="$1"
 
-    if [[ ! -f "${file_path}" ]]; then
+    if [[ ! -f "${path}" ]]; then
         printf '%s' "-"
         return
     fi
 
-    du -h "${file_path}" 2>/dev/null |
+    du -h "${path}" 2>/dev/null |
         awk '{print $1}'
 }
 
 # =============================================================================
-# Helper: count recent events
-#
-# Estimate events per hour using timestamps from the last 24 hours rather than
-# dividing the complete historical file by its modification age.
-#
-# Supported formats:
-# - syslog
-# - audit
-# - custom
-# - JSON
-# =============================================================================
-
-estimate_events_per_hour() {
-    local file_path="$1"
-    local format_type="$2"
-    local recent_events=0
-    local rate="0"
-
-    if [[ ! -f "${file_path}" ]]; then
-        printf '%s' "0"
-        return
-    fi
-
-    if [[ ! -s "${file_path}" ]]; then
-        printf '%s' "0"
-        return
-    fi
-
-    case "${format_type}" in
-
-        syslog)
-            # Syslog normally starts with:
-            # Aug  8 18:15:22 hostname ...
-            #
-            # Count entries matching dates from the current observation window.
-
-            recent_events="$(
-                awk \
-                    -v start_epoch="$(date -d "${OBSERVATION_HOURS} hours ago" +%s)" \
-                    -v current_year="$(date +%Y)" \
-                    '
-                    BEGIN {
-                        month["Jan"]=1
-                        month["Feb"]=2
-                        month["Mar"]=3
-                        month["Apr"]=4
-                        month["May"]=5
-                        month["Jun"]=6
-                        month["Jul"]=7
-                        month["Aug"]=8
-                        month["Sep"]=9
-                        month["Oct"]=10
-                        month["Nov"]=11
-                        month["Dec"]=12
-                    }
-
-                    /^[A-Z][a-z][a-z][[:space:]]+[0-9]+[[:space:]][0-9]{2}:[0-9]{2}:[0-9]{2}/ {
-                        command = sprintf(
-                            "date -d \"%s %s %s %s\" +%%s 2>/dev/null",
-                            current_year,
-                            month[$1],
-                            $2,
-                            $3
-                        )
-
-                        command | getline event_epoch
-                        close(command)
-
-                        if (event_epoch >= start_epoch) {
-                            count++
-                        }
-                    }
-
-                    END {
-                        print count + 0
-                    }
-                    ' "${file_path}" 2>/dev/null || printf '0'
-            )"
-            ;;
-
-        audit)
-            # audit.log records contain:
-            # msg=audit(UNIX_EPOCH.xxx:serial)
-
-            recent_events="$(
-                awk \
-                    -v start_epoch="$(date -d "${OBSERVATION_HOURS} hours ago" +%s)" \
-                    '
-                    match($0, /audit\(([0-9]+)\./, result) {
-                        if (result[1] >= start_epoch) {
-                            count++
-                        }
-                    }
-
-                    END {
-                        print count + 0
-                    }
-                    ' "${file_path}" 2>/dev/null || printf '0'
-            )"
-            ;;
-
-        custom|JSON)
-            # For application/custom logs where timestamp structure may vary,
-            # use modification time as a conservative signal.
-            #
-            # If the file was not modified during the last 24 hours,
-            # its current event rate is treated as zero.
-
-            if find "${file_path}" \
-                -mmin "-$((OBSERVATION_HOURS * 60))" \
-                -print \
-                -quit 2>/dev/null |
-                grep -q .
-            then
-                recent_events="$(
-                    wc -l < "${file_path}" 2>/dev/null || printf '0'
-                )"
-            else
-                recent_events=0
-            fi
-            ;;
-
-        *)
-            recent_events=0
-            ;;
-    esac
-
-    if [[ "${recent_events}" -le 0 ]]; then
-        printf '%s' "0"
-        return
-    fi
-
-    rate="$(
-        awk \
-            -v events="${recent_events}" \
-            -v hours="${OBSERVATION_HOURS}" \
-            'BEGIN {
-                value=events/hours
-
-                if (value > 0 && value < 1) {
-                    print "<1"
-                } else {
-                    printf "%.0f", value
-                }
-            }'
-    )"
-
-    printf '%s' "${rate}"
-}
-
-# =============================================================================
-# Helper: find logrotate configuration
+# Logrotate Configuration
 # =============================================================================
 
 find_logrotate_config() {
-    local file_path="$1"
-    local base_name=""
+    local path="$1"
+    local basename_value=""
     local result=""
 
-    base_name="$(basename "${file_path}")"
+    basename_value="$(basename "${path}")"
 
     if [[ -f "/etc/logrotate.conf" ]]; then
-        if grep -Fq -- "${file_path}" /etc/logrotate.conf 2>/dev/null; then
+
+        if grep -Fq "${path}" /etc/logrotate.conf 2>/dev/null; then
             printf '%s' "/etc/logrotate.conf"
             return
         fi
@@ -251,15 +100,20 @@ find_logrotate_config() {
     if [[ -d "/etc/logrotate.d" ]]; then
 
         result="$(
-            grep -RFl -- "${file_path}" \
-                /etc/logrotate.d 2>/dev/null |
+            grep -RFl \
+                "${path}" \
+                /etc/logrotate.d \
+                2>/dev/null |
                 head -n 1 || true
         )"
 
         if [[ -z "${result}" ]]; then
+
             result="$(
-                grep -RFl -- "${base_name}" \
-                    /etc/logrotate.d 2>/dev/null |
+                grep -RFl \
+                    "${basename_value}" \
+                    /etc/logrotate.d \
+                    2>/dev/null |
                     head -n 1 || true
             )"
         fi
@@ -268,24 +122,23 @@ find_logrotate_config() {
     if [[ -n "${result}" ]]; then
         printf '%s' "${result}"
     else
-        printf '%s' "-"
+        printf '%s' ""
     fi
 }
 
 # =============================================================================
-# Helper: parse logrotate policy
+# Rotation Policy
 # =============================================================================
 
-get_logrotate_policy() {
-    local file_path="$1"
+get_rotation_policy() {
+    local path="$1"
     local config=""
     local frequency=""
     local rotate_count=""
-    local policy=""
 
-    config="$(find_logrotate_config "${file_path}")"
+    config="$(find_logrotate_config "${path}")"
 
-    if [[ "${config}" == "-" ]]; then
+    if [[ -z "${config}" ]]; then
         printf '%s' "not found"
         return
     fi
@@ -293,7 +146,8 @@ get_logrotate_policy() {
     frequency="$(
         grep -E \
             '^[[:space:]]*(hourly|daily|weekly|monthly|yearly)[[:space:]]*$' \
-            "${config}" 2>/dev/null |
+            "${config}" \
+            2>/dev/null |
             head -n 1 |
             xargs || true
     )"
@@ -301,128 +155,133 @@ get_logrotate_policy() {
     rotate_count="$(
         grep -E \
             '^[[:space:]]*rotate[[:space:]]+[0-9]+' \
-            "${config}" 2>/dev/null |
+            "${config}" \
+            2>/dev/null |
             head -n 1 |
             awk '{print $2}' || true
     )"
 
     if [[ -n "${frequency}" && -n "${rotate_count}" ]]; then
-        policy="${frequency}, rotate ${rotate_count}"
+
+        printf '%s, rotate %s' \
+            "${frequency}" \
+            "${rotate_count}"
 
     elif [[ -n "${frequency}" ]]; then
-        policy="${frequency}"
+
+        printf '%s' "${frequency}"
 
     elif [[ -n "${rotate_count}" ]]; then
-        policy="rotate ${rotate_count}"
+
+        printf 'rotate %s' "${rotate_count}"
 
     else
-        policy="configured"
-    fi
 
-    printf '%s' "${policy}"
+        printf '%s' "configured"
+    fi
 }
 
 # =============================================================================
-# Helper: auditd rotation policy
+# Events Per Hour
 #
-# audit.log commonly uses auditd's own rotation configuration instead of
-# logrotate.
+# This is an estimate.
+#
+# For logs modified within the last hour, the number of lines in the current
+# log provides a simple activity estimate.
+#
+# For older logs, the rate is normalized using file age, capped at 24 hours.
 # =============================================================================
 
-get_auditd_rotation_policy() {
-    local audit_conf="/etc/audit/auditd.conf"
-    local max_log_file=""
-    local max_log_file_action=""
-    local num_logs=""
+estimate_events_per_hour() {
+    local path="$1"
+    local lines=0
+    local now_epoch=0
+    local modified_epoch=0
+    local age_seconds=0
+    local age_hours=0
+    local rate=""
 
-    if [[ ! -f "${audit_conf}" ]]; then
-        printf '%s' "not found"
+    if [[ ! -f "${path}" ]]; then
+        printf '%s' "-"
         return
     fi
 
-    max_log_file="$(
-        awk -F= '
-            /^[[:space:]]*max_log_file[[:space:]]*=/ {
-                gsub(/[[:space:]]/, "", $2)
-                print $2
-                exit
-            }
-        ' "${audit_conf}" 2>/dev/null
-    )"
-
-    max_log_file_action="$(
-        awk -F= '
-            /^[[:space:]]*max_log_file_action[[:space:]]*=/ {
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
-                print $2
-                exit
-            }
-        ' "${audit_conf}" 2>/dev/null
-    )"
-
-    num_logs="$(
-        awk -F= '
-            /^[[:space:]]*num_logs[[:space:]]*=/ {
-                gsub(/[[:space:]]/, "", $2)
-                print $2
-                exit
-            }
-        ' "${audit_conf}" 2>/dev/null
-    )"
-
-    if [[ -n "${max_log_file_action}" ]]; then
-
-        printf 'auditd %s' "${max_log_file_action}"
-
-        if [[ -n "${max_log_file}" ]]; then
-            printf ', %s MB' "${max_log_file}"
-        fi
-
-        if [[ -n "${num_logs}" ]]; then
-            printf ', %s logs' "${num_logs}"
-        fi
-
+    if [[ ! -s "${path}" ]]; then
+        printf '%s' "0"
         return
     fi
 
-    printf '%s' "auditd configured"
+    lines="$(
+        wc -l < "${path}" 2>/dev/null || printf '0'
+    )"
+
+    if [[ "${lines}" -eq 0 ]]; then
+        printf '%s' "0"
+        return
+    fi
+
+    now_epoch="$(date +%s)"
+
+    modified_epoch="$(
+        stat -c '%Y' "${path}" 2>/dev/null || printf '0'
+    )"
+
+    if [[ "${modified_epoch}" -eq 0 ]]; then
+        printf '%s' "<1"
+        return
+    fi
+
+    age_seconds=$((now_epoch - modified_epoch))
+
+    # Modified during last hour.
+    if [[ "${age_seconds}" -le 3600 ]]; then
+
+        rate="${lines}"
+
+    else
+
+        age_hours=$((age_seconds / 3600))
+
+        if [[ "${age_hours}" -lt 1 ]]; then
+            age_hours=1
+        fi
+
+        if [[ "${age_hours}" -gt 24 ]]; then
+            age_hours=24
+        fi
+
+        rate="$(
+            awk \
+                -v lines="${lines}" \
+                -v hours="${age_hours}" \
+                'BEGIN {
+                    result=lines/hours;
+
+                    if (result > 0 && result < 1) {
+                        print "<1";
+                    } else {
+                        printf "%.0f", result;
+                    }
+                }'
+        )"
+    fi
+
+    printf '%s' "${rate}"
 }
 
 # =============================================================================
-# Helper: rotation policy dispatcher
-# =============================================================================
-
-get_rotation_policy() {
-    local source_name="$1"
-    local file_path="$2"
-
-    if [[ "${source_name}" == "audit.log" ]]; then
-        get_auditd_rotation_policy
-        return
-    fi
-
-    get_logrotate_policy "${file_path}"
-}
-
-# =============================================================================
-# Helper: source state
+# Source State
 # =============================================================================
 
 get_source_state() {
-    local file_path="$1"
-    local event_rate="$2"
+    local path="$1"
 
-    if [[ ! -f "${file_path}" ]]; then
+    if [[ ! -e "${path}" ]]; then
         printf '%s' "MISSING"
         return
     fi
 
-    if [[ ! -s "${file_path}" ]]; then
-        printf '%s' "INACTIVE"
-        return
-    fi
-
-    if [[ "${event_rate}" == "0" ]]; then
+    if [[ ! -s "${path}" ]]; then
         printf '%s' "INACTIVE"
         return
     fi
@@ -431,71 +290,66 @@ get_source_state() {
 }
 
 # =============================================================================
-# Helper: add source to inventory
+# Register Log Source
 # =============================================================================
 
 add_source() {
-    local source_name="$1"
-    local file_path="$2"
-    local format_type="$3"
+    local source="$1"
+    local path="$2"
+    local format="$3"
     local relevance="$4"
 
     local rotation="-"
-    local file_size="-"
-    local event_rate="-"
-    local state="MISSING"
+    local size="-"
+    local events_per_hour="-"
+    local state=""
 
-    if [[ -f "${file_path}" ]]; then
+    state="$(get_source_state "${path}")"
 
-        file_size="$(get_file_size "${file_path}")"
+    case "${state}" in
 
-        event_rate="$(
-            estimate_events_per_hour \
-                "${file_path}" \
-                "${format_type}"
-        )"
+        ACTIVE)
+            FOUND_COUNT=$((FOUND_COUNT + 1))
 
-        rotation="$(
-            get_rotation_policy \
-                "${source_name}" \
-                "${file_path}"
-        )"
+            rotation="$(get_rotation_policy "${path}")"
+            size="$(get_file_size "${path}")"
+            events_per_hour="$(estimate_events_per_hour "${path}")"
+            ;;
 
-        state="$(
-            get_source_state \
-                "${file_path}" \
-                "${event_rate}"
-        )"
-
-        FOUND_COUNT=$((FOUND_COUNT + 1))
-
-        if [[ "${state}" == "INACTIVE" ]]; then
+        INACTIVE)
+            FOUND_COUNT=$((FOUND_COUNT + 1))
             INACTIVE_COUNT=$((INACTIVE_COUNT + 1))
-        fi
 
-    else
+            rotation="$(get_rotation_policy "${path}")"
+            size="$(get_file_size "${path}")"
+            events_per_hour="0"
+            ;;
 
-        MISSING_COUNT=$((MISSING_COUNT + 1))
-    fi
+        MISSING)
+            MISSING_COUNT=$((MISSING_COUNT + 1))
+            ;;
+    esac
 
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "${source_name}" \
-        "${file_path}" \
-        "${format_type}" \
+        "${source}" \
+        "${path}" \
+        "${format}" \
         "${rotation}" \
-        "${file_size}" \
-        "${event_rate}" \
+        "${size}" \
+        "${events_per_hour}" \
         "${relevance}" \
-        "${state}" >> "${RESULT_FILE}"
+        "${state}" \
+        >> "${TMP_FILE}"
 }
 
 # =============================================================================
-# Helper: discover other security-relevant sources
+# Discover Other Security-Relevant Sources
 # =============================================================================
 
-discover_optional_sources() {
+discover_additional_sources() {
 
-    if [[ -f "/var/log/fail2ban.log" ]]; then
+    if [[ -e "/var/log/fail2ban.log" ]]; then
+
         add_source \
             "fail2ban" \
             "/var/log/fail2ban.log" \
@@ -503,15 +357,17 @@ discover_optional_sources() {
             "high"
     fi
 
-    if [[ -f "/var/log/ufw.log" ]]; then
+    if [[ -e "/var/log/ufw.log" ]]; then
+
         add_source \
-            "ufw" \
+            "ufw.log" \
             "/var/log/ufw.log" \
             "syslog" \
             "high"
     fi
 
-    if [[ -f "/var/log/nginx/access.log" ]]; then
+    if [[ -e "/var/log/nginx/access.log" ]]; then
+
         add_source \
             "nginx access" \
             "/var/log/nginx/access.log" \
@@ -519,25 +375,18 @@ discover_optional_sources() {
             "high"
     fi
 
-    if [[ -f "/var/log/nginx/error.log" ]]; then
+    if [[ -e "/var/log/nginx/error.log" ]]; then
+
         add_source \
             "nginx error" \
             "/var/log/nginx/error.log" \
             "custom" \
             "high"
     fi
-
-    if [[ -f "/var/log/daemon.log" ]]; then
-        add_source \
-            "daemon.log" \
-            "/var/log/daemon.log" \
-            "syslog" \
-            "medium"
-    fi
 }
 
 # =============================================================================
-# Start
+# Discover Log Sources
 # =============================================================================
 
 printf '\n'
@@ -548,67 +397,69 @@ printf '\n'
 
 printf '[*] Discovering log sources...\n'
 
-: > "${RESULT_FILE}"
-
-# =============================================================================
-# Required Linux Log Sources
-# =============================================================================
-
+# auth.log
 add_source \
     "auth.log" \
     "/var/log/auth.log" \
     "syslog" \
     "critical"
 
+# audit.log
 add_source \
     "audit.log" \
     "/var/log/audit/audit.log" \
     "audit" \
     "critical"
 
+# syslog
 add_source \
     "syslog" \
     "/var/log/syslog" \
     "syslog" \
     "high"
 
+# kern.log
 add_source \
     "kern.log" \
     "/var/log/kern.log" \
     "syslog" \
     "medium"
 
-add_source \
-    "dpkg.log" \
-    "/var/log/dpkg.log" \
-    "custom" \
-    "medium"
-
+# apache2 access log
+#
+# Apache normally uses the "combined" access-log format.
+# For the normalized inventory classification this is an application-specific
+# custom log format.
 add_source \
     "apache2 access" \
     "/var/log/apache2/access.log" \
     "custom" \
     "high"
 
+# apache2 error log
 add_source \
     "apache2 error" \
     "/var/log/apache2/error.log" \
     "custom" \
     "high"
 
-# =============================================================================
-# Other Security-Relevant Sources
-# =============================================================================
+# dpkg.log
+add_source \
+    "dpkg.log" \
+    "/var/log/dpkg.log" \
+    "custom" \
+    "medium"
 
-discover_optional_sources
+# Other security-relevant sources
+discover_additional_sources
 
 # =============================================================================
-# Inventory Table
+# Display Inventory
 # =============================================================================
 
 printf '\n'
 
-printf '%-18s %-34s %-9s %-28s %-9s %-10s %-10s %s\n' \
+printf '%-18s %-34s %-8s %-22s %-9s %-10s %-10s %s\n' \
     "Source" \
     "Path" \
     "Format" \
@@ -618,7 +469,7 @@ printf '%-18s %-34s %-9s %-28s %-9s %-10s %-10s %s\n' \
     "Relevance" \
     "State"
 
-printf '%-18s %-34s %-9s %-28s %-9s %-10s %-10s %s\n' \
+printf '%-18s %-34s %-8s %-22s %-9s %-10s %-10s %s\n' \
     "------" \
     "----" \
     "------" \
@@ -629,81 +480,89 @@ printf '%-18s %-34s %-9s %-28s %-9s %-10s %-10s %s\n' \
     "-----"
 
 while IFS=$'\t' read -r \
-    source_name \
-    file_path \
-    format_type \
+    source \
+    path \
+    format \
     rotation \
-    file_size \
-    event_rate \
+    size \
+    events_per_hour \
     relevance \
     state
 do
 
-    printf '%-18s %-34s %-9s %-28s %-9s %-10s %-10s %s\n' \
-        "${source_name}" \
-        "${file_path}" \
-        "${format_type}" \
+    printf '%-18s %-34s %-8s %-22s %-9s %-10s %-10s %s\n' \
+        "${source}" \
+        "${path}" \
+        "${format}" \
         "${rotation}" \
-        "${file_size}" \
-        "${event_rate}" \
+        "${size}" \
+        "${events_per_hour}" \
         "${relevance}" \
         "${state}"
 
-done < "${RESULT_FILE}"
+done < "${TMP_FILE}"
 
 # =============================================================================
 # Missing or Inactive Expected Sources
 # =============================================================================
 
 printf '\n'
-printf '[*] Identifying missing or inactive expected sources...\n'
+printf '[*] Checking expected sources for missing or inactive telemetry...\n'
 
 while IFS=$'\t' read -r \
-    source_name \
-    file_path \
-    format_type \
+    source \
+    path \
+    format \
     rotation \
-    file_size \
-    event_rate \
+    size \
+    events_per_hour \
     relevance \
     state
 do
 
-    # Silence shellcheck/strict-mode warnings for fields not needed here.
-    : "${format_type}"
+    # Variables are read because the TSV schema contains all required fields.
+    : "${format}"
     : "${rotation}"
-    : "${file_size}"
-    : "${event_rate}"
+    : "${size}"
+    : "${events_per_hour}"
     : "${relevance}"
 
     case "${state}" in
 
         MISSING)
+
             printf '    [MISSING] %s -> %s\n' \
-                "${source_name}" \
-                "${file_path}"
+                "${source}" \
+                "${path}"
             ;;
 
         INACTIVE)
+
             printf '    [INACTIVE] %s -> not generating events\n' \
-                "${source_name}"
+                "${source}"
             ;;
 
         ACTIVE)
             ;;
     esac
 
-done < "${RESULT_FILE}"
+done < "${TMP_FILE}"
 
 # =============================================================================
 # Summary
 # =============================================================================
 
 printf '\n'
-printf 'Sources found: %d | Missing: %d | Inactive: %d\n' \
+
+printf 'Sources found: %d | Missing: %d' \
     "${FOUND_COUNT}" \
-    "${MISSING_COUNT}" \
-    "${INACTIVE_COUNT}"
+    "${MISSING_COUNT}"
+
+if [[ "${INACTIVE_COUNT}" -gt 0 ]]; then
+    printf ' | Inactive: %d' "${INACTIVE_COUNT}"
+fi
 
 printf '\n'
-printf '[*] Log source inventory complete.\n'
+
+printf '\n'
+printf '[PASS] Linux log source inventory complete.\n'
