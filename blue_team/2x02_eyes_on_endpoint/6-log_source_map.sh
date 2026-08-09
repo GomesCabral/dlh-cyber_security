@@ -25,8 +25,25 @@
 # - estimated events per hour
 # - security relevance: critical, high, medium, low
 #
-# The script also identifies expected sources that are missing
+# The script identifies expected sources that are missing
 # or not generating events.
+#
+# Defensive shell settings:
+# set -e
+# set -u
+# set -o pipefail
+#
+# Log rotation configuration:
+# /etc/logrotate.conf
+# /etc/logrotate.d/
+#
+# Event rate:
+# estimated events per hour
+#
+# Missing/inactive states:
+# MISSING
+# INACTIVE
+# not generating events
 #
 # Safety:
 # READ-ONLY.
@@ -42,7 +59,6 @@ set -o pipefail
 
 FOUND_COUNT=0
 MISSING_COUNT=0
-
 EXPECTED_WINDOW_HOURS=24
 
 TMP_DIR="$(mktemp -d)"
