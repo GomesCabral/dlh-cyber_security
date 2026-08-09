@@ -1987,3 +1987,483 @@ Confirm evidence exists
 This is the same principle used earlier with Sysmon: **deployment does not equal coverage**.
 
 The purpose of telemetry engineering is not simply to collect logs, but to ensure that the logs contain enough evidence for analysts to understand what an attacker actually did.
+
+---
+
+# Task 6 - Linux Log Source Mapping
+
+## Script
+
+```text
+6-log_source_map.sh
+```
+
+## Goal
+
+Inventory the active Linux log sources available on the hardened endpoint and document their format, location, rotation policy, event rate, and security relevance.
+
+The purpose of this task is to understand exactly what telemetry exists before attempting to normalize and export it for SOC consumption.
+
+## Why This Matters
+
+Linux telemetry is distributed across multiple files and services.
+
+Different sources answer different security questions:
+
+```text
+auth.log
+Who authenticated?
+Who used sudo?
+Were there failed SSH logins?
+
+audit.log
+What process executed?
+What file changed?
+What syscall was used?
+
+syslog
+What happened to services and the operating system?
+
+kern.log
+What happened at kernel level?
+
+apache2/access.log
+What HTTP requests reached the server?
+
+apache2/error.log
+What web server errors or suspicious conditions occurred?
+
+dpkg.log
+What software was installed, upgraded or removed?
+```
+
+A SOC cannot build reliable detection rules without first understanding which of these sources actually exist and generate telemetry.
+
+## Expected Log Sources
+
+The inventory checks:
+
+```text
+/var/log/auth.log
+/var/log/audit/audit.log
+/var/log/syslog
+/var/log/kern.log
+/var/log/dpkg.log
+/var/log/apache2/access.log
+/var/log/apache2/error.log
+```
+
+The script also discovers additional security-relevant sources when present, such as:
+
+```text
+/var/log/fail2ban.log
+/var/log/ufw.log
+/var/log/nginx/access.log
+/var/log/nginx/error.log
+```
+
+## Log Formats
+
+Each source is classified using a format type.
+
+Supported classifications include:
+
+```text
+syslog
+JSON
+audit
+custom
+```
+
+Examples:
+
+```text
+auth.log     -> syslog
+syslog       -> syslog
+audit.log    -> audit
+dpkg.log     -> custom
+Apache logs  -> custom
+```
+
+## Rotation Policy
+
+The script searches:
+
+```text
+/etc/logrotate.d/
+```
+
+to identify the rotation policy associated with each log source.
+
+Typical settings may include:
+
+```text
+daily
+weekly
+monthly
+rotate 7
+rotate 14
+rotate 30
+```
+
+Example:
+
+```text
+daily, rotate 14
+```
+
+means that logs are rotated daily and approximately fourteen rotated copies are retained.
+
+## Current File Size
+
+The current size of each log source is collected using Linux filesystem utilities.
+
+Example:
+
+```text
+auth.log       2.4M
+audit.log      18M
+syslog         6.1M
+```
+
+File size can help identify unusually high or unusually low telemetry volume.
+
+## Events Per Hour
+
+The script calculates an estimated:
+
+```text
+events per hour
+```
+
+for each active log source.
+
+Example:
+
+```text
+audit.log      187 events/hr
+auth.log        42 events/hr
+apache access  234 events/hr
+dpkg.log        <1 event/hr
+```
+
+This provides a basic understanding of telemetry volume.
+
+High volume does not automatically mean high security value.
+
+For example:
+
+```text
+Apache access log
+500 events/hour
+
+auth.log
+5 events/hour
+```
+
+The five authentication events may still be more important to a SOC investigation than hundreds of normal HTTP requests.
+
+## Security Relevance
+
+Every log source receives a security relevance rating:
+
+```text
+critical
+high
+medium
+low
+```
+
+Example classifications:
+
+```text
+audit.log        critical
+auth.log         critical
+syslog           high
+Apache access    high
+Apache error     high
+kern.log         medium
+dpkg.log         medium
+```
+
+The rating represents investigative usefulness rather than event volume.
+
+## Missing Sources
+
+The script explicitly identifies expected log sources that do not exist.
+
+Example:
+
+```text
+[MISSING] auth.log -> /var/log/auth.log
+```
+
+A missing file does not always mean that Linux is not generating the telemetry.
+
+Modern Linux systems may use:
+
+```text
+systemd-journald
+```
+
+instead of traditional text log files.
+
+For example:
+
+```text
+/var/log/syslog missing
+        |
+        v
+journalctl contains events
+```
+
+This distinction is important because a SIEM agent configured only to ingest `/var/log/syslog` could become blind even though the operating system is still logging events elsewhere.
+
+## Inactive Sources
+
+A log source may exist but contain no current telemetry.
+
+The script reports this as:
+
+```text
+[INACTIVE]
+```
+
+Example:
+
+```text
+apache2/access.log exists
+but contains no events
+```
+
+Possible explanations include:
+
+```text
+service not running
+service unused
+logging disabled
+wrong log path
+collector problem
+```
+
+## Real-World Example
+
+Consider an attacker who compromises the Linux server through a web application.
+
+The activity might appear across several sources:
+
+```text
+apache2/access.log
+        |
+        | suspicious HTTP request
+        v
+apache2/error.log
+        |
+        | application error
+        v
+audit.log
+        |
+        | command execution
+        v
+auth.log
+        |
+        | sudo activity
+        v
+syslog
+        |
+        | service restart
+        v
+SOC investigation
+```
+
+No single log source provides the full attack story.
+
+The analyst must correlate multiple sources.
+
+## Example Authentication Investigation
+
+A brute-force attack may produce:
+
+```text
+auth.log
+
+Failed password
+Failed password
+Failed password
+Failed password
+Accepted password
+```
+
+This allows analysts to identify:
+
+```text
+source IP
+target account
+failed attempts
+successful authentication
+```
+
+## Example Package Investigation
+
+If an attacker installs a tool using the package manager:
+
+```bash
+sudo apt install netcat-openbsd
+```
+
+`dpkg.log` may provide evidence that a package was installed.
+
+This can be useful when answering:
+
+```text
+Was new software installed?
+When was it installed?
+Was it installed during the incident window?
+```
+
+## Example Web Investigation
+
+Apache access logs may show:
+
+```text
+GET /login.php
+GET /admin
+POST /upload.php
+GET /../../etc/passwd
+```
+
+The log can help identify:
+
+```text
+scanning
+directory traversal
+authentication attacks
+web exploitation
+```
+
+Apache error logs may provide additional context about failed requests or application errors.
+
+## auditd Relationship
+
+Task 5 improved `auditd` visibility with keys such as:
+
+```text
+process_exec
+network_connect
+ssh_keys
+cron_persist
+sudoers
+```
+
+Task 6 now inventories:
+
+```text
+/var/log/audit/audit.log
+```
+
+as one of the critical Linux telemetry sources.
+
+The relationship is:
+
+```text
+Task 5
+Create useful audit telemetry
+        |
+        v
+audit.log
+        |
+        v
+Task 6
+Inventory and characterize the source
+        |
+        v
+future normalization/export
+```
+
+## Validation
+
+Run:
+
+```bash
+bash -n 6-log_source_map.sh
+```
+
+Then:
+
+```bash
+shellcheck 6-log_source_map.sh
+```
+
+Execute:
+
+```bash
+sudo ./6-log_source_map.sh
+```
+
+Expected structure:
+
+```text
+[*] Discovering log sources...
+
+Source             Path                       Format    Rotation       Events/hr   Relevance
+------             ----                       ------    --------       ---------   ---------
+auth.log           /var/log/auth.log          syslog    ...            ...         critical
+audit.log          /var/log/audit/audit.log   audit     ...            ...         critical
+syslog             /var/log/syslog            syslog    ...            ...         high
+kern.log           /var/log/kern.log          syslog    ...            ...         medium
+apache2 access     /var/log/apache2/access.log custom   ...            ...         high
+apache2 error      /var/log/apache2/error.log  custom   ...            ...         high
+dpkg.log           /var/log/dpkg.log          custom    ...            ...         medium
+
+Sources found: X | Missing: Y
+```
+
+The actual counts depend on the Linux host.
+
+## SOC Workflow
+
+This task establishes the source inventory for later telemetry engineering:
+
+```text
+Linux services
+      |
+      v
+log files / journald / auditd
+      |
+      v
+Task 6 source inventory
+      |
+      v
+known paths
+known formats
+known volumes
+known rotation
+known relevance
+      |
+      v
+normalization
+      |
+      v
+SIEM ingestion
+      |
+      v
+SOC detection
+```
+
+## Security Engineering Lesson
+
+Before collecting logs, a security engineer should know:
+
+```text
+What sources exist?
+Where are they stored?
+What format do they use?
+How long are they retained?
+How much telemetry do they generate?
+Are important sources missing?
+How useful are they for investigation?
+```
+
+The central principle is:
+
+> A telemetry pipeline should begin with an accurate inventory of the available evidence sources, not with assumptions about what the operating system is logging.
