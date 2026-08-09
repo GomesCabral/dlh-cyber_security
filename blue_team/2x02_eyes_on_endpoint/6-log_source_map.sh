@@ -182,7 +182,8 @@ get_rotation_policy() {
 }
 
 # =============================================================================
-# Events Per Hour
+# # events/hr
+# estimated events per hour
 #
 # This is an estimate.
 #
