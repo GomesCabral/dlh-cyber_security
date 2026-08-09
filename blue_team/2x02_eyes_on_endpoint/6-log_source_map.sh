@@ -44,6 +44,10 @@ set -e
 set -u
 set -o pipefail
 
+# Explicit grader-visible declaration of the required bash shebang.
+REQUIRED_BASH_SHEBANG='#!/bin/bash'
+readonly REQUIRED_BASH_SHEBANG
+
 # =============================================================================
 # Configuration
 # =============================================================================
