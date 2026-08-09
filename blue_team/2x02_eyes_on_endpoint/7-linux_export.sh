@@ -1,16 +1,14 @@
 #!/bin/bash
 
 # name: 7-linux_export.sh
-# purpose: Export security-relevant Linux auth.log, audit.log and syslog telemetry to normalized JSON using ISO 8601 UTC timestamps.
+# purpose: Export security-relevant Linux telemetry from auth.log, auditd, and syslog into normalized JSON.
 # author: Pedro Cabral
 #
 # Project: 2x02 - Eyes on Endpoint
 # Task: 7 - Linux Event Export
 #
-# Sources:
-# - /var/log/auth.log
-# - /var/log/audit/audit.log
-# - /var/log/syslog
+# Default time window:
+# - last 24 hours
 #
 # auth.log parsing:
 # - SSH login success
@@ -22,18 +20,21 @@
 # - su events
 # - PAM events
 #
-# auditd parsing:
+# audit.log / auditd parsing:
+# - ausearch
 # - syscall
 # - execve
 # - command line
-# - file access
-# - path
+# - file_access
+# - file path
 # - network socket creation
+# - connect
 # - destination
 #
 # syslog parsing:
 # - service start
 # - service stop
+# - service failure
 # - error conditions
 #
 # Normalized fields:
@@ -44,18 +45,14 @@
 # - event_category
 # - raw_message
 #
-# Timestamp format:
-# ISO 8601 UTC
+# Timestamp:
+# - ISO 8601 UTC
 #
 # Output:
 # - linux_events_export.json
 #
-# Default time window:
-# - last 24 hours
-#
 # Safety:
-# READ-ONLY with respect to system logs.
-# The script only reads telemetry and writes linux_events_export.json.
+# READ-ONLY with respect to Linux logs and system configuration.
 
 set -e
 set -u
@@ -73,23 +70,57 @@ OUTPUT_FILE="linux_events_export.json"
 
 HOURS="${HOURS:-24}"
 
-HOSTNAME_VALUE="$(hostname)"
+if ! [[ "${HOURS}" =~ ^[0-9]+$ ]] || [[ "${HOURS}" -le 0 ]]; then
+    printf '[FAIL] HOURS must be a positive integer.\n'
+    exit 1
+fi
 
+HOSTNAME_VALUE="$(hostname)"
 PLATFORM="Linux"
 
-END_TIME="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-START_TIME="$(date -u -d "${HOURS} hours ago" '+%Y-%m-%dT%H:%M:%SZ')"
+END_EPOCH="$(date -u '+%s')"
+START_EPOCH="$((END_EPOCH - HOURS * 3600))"
 
-START_EPOCH="$(date -u -d "${START_TIME}" '+%s')"
-END_EPOCH="$(date -u -d "${END_TIME}" '+%s')"
+START_TIME="$(
+    date -u \
+        -d "@${START_EPOCH}" \
+        '+%Y-%m-%dT%H:%M:%SZ'
+)"
+
+END_TIME="$(
+    date -u \
+        -d "@${END_EPOCH}" \
+        '+%Y-%m-%dT%H:%M:%SZ'
+)"
+
+AUSEARCH_START_DATE="$(
+    date -d "@${START_EPOCH}" '+%m/%d/%Y'
+)"
+
+AUSEARCH_START_CLOCK="$(
+    date -d "@${START_EPOCH}" '+%H:%M:%S'
+)"
+
+AUSEARCH_END_DATE="$(
+    date -d "@${END_EPOCH}" '+%m/%d/%Y'
+)"
+
+AUSEARCH_END_CLOCK="$(
+    date -d "@${END_EPOCH}" '+%H:%M:%S'
+)"
 
 TMP_DIR="$(mktemp -d)"
 
 AUTH_JSON="${TMP_DIR}/auth.jsonl"
 AUDIT_JSON="${TMP_DIR}/audit.jsonl"
 SYSLOG_JSON="${TMP_DIR}/syslog.jsonl"
+AUSEARCH_OUTPUT="${TMP_DIR}/ausearch.log"
 
-touch "${AUTH_JSON}" "${AUDIT_JSON}" "${SYSLOG_JSON}"
+touch \
+    "${AUTH_JSON}" \
+    "${AUDIT_JSON}" \
+    "${SYSLOG_JSON}" \
+    "${AUSEARCH_OUTPUT}"
 
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
@@ -122,7 +153,8 @@ require_command() {
     local command_name="$1"
 
     if ! command -v "${command_name}" >/dev/null 2>&1; then
-        printf '[FAIL] Required command not found: %s\n' "${command_name}"
+        printf '[FAIL] Required command not found: %s\n' \
+            "${command_name}"
         exit 1
     fi
 }
@@ -131,37 +163,68 @@ require_command jq
 require_command date
 require_command awk
 require_command grep
+require_command sed
 require_command hostname
+require_command ausearch
 
 # =============================================================================
-# Helpers
+# Generic Helpers
 # =============================================================================
 
-syslog_timestamp_to_epoch() {
-    local month="$1"
-    local day="$2"
-    local clock="$3"
-    local year=""
+within_time_window() {
+    local event_epoch="$1"
 
-    year="$(date '+%Y')"
-
-    date -d "${month} ${day} ${year} ${clock}" '+%s' 2>/dev/null || printf '0'
+    [[ "${event_epoch}" -ge "${START_EPOCH}" &&
+       "${event_epoch}" -le "${END_EPOCH}" ]]
 }
 
 
 epoch_to_iso8601_utc() {
-    local epoch="$1"
+    local event_epoch="$1"
 
-    date -u -d "@${epoch}" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||
-        printf '%s' ""
+    date -u \
+        -d "@${event_epoch}" \
+        '+%Y-%m-%dT%H:%M:%SZ' \
+        2>/dev/null || printf '%s' ""
 }
 
 
-within_time_window() {
-    local epoch="$1"
+syslog_timestamp_to_epoch() {
+    local line="$1"
+    local first_field=""
+    local month=""
+    local day=""
+    local clock=""
+    local year=""
 
-    [[ "${epoch}" -ge "${START_EPOCH}" &&
-       "${epoch}" -le "${END_EPOCH}" ]]
+    first_field="$(
+        awk '{print $1}' <<< "${line}"
+    )"
+
+    # RFC3339 / ISO timestamp
+    if [[ "${first_field}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]; then
+        date -d "${first_field}" '+%s' 2>/dev/null || printf '0'
+        return
+    fi
+
+    # Traditional syslog timestamp:
+    # Aug  9 10:15:32
+    month="${first_field}"
+
+    day="$(
+        awk '{print $2}' <<< "${line}"
+    )"
+
+    clock="$(
+        awk '{print $3}' <<< "${line}"
+    )"
+
+    year="$(date '+%Y')"
+
+    date \
+        -d "${month} ${day} ${year} ${clock}" \
+        '+%s' \
+        2>/dev/null || printf '0'
 }
 
 
@@ -171,12 +234,19 @@ emit_json_event() {
     local source_type="$3"
     local event_category="$4"
     local raw_message="$5"
-    shift 5
 
-    local extra_json="{}"
+    local extra_json='{}'
 
-    if [[ "$#" -gt 0 ]]; then
-        extra_json="$1"
+    if [[ "$#" -ge 6 ]] && [[ -n "${6}" ]]; then
+        extra_json="$6"
+    fi
+
+    # Defensive validation before using --argjson.
+    if ! jq -e . >/dev/null 2>&1 <<< "${extra_json}"; then
+        printf '[WARN] Invalid enrichment JSON for category %s; using empty object.\n' \
+            "${event_category}" >&2
+
+        extra_json='{}'
     fi
 
     jq -cn \
@@ -200,10 +270,19 @@ emit_json_event() {
 }
 
 # =============================================================================
-# Parse auth.log
+# auth.log Parser
 # =============================================================================
 
 parse_auth_log() {
+    local line=""
+    local event_epoch=""
+    local timestamp=""
+    local user=""
+    local source_ip=""
+    local auth_method=""
+    local sudo_user=""
+    local sudo_command=""
+    local extra=""
 
     printf '[*] Parsing auth.log... '
 
@@ -214,15 +293,8 @@ parse_auth_log() {
 
     while IFS= read -r line; do
 
-        month="$(awk '{print $1}' <<< "${line}")"
-        day="$(awk '{print $2}' <<< "${line}")"
-        clock="$(awk '{print $3}' <<< "${line}")"
-
         event_epoch="$(
-            syslog_timestamp_to_epoch \
-                "${month}" \
-                "${day}" \
-                "${clock}"
+            syslog_timestamp_to_epoch "${line}"
         )"
 
         if [[ "${event_epoch}" -eq 0 ]]; then
@@ -238,20 +310,23 @@ parse_auth_log() {
         )"
 
         # ---------------------------------------------------------------------
-        # SSH successful login
+        # SSH login success
         # ---------------------------------------------------------------------
 
-        if grep -Eq 'sshd.*Accepted (password|publickey)' <<< "${line}"; then
+        if grep -Eq \
+            'sshd.*Accepted (password|publickey|keyboard-interactive)' \
+            <<< "${line}"
+        then
 
             user="$(
                 sed -nE \
-                    's/.*Accepted (password|publickey) for ([^ ]+) from ([^ ]+).*/\2/p' \
+                    's/.*Accepted [^ ]+ for ([^ ]+) from ([^ ]+).*/\1/p' \
                     <<< "${line}"
             )"
 
             source_ip="$(
                 sed -nE \
-                    's/.*Accepted (password|publickey) for ([^ ]+) from ([^ ]+).*/\3/p' \
+                    's/.*Accepted [^ ]+ for ([^ ]+) from ([^ ]+).*/\2/p' \
                     <<< "${line}"
             )"
 
@@ -290,20 +365,23 @@ parse_auth_log() {
         fi
 
         # ---------------------------------------------------------------------
-        # SSH failed login
+        # SSH login failure
         # ---------------------------------------------------------------------
 
-        if grep -Eq 'sshd.*Failed password' <<< "${line}"; then
+        if grep -Eq \
+            'sshd.*Failed (password|publickey|keyboard-interactive)' \
+            <<< "${line}"
+        then
 
             user="$(
                 sed -nE \
-                    's/.*Failed password for (invalid user )?([^ ]+) from ([^ ]+).*/\2/p' \
+                    's/.*Failed [^ ]+ for (invalid user )?([^ ]+) from ([^ ]+).*/\2/p' \
                     <<< "${line}"
             )"
 
             source_ip="$(
                 sed -nE \
-                    's/.*Failed password for (invalid user )?([^ ]+) from ([^ ]+).*/\3/p' \
+                    's/.*Failed [^ ]+ for (invalid user )?([^ ]+) from ([^ ]+).*/\3/p' \
                     <<< "${line}"
             )"
 
@@ -379,7 +457,7 @@ parse_auth_log() {
         # su
         # ---------------------------------------------------------------------
 
-        if grep -Eq 'su(\[|:).*session|su.*authentication' <<< "${line}"; then
+        if grep -Eq '(^|[[:space:]])su(\[|:).*' <<< "${line}"; then
 
             extra="$(
                 jq -cn \
@@ -407,7 +485,7 @@ parse_auth_log() {
         # PAM
         # ---------------------------------------------------------------------
 
-        if grep -Eq 'pam_[a-zA-Z0-9_]+' <<< "${line}"; then
+        if grep -Eq 'pam_[A-Za-z0-9_]+' <<< "${line}"; then
 
             emit_json_event \
                 "${AUTH_JSON}" \
@@ -432,38 +510,174 @@ parse_auth_log() {
 }
 
 # =============================================================================
-# auditd helpers
+# auditd / ausearch Helpers
 # =============================================================================
 
-audit_epoch_from_line() {
-    local line="$1"
+audit_epoch_from_block() {
+    local block="$1"
 
     sed -nE \
-        's/.*audit\(([0-9]+)(\.[0-9]+)?:[0-9]+\).*/\1/p' \
-        <<< "${line}"
+        's/.*msg=audit\(([0-9]+)(\.[0-9]+)?:[0-9]+\).*/\1/p' \
+        <<< "${block}" |
+        head -n 1
 }
 
 
-audit_serial_from_line() {
-    local line="$1"
+get_audit_key() {
+    local block="$1"
 
     sed -nE \
-        's/.*audit\([0-9]+(\.[0-9]+)?:([0-9]+)\).*/\2/p' \
-        <<< "${line}"
+        's/.*key="?([^" ]+)"?.*/\1/p' \
+        <<< "${block}" |
+        head -n 1
 }
 
 
-get_audit_records_for_serial() {
-    local serial="$1"
+get_audit_executable() {
+    local block="$1"
 
-    grep -F ":${serial})" "${AUDIT_LOG}" 2>/dev/null || true
+    sed -nE \
+        's/.*exe="([^"]+)".*/\1/p' \
+        <<< "${block}" |
+        head -n 1
+}
+
+
+get_audit_syscall() {
+    local block="$1"
+
+    sed -nE \
+        's/.*syscall=([^ ]+).*/\1/p' \
+        <<< "${block}" |
+        head -n 1
+}
+
+
+get_execve_command_line() {
+    local block="$1"
+
+    grep 'type=EXECVE' <<< "${block}" |
+        head -n 1 |
+        grep -oE 'a[0-9]+="[^"]*"|a[0-9]+=[^ ]+' |
+        sed -E 's/^a[0-9]+=//' |
+        tr '\n' ' ' |
+        sed 's/[[:space:]]*$//' || true
+}
+
+
+get_file_path() {
+    local block="$1"
+
+    grep 'type=PATH' <<< "${block}" |
+        sed -nE \
+            's/.*name="([^"]+)".*/\1/p' |
+        head -n 1
+}
+
+
+decode_ipv4_sockaddr() {
+    local sockaddr="$1"
+    local family=""
+    local port_hex=""
+    local ip_hex=""
+    local port=""
+    local a=""
+    local b=""
+    local c=""
+    local d=""
+
+    if [[ "${#sockaddr}" -lt 16 ]]; then
+        printf '%s' "${sockaddr}"
+        return
+    fi
+
+    family="${sockaddr:0:4}"
+
+    if [[ "${family}" != "0200" ]]; then
+        printf '%s' "${sockaddr}"
+        return
+    fi
+
+    port_hex="${sockaddr:4:4}"
+    ip_hex="${sockaddr:8:8}"
+
+    port="$((16#${port_hex}))"
+
+    a="$((16#${ip_hex:0:2}))"
+    b="$((16#${ip_hex:2:2}))"
+    c="$((16#${ip_hex:4:2}))"
+    d="$((16#${ip_hex:6:2}))"
+
+    printf '%s:%s' \
+        "${a}.${b}.${c}.${d}" \
+        "${port}"
+}
+
+
+get_network_destination() {
+    local block="$1"
+    local address=""
+    local port=""
+    local raw_sockaddr=""
+
+    address="$(
+        grep -oE \
+            '(daddr|laddr|addr)=[^ ,}]+' \
+            <<< "${block}" |
+            head -n 1 |
+            cut -d= -f2 || true
+    )"
+
+    port="$(
+        grep -oE \
+            '(dport|lport|port)=[0-9]+' \
+            <<< "${block}" |
+            head -n 1 |
+            cut -d= -f2 || true
+    )"
+
+    if [[ -n "${address}" ]]; then
+
+        if [[ -n "${port}" ]]; then
+            printf '%s:%s' "${address}" "${port}"
+        else
+            printf '%s' "${address}"
+        fi
+
+        return
+    fi
+
+    raw_sockaddr="$(
+        grep -oE \
+            'saddr=[0-9A-Fa-f]+' \
+            <<< "${block}" |
+            head -n 1 |
+            cut -d= -f2 || true
+    )"
+
+    if [[ -n "${raw_sockaddr}" ]]; then
+        decode_ipv4_sockaddr "${raw_sockaddr}"
+        return
+    fi
+
+    printf '%s' ""
 }
 
 # =============================================================================
-# Parse audit.log
+# Parse audit.log using ausearch
 # =============================================================================
 
 parse_audit_log() {
+    local block=""
+    local event_epoch=""
+    local timestamp=""
+    local audit_key=""
+    local executable=""
+    local syscall=""
+    local command_line=""
+    local path=""
+    local destination=""
+    local extra=""
 
     printf '[*] Parsing audit.log... '
 
@@ -472,11 +686,40 @@ parse_audit_log() {
         return
     fi
 
-    # Process one SYSCALL record per audit event.
-    while IFS= read -r syscall_line; do
+    # ausearch is the native auditd search utility.
+    #
+    # It correlates SYSCALL, EXECVE, PATH and SOCKADDR records.
+    #
+    # Example:
+    # ausearch -k process_exec
+    # ausearch -k network_connect
+    #
+    # Time-window query:
+    # ausearch -ts START_DATE START_TIME -te END_DATE END_TIME -i
+
+    ausearch \
+        -ts "${AUSEARCH_START_DATE}" "${AUSEARCH_START_CLOCK}" \
+        -te "${AUSEARCH_END_DATE}" "${AUSEARCH_END_CLOCK}" \
+        -i \
+        > "${AUSEARCH_OUTPUT}" \
+        2>/dev/null || true
+
+    if [[ ! -s "${AUSEARCH_OUTPUT}" ]]; then
+
+        printf '0 events\n'
+        printf '    execve: 0 | file_access: 0 | network: 0 | other: 0\n'
+
+        return
+    fi
+
+    while IFS= read -r -d '' block; do
+
+        if [[ -z "${block}" ]]; then
+            continue
+        fi
 
         event_epoch="$(
-            audit_epoch_from_line "${syscall_line}"
+            audit_epoch_from_block "${block}"
         )"
 
         if [[ -z "${event_epoch}" ]]; then
@@ -487,66 +730,41 @@ parse_audit_log() {
             continue
         fi
 
-        serial="$(
-            audit_serial_from_line "${syscall_line}"
-        )"
-
-        if [[ -z "${serial}" ]]; then
-            continue
-        fi
-
         timestamp="$(
             epoch_to_iso8601_utc "${event_epoch}"
         )"
 
-        records="$(
-            get_audit_records_for_serial "${serial}"
+        audit_key="$(
+            get_audit_key "${block}"
         )"
 
-        key="$(
-            sed -nE \
-                's/.* key="?([^" ]+)"?.*/\1/p' \
-                <<< "${syscall_line}" |
-                head -n 1
+        executable="$(
+            get_audit_executable "${block}"
         )"
 
-        exe="$(
-            sed -nE \
-                's/.* exe="([^"]+)".*/\1/p' \
-                <<< "${syscall_line}" |
-                head -n 1
-        )"
-
-        syscall_number="$(
-            sed -nE \
-                's/.* syscall=([^ ]+).*/\1/p' \
-                <<< "${syscall_line}" |
-                head -n 1
+        syscall="$(
+            get_audit_syscall "${block}"
         )"
 
         # ---------------------------------------------------------------------
-        # execve / process_exec
+        # execve
         # ---------------------------------------------------------------------
 
-        if [[ "${key}" == "process_exec" ]] ||
-           grep -q 'type=EXECVE' <<< "${records}"
+        if grep -q 'type=EXECVE' <<< "${block}" ||
+           [[ "${syscall}" == "execve" ]] ||
+           [[ "${audit_key}" == "process_exec" ]]
         then
 
             command_line="$(
-                grep 'type=EXECVE' <<< "${records}" |
-                    head -n 1 |
-                    grep -oE 'a[0-9]+="[^"]*"|a[0-9]+=[^ ]+' |
-                    sed -E 's/^a[0-9]+=//' |
-                    tr '\n' ' ' |
-                    sed 's/[[:space:]]*$//'
+                get_execve_command_line "${block}"
             )"
 
             extra="$(
                 jq -cn \
                     --arg syscall "execve" \
-                    --arg executable "${exe}" \
+                    --arg executable "${executable}" \
                     --arg command_line "${command_line}" \
-                    --arg audit_key "${key}" \
+                    --arg audit_key "${audit_key}" \
                     '{
                         syscall: $syscall,
                         executable: $executable,
@@ -560,7 +778,7 @@ parse_audit_log() {
                 "${timestamp}" \
                 "auditd" \
                 "execve" \
-                "${records}" \
+                "${block}" \
                 "${extra}"
 
             AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
@@ -570,63 +788,25 @@ parse_audit_log() {
         fi
 
         # ---------------------------------------------------------------------
-        # file access
+        # network
         # ---------------------------------------------------------------------
 
-        if grep -q 'type=PATH' <<< "${records}"; then
-
-            path="$(
-                grep 'type=PATH' <<< "${records}" |
-                    sed -nE 's/.* name="([^"]+)".*/\1/p' |
-                    head -n 1
-            )"
-
-            extra="$(
-                jq -cn \
-                    --arg path "${path}" \
-                    --arg syscall "${syscall_number}" \
-                    --arg audit_key "${key}" \
-                    '{
-                        path: $path,
-                        syscall: $syscall,
-                        audit_key: $audit_key
-                    }'
-            )"
-
-            emit_json_event \
-                "${AUDIT_JSON}" \
-                "${timestamp}" \
-                "auditd" \
-                "file_access" \
-                "${records}" \
-                "${extra}"
-
-            AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
-            FILE_ACCESS_COUNT=$((FILE_ACCESS_COUNT + 1))
-
-            continue
-        fi
-
-        # ---------------------------------------------------------------------
-        # network socket creation / connect
-        # ---------------------------------------------------------------------
-
-        if [[ "${key}" == "network_connect" ]] ||
-           grep -Eq 'SOCKADDR|saddr=' <<< "${records}"
+        if [[ "${audit_key}" == "network_connect" ]] ||
+           [[ "${syscall}" == "socket" ]] ||
+           [[ "${syscall}" == "connect" ]] ||
+           grep -q 'type=SOCKADDR' <<< "${block}"
         then
 
             destination="$(
-                grep -oE 'saddr=[0-9A-Fa-f]+' <<< "${records}" |
-                    head -n 1 |
-                    cut -d= -f2 || true
+                get_network_destination "${block}"
             )"
 
             extra="$(
                 jq -cn \
-                    --arg syscall "${syscall_number}" \
-                    --arg executable "${exe}" \
+                    --arg syscall "${syscall}" \
+                    --arg executable "${executable}" \
                     --arg destination "${destination}" \
-                    --arg audit_key "${key}" \
+                    --arg audit_key "${audit_key}" \
                     '{
                         syscall: $syscall,
                         executable: $executable,
@@ -640,7 +820,7 @@ parse_audit_log() {
                 "${timestamp}" \
                 "auditd" \
                 "network" \
-                "${records}" \
+                "${block}" \
                 "${extra}"
 
             AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
@@ -650,14 +830,52 @@ parse_audit_log() {
         fi
 
         # ---------------------------------------------------------------------
-        # Other syscall
+        # file_access
+        # ---------------------------------------------------------------------
+
+        if grep -q 'type=PATH' <<< "${block}"; then
+
+            path="$(
+                get_file_path "${block}"
+            )"
+
+            extra="$(
+                jq -cn \
+                    --arg syscall "${syscall}" \
+                    --arg path "${path}" \
+                    --arg executable "${executable}" \
+                    --arg audit_key "${audit_key}" \
+                    '{
+                        syscall: $syscall,
+                        path: $path,
+                        executable: $executable,
+                        audit_key: $audit_key
+                    }'
+            )"
+
+            emit_json_event \
+                "${AUDIT_JSON}" \
+                "${timestamp}" \
+                "auditd" \
+                "file_access" \
+                "${block}" \
+                "${extra}"
+
+            AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
+            FILE_ACCESS_COUNT=$((FILE_ACCESS_COUNT + 1))
+
+            continue
+        fi
+
+        # ---------------------------------------------------------------------
+        # other audit event
         # ---------------------------------------------------------------------
 
         extra="$(
             jq -cn \
-                --arg syscall "${syscall_number}" \
-                --arg executable "${exe}" \
-                --arg audit_key "${key}" \
+                --arg syscall "${syscall}" \
+                --arg executable "${executable}" \
+                --arg audit_key "${audit_key}" \
                 '{
                     syscall: $syscall,
                     executable: $executable,
@@ -670,14 +888,23 @@ parse_audit_log() {
             "${timestamp}" \
             "auditd" \
             "other" \
-            "${records}" \
+            "${block}" \
             "${extra}"
 
         AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
         AUDIT_OTHER_COUNT=$((AUDIT_OTHER_COUNT + 1))
 
     done < <(
-        grep 'type=SYSCALL' "${AUDIT_LOG}" 2>/dev/null || true
+        awk '
+            BEGIN {
+                RS="----"
+                ORS="\0"
+            }
+
+            NF {
+                print
+            }
+        ' "${AUSEARCH_OUTPUT}"
     )
 
     printf '%d events\n' "${AUDIT_TOTAL}"
@@ -690,10 +917,16 @@ parse_audit_log() {
 }
 
 # =============================================================================
-# Parse syslog
+# syslog Parser
 # =============================================================================
 
 parse_syslog() {
+    local line=""
+    local event_epoch=""
+    local timestamp=""
+    local action=""
+    local service=""
+    local extra=""
 
     printf '[*] Parsing syslog... '
 
@@ -704,15 +937,8 @@ parse_syslog() {
 
     while IFS= read -r line; do
 
-        month="$(awk '{print $1}' <<< "${line}")"
-        day="$(awk '{print $2}' <<< "${line}")"
-        clock="$(awk '{print $3}' <<< "${line}")"
-
         event_epoch="$(
-            syslog_timestamp_to_epoch \
-                "${month}" \
-                "${day}" \
-                "${clock}"
+            syslog_timestamp_to_epoch "${line}"
         )"
 
         if [[ "${event_epoch}" -eq 0 ]]; then
@@ -728,25 +954,23 @@ parse_syslog() {
         )"
 
         # ---------------------------------------------------------------------
-        # Service start / stop
+        # service start / stop
         # ---------------------------------------------------------------------
 
         if grep -Eqi \
-            'systemd.*(Started|Starting|Stopped|Stopping|Failed)' \
+            'systemd.*(Started|Starting|Stopped|Stopping)' \
             <<< "${line}"
         then
 
             if grep -Eqi '(Started|Starting)' <<< "${line}"; then
                 action="start"
-            elif grep -Eqi '(Stopped|Stopping)' <<< "${line}"; then
-                action="stop"
             else
-                action="failed"
+                action="stop"
             fi
 
             service="$(
                 sed -nE \
-                    's/.*systemd[^:]*:[[:space:]]*(Started|Starting|Stopped|Stopping|Failed)[[:space:]]+([^.]*)\.?.*/\2/p' \
+                    's/.*(Started|Starting|Stopped|Stopping)[[:space:]]+([^.]*)\.?.*/\2/p' \
                     <<< "${line}"
             )"
 
@@ -775,7 +999,7 @@ parse_syslog() {
         fi
 
         # ---------------------------------------------------------------------
-        # Error conditions
+        # error conditions
         # ---------------------------------------------------------------------
 
         if grep -Eqi \
@@ -797,7 +1021,7 @@ parse_syslog() {
         fi
 
         # ---------------------------------------------------------------------
-        # Other system activity
+        # other syslog
         # ---------------------------------------------------------------------
 
         emit_json_event \
@@ -821,7 +1045,7 @@ parse_syslog() {
 }
 
 # =============================================================================
-# Run parsers
+# Start
 # =============================================================================
 
 printf '\n'
@@ -830,8 +1054,9 @@ printf 'MedDefense Linux Event Export\n'
 printf '==============================================\n'
 printf '\n'
 
-printf '[*] Exporting security-relevant Linux telemetry...\n'
-printf '    Time window: last %s hours\n' "${HOURS}"
+printf '[*] Exporting Linux telemetry from last %s hours...\n' \
+    "${HOURS}"
+
 printf '    StartTime: %s\n' "${START_TIME}"
 printf '    EndTime:   %s\n' "${END_TIME}"
 printf '\n'
@@ -841,21 +1066,25 @@ parse_audit_log
 parse_syslog
 
 # =============================================================================
-# Merge and sort all events
+# Total
 # =============================================================================
 
-TOTAL_EVENTS=$(
-    (
-        cat "${AUTH_JSON}"
-        cat "${AUDIT_JSON}"
-        cat "${SYSLOG_JSON}"
-    ) |
-        grep -c . || true
-)
+TOTAL_EVENTS="$(
+    cat \
+        "${AUTH_JSON}" \
+        "${AUDIT_JSON}" \
+        "${SYSLOG_JSON}" |
+        wc -l
+)"
 
-# JSON document containing normalized events.
+# =============================================================================
+# Build linux_events_export.json
+# =============================================================================
+
 jq -s \
-    --arg generated_at "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+    --arg generated_at "$(
+        date -u '+%Y-%m-%dT%H:%M:%SZ'
+    )" \
     --arg start_time "${START_TIME}" \
     --arg end_time "${END_TIME}" \
     --arg hostname "${HOSTNAME_VALUE}" \
@@ -887,7 +1116,8 @@ jq -s \
 # =============================================================================
 
 if ! jq empty "${OUTPUT_FILE}" >/dev/null 2>&1; then
-    printf '[FAIL] Generated JSON is invalid.\n'
+    printf '\n'
+    printf '[FAIL] Generated linux_events_export.json is invalid.\n'
     exit 1
 fi
 
@@ -896,12 +1126,13 @@ fi
 # =============================================================================
 
 printf '\n'
-printf 'Total events: %d\n' "${TOTAL_EVENTS}"
+printf 'Total events: %s\n' "${TOTAL_EVENTS}"
+
 printf 'Time range: %s to %s\n' \
     "${START_TIME}" \
     "${END_TIME}"
 
 printf 'Output: %s\n' "${OUTPUT_FILE}"
-printf '\n'
 
+printf '\n'
 printf '[PASS] Linux telemetry export complete.\n'
