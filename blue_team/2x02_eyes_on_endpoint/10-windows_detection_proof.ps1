@@ -70,6 +70,8 @@ param(
     [int]$WindowSeconds = 30
 )
 
+Set-StrictMode -Version Latest
+
 $ErrorActionPreference = "Stop"
 
 # ============================================================================
