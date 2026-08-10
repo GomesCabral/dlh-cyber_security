@@ -1,0 +1,120 @@
+﻿{
+    "metadata":  {
+                     "simulation":  "MedDefense Windows Attacker Simulation",
+                     "hostname":  "DC01",
+                     "platform":  "Windows",
+                     "host_type":  "Domain Controller",
+                     "generated_at":  "2026-08-10T09:14:25.2959095Z",
+                     "action_count":  6,
+                     "controlled_simulation":  true
+                 },
+    "actions":  [
+                    {
+                        "action_number":  1,
+                        "description":  "Created temporary support_update account",
+                        "timestamp":  "2026-08-10T09:13:13.4132452Z",
+                        "expected_detection_source":  [
+                                                          "Security Event ID 4720",
+                                                          "Sysmon Event ID 1"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1136",
+                                             "technique_name":  "Create Account"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "account":  "support_update",
+                                        "account_type":  "domain"
+                                    }
+                    },
+                    {
+                        "action_number":  2,
+                        "description":  "Added support_update to Administrators group",
+                        "timestamp":  "2026-08-10T09:13:13.6885766Z",
+                        "expected_detection_source":  [
+                                                          "Security Event ID 4732",
+                                                          "Sysmon Event ID 1"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1098",
+                                             "technique_name":  "Account Manipulation"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "account":  "support_update",
+                                        "group":  "Administrators"
+                                    }
+                    },
+                    {
+                        "action_number":  3,
+                        "description":  "Executed harmless encoded PowerShell payload",
+                        "timestamp":  "2026-08-10T09:13:15.3229826Z",
+                        "expected_detection_source":  [
+                                                          "Sysmon Event ID 1",
+                                                          "PowerShell Event ID 4104",
+                                                          "Security Event ID 4688"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1059.001",
+                                             "technique_name":  "PowerShell"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "encoded_command":  "VwByAGkAdABlAC0ASABvAHMAdAAgACIAQwAyACAAYgBlAGEAYwBvAG4AIgA=",
+                                        "payload":  "Write-Host \"C2 beacon\""
+                                    }
+                    },
+                    {
+                        "action_number":  4,
+                        "description":  "Created controlled scheduled task persistence artifact",
+                        "timestamp":  "2026-08-10T09:13:15.6427206Z",
+                        "expected_detection_source":  [
+                                                          "Security Event ID 4698",
+                                                          "Sysmon Event ID 1"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1053.005",
+                                             "technique_name":  "Scheduled Task/Job: Scheduled Task"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "command":  "cmd.exe /c exit 0",
+                                        "task_name":  "MedDefense-Sim-Persistence"
+                                    }
+                    },
+                    {
+                        "action_number":  5,
+                        "description":  "Initiated controlled outbound TCP connection",
+                        "timestamp":  "2026-08-10T09:14:25.1550095Z",
+                        "expected_detection_source":  [
+                                                          "Sysmon Event ID 3"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1071",
+                                             "technique_name":  "Application Layer Protocol"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "tcp_test_succeeded":  false,
+                                        "destination_ip":  "1.1.1.1",
+                                        "destination_port":  443
+                                    }
+                    },
+                    {
+                        "action_number":  6,
+                        "description":  "Dropped harmless file in Windows Startup directory",
+                        "timestamp":  "2026-08-10T09:14:25.2356233Z",
+                        "expected_detection_source":  [
+                                                          "Sysmon Event ID 11"
+                                                      ],
+                        "mitre_attack":  {
+                                             "technique_id":  "T1547.001",
+                                             "technique_name":  "Registry Run Keys / Startup Folder"
+                                         },
+                        "status":  "executed",
+                        "details":  {
+                                        "target_file":  "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\meddefense_simulation.txt"
+                                    }
+                    }
+                ]
+}
