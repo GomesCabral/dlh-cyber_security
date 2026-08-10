@@ -402,7 +402,7 @@ try {
     & $PowerShellExecutable `
         -NoProfile `
         -NonInteractive `
-        -EncodedCommand $EncodedPayload
+        -enc $EncodedPayload
 
     if ($LASTEXITCODE -ne 0) {
 
