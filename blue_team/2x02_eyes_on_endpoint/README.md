@@ -5358,3 +5358,1698 @@ Then investigate the relevant audit keys individually.
 **Project:** 2x02 - Eyes on Endpoint  
 **Task:** 12 - Linux Detection Proof
 
+---
+
+# Task 13 — Consolidated Telemetry Export
+
+## Project
+
+**2x02 - Eyes on Endpoint**
+
+Task 13 creates the final telemetry handoff package for the next SOC analysis stage.
+
+The script `13-consolidated_export.sh` combines the Windows and Linux telemetry produced earlier in the project, normalizes the event structure and timestamps, validates required fields, combines the Windows and Linux attacker ground truth, and builds a clean directory that can be handed to a SOC analyst.
+
+---
+
+## Goal
+
+Create a consistent cross-platform telemetry package containing:
+
+- normal Windows endpoint telemetry;
+- normal Linux endpoint telemetry;
+- attacker-simulation ground truth from both platforms;
+- normalized UTC timestamps;
+- consistent core fields across Windows and Linux.
+
+The resulting directory is:
+
+```text
+telemetry_handoff/
+├── windows_events.json
+├── linux_events.json
+└── attack_ground_truth.json
+```
+
+---
+
+## Repository Location
+
+```text
+dlh-cyber_security/
+└── blue_team/
+    └── 2x02_eyes_on_endpoint/
+        ├── windows_events_export.json
+        ├── linux_events_export.json
+        ├── windows_attack_log.json
+        ├── linux_attack_log.json
+        ├── 13-consolidated_export.sh
+        └── telemetry_handoff/
+```
+
+---
+
+## Input Files
+
+The script requires four JSON files.
+
+### Windows telemetry
+
+```text
+windows_events_export.json
+```
+
+Produced by the earlier Windows telemetry export task.
+
+### Linux telemetry
+
+```text
+linux_events_export.json
+```
+
+Produced by the Linux telemetry export task.
+
+### Windows attacker ground truth
+
+```text
+windows_attack_log.json
+```
+
+Produced by the Windows attacker simulation.
+
+### Linux attacker ground truth
+
+```text
+linux_attack_log.json
+```
+
+Produced by:
+
+```text
+11-linux_attack_sim.sh
+```
+
+All four files must exist in the same project directory as the script.
+
+---
+
+## Why Consolidation Is Needed
+
+Before consolidation, the project contains telemetry from different operating systems and different logging technologies.
+
+For example:
+
+```text
+Windows
+├── Security Event Log
+├── Sysmon
+└── PowerShell Operational
+
+Linux
+├── auditd
+├── auth.log
+├── syslog
+└── systemd journal
+```
+
+A SOC needs a predictable schema before it can reliably search and correlate events across platforms.
+
+Task 13 therefore creates a common handoff structure.
+
+---
+
+## Required Event Fields
+
+Every exported event must contain:
+
+```text
+timestamp
+hostname
+source_type
+event_category
+```
+
+Conceptually:
+
+```json
+{
+  "timestamp": "2026-08-10T12:58:45Z",
+  "hostname": "DC01",
+  "source_type": "Security",
+  "event_category": "process_creation"
+}
+```
+
+The same core structure is expected for Linux events.
+
+This gives the SOC a consistent starting point regardless of the original operating system.
+
+---
+
+## Field Normalization
+
+The script attempts to normalize common alternative field names.
+
+### Timestamp
+
+Possible source fields include:
+
+```text
+timestamp
+Timestamp
+time
+TimeCreated
+```
+
+They are normalized into:
+
+```text
+timestamp
+```
+
+### Hostname
+
+Possible source fields include:
+
+```text
+hostname
+host
+computer
+Computer
+computer_name
+```
+
+They are normalized into:
+
+```text
+hostname
+```
+
+### Source
+
+Possible source fields include:
+
+```text
+source_type
+source
+provider
+log_name
+```
+
+They are normalized into:
+
+```text
+source_type
+```
+
+### Event category
+
+Possible source fields include:
+
+```text
+event_category
+category
+event_type
+type
+```
+
+They are normalized into:
+
+```text
+event_category
+```
+
+---
+
+## Timestamp Normalization
+
+Cross-platform correlation depends heavily on time consistency.
+
+Task 13 normalizes timestamps to:
+
+```text
+UTC ISO 8601
+```
+
+Example:
+
+```text
+2026-08-10T12:58:45Z
+```
+
+The `Z` indicates UTC.
+
+Without consistent timestamps, the SOC could incorrectly place Windows and Linux events in different parts of an incident timeline.
+
+Conceptually:
+
+```text
+Windows local time ─┐
+                    ├──> UTC ISO 8601 ──> unified timeline
+Linux local time ───┘
+```
+
+---
+
+## Important Timestamp Assumption
+
+If a timestamp already ends in:
+
+```text
+Z
+```
+
+the script keeps it as UTC.
+
+If a timestamp has no timezone information, the script treats it as UTC and appends:
+
+```text
+Z
+```
+
+Therefore, source exporters should ideally already provide correct timezone-aware timestamps.
+
+---
+
+## Field Consistency Validation
+
+After normalization, the script verifies every Windows and Linux event.
+
+An event fails validation if any of these fields is empty:
+
+```text
+timestamp
+hostname
+source_type
+event_category
+```
+
+Successful validation produces:
+
+```text
+Required fields present in all events    [OK]
+```
+
+If fields are missing, the script stops rather than silently producing an incomplete SOC handoff.
+
+Example:
+
+```text
+Required fields present in all events    [FAIL]
+Windows events missing required fields: 3
+Linux events missing required fields:   0
+```
+
+This is intentional.
+
+Bad telemetry should be corrected before the handoff is accepted.
+
+---
+
+## Attacker Ground Truth
+
+The two attacker-simulation files are combined into:
+
+```text
+attack_ground_truth.json
+```
+
+The combined report preserves separate Windows and Linux sections and also creates a unified chronological `actions` array.
+
+Conceptually:
+
+```json
+{
+  "metadata": {
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "windows_actions": 6,
+    "linux_actions": 6,
+    "total_actions": 12
+  },
+
+  "windows": {
+    "actions": []
+  },
+
+  "linux": {
+    "actions": []
+  },
+
+  "actions": []
+}
+```
+
+Each action in the unified array receives a platform field:
+
+```json
+"platform": "Windows"
+```
+
+or:
+
+```json
+"platform": "Linux"
+```
+
+The unified list is sorted by timestamp.
+
+---
+
+## Why Ground Truth Is Separate
+
+The normal telemetry contains what a SOC analyst would normally receive.
+
+The ground truth contains the known attacker-simulation actions.
+
+These serve different purposes.
+
+```text
+TELEMETRY
+What the monitoring systems observed
+
+        vs.
+
+GROUND TRUTH
+What we know actually happened
+```
+
+This makes it possible to evaluate detections objectively.
+
+For example:
+
+```text
+Ground truth says:
+    suspicious action occurred at 12:10:15 UTC
+
+SOC searches telemetry
+        ↓
+Detection found?
+        ↓
+Yes / No
+        ↓
+Coverage can be measured
+```
+
+---
+
+## Requirements
+
+The script requires:
+
+```text
+bash
+jq
+date
+awk
+du
+```
+
+Check the main dependency:
+
+```bash
+jq --version
+```
+
+On Debian/Ubuntu, install it if necessary:
+
+```bash
+sudo apt update
+sudo apt install jq
+```
+
+---
+
+## Running the Script
+
+Make it executable:
+
+```bash
+chmod +x 13-consolidated_export.sh
+```
+
+Run:
+
+```bash
+./13-consolidated_export.sh
+```
+
+The script does not require `sudo` unless the source files themselves have restrictive permissions.
+
+---
+
+## Expected Output
+
+A successful execution should resemble:
+
+```text
+[*] Loading Windows events (2270)...
+[*] Loading Linux events (2022)...
+[*] Normalizing timestamps to UTC...
+    Windows: 2270 events normalized
+    Linux: 2022 events normalized
+[*] Verifying field consistency...
+    Required fields present in all events    [OK]
+[*] Combining ground truth...
+    Windows actions: 6 | Linux actions: 6 | Total: 12
+[*] Building handoff directory...
+telemetry_handoff/
+  windows_events.json      (2270 events, 4.2M)
+  linux_events.json        (2022 events, 3.1M)
+  attack_ground_truth.json (12 actions, ...)
+Total: 4292 events across 2 platforms
+```
+
+The actual event counts and file sizes depend on the telemetry previously collected in the lab.
+
+---
+
+## Output 1 — Windows Events
+
+```text
+telemetry_handoff/windows_events.json
+```
+
+The output contains metadata plus the normalized Windows event collection:
+
+```json
+{
+  "metadata": {
+    "platform": "Windows",
+    "normalized_to_utc": true
+  },
+  "events": []
+}
+```
+
+Count the Windows events:
+
+```bash
+jq '.events | length' telemetry_handoff/windows_events.json
+```
+
+---
+
+## Output 2 — Linux Events
+
+```text
+telemetry_handoff/linux_events.json
+```
+
+It uses the same top-level structure:
+
+```json
+{
+  "metadata": {
+    "platform": "Linux",
+    "normalized_to_utc": true
+  },
+  "events": []
+}
+```
+
+Count the Linux events:
+
+```bash
+jq '.events | length' telemetry_handoff/linux_events.json
+```
+
+---
+
+## Output 3 — Combined Ground Truth
+
+```text
+telemetry_handoff/attack_ground_truth.json
+```
+
+View it with:
+
+```bash
+jq . telemetry_handoff/attack_ground_truth.json
+```
+
+Count all simulated actions:
+
+```bash
+jq '.actions | length' \
+    telemetry_handoff/attack_ground_truth.json
+```
+
+For six Windows and six Linux actions, the expected result is:
+
+```text
+12
+```
+
+---
+
+## Reading the Unified Attack Timeline
+
+Show platform, timestamp, action number, and description:
+
+```bash
+jq -r '
+    .actions[]
+    | [
+        .timestamp,
+        .platform,
+        .action_number,
+        .description
+      ]
+    | @tsv
+' telemetry_handoff/attack_ground_truth.json
+```
+
+This provides a cross-platform attacker timeline.
+
+---
+
+## Inspecting the Handoff Directory
+
+Use:
+
+```bash
+ls -lh telemetry_handoff/
+```
+
+If `tree` is installed:
+
+```bash
+tree telemetry_handoff/
+```
+
+Expected structure:
+
+```text
+telemetry_handoff/
+├── attack_ground_truth.json
+├── linux_events.json
+└── windows_events.json
+```
+
+---
+
+## Validate All JSON Files
+
+Run:
+
+```bash
+jq empty telemetry_handoff/windows_events.json
+jq empty telemetry_handoff/linux_events.json
+jq empty telemetry_handoff/attack_ground_truth.json
+```
+
+No output means the files are valid JSON.
+
+---
+
+## Check Required Fields Manually
+
+For Windows:
+
+```bash
+jq '
+[
+  .events[]
+  | select(
+      (.timestamp // "") == ""
+      or (.hostname // "") == ""
+      or (.source_type // "") == ""
+      or (.event_category // "") == ""
+  )
+]
+| length
+' telemetry_handoff/windows_events.json
+```
+
+For Linux:
+
+```bash
+jq '
+[
+  .events[]
+  | select(
+      (.timestamp // "") == ""
+      or (.hostname // "") == ""
+      or (.source_type // "") == ""
+      or (.event_category // "") == ""
+  )
+]
+| length
+' telemetry_handoff/linux_events.json
+```
+
+A successful handoff should return:
+
+```text
+0
+```
+
+for both.
+
+---
+
+## Viewing Sample Events
+
+First Windows event:
+
+```bash
+jq '.events[0]' telemetry_handoff/windows_events.json
+```
+
+First Linux event:
+
+```bash
+jq '.events[0]' telemetry_handoff/linux_events.json
+```
+
+First attacker action:
+
+```bash
+jq '.actions[0]' telemetry_handoff/attack_ground_truth.json
+```
+
+---
+
+## Count Events by Platform
+
+Windows:
+
+```bash
+jq '.events | length' telemetry_handoff/windows_events.json
+```
+
+Linux:
+
+```bash
+jq '.events | length' telemetry_handoff/linux_events.json
+```
+
+Total:
+
+```bash
+WINDOWS=$(jq '.events | length' telemetry_handoff/windows_events.json)
+LINUX=$(jq '.events | length' telemetry_handoff/linux_events.json)
+
+echo $((WINDOWS + LINUX))
+```
+
+---
+
+## Count Events by Source Type
+
+Windows:
+
+```bash
+jq -r '
+    .events[]
+    | .source_type
+' telemetry_handoff/windows_events.json |
+sort |
+uniq -c |
+sort -nr
+```
+
+Linux:
+
+```bash
+jq -r '
+    .events[]
+    | .source_type
+' telemetry_handoff/linux_events.json |
+sort |
+uniq -c |
+sort -nr
+```
+
+This helps understand the telemetry composition before SOC analysis begins.
+
+---
+
+## Count Events by Category
+
+Windows:
+
+```bash
+jq -r '.events[].event_category' \
+    telemetry_handoff/windows_events.json |
+sort |
+uniq -c |
+sort -nr
+```
+
+Linux:
+
+```bash
+jq -r '.events[].event_category' \
+    telemetry_handoff/linux_events.json |
+sort |
+uniq -c |
+sort -nr
+```
+
+---
+
+## Operational Events vs Attack Signal
+
+The handoff package is intentionally expected to contain much more normal activity than attacker-simulation activity.
+
+Conceptually:
+
+```text
+Thousands of normal events
+████████████████████████████████████████
+
+Small attacker signal
+                    ▲
+                    │
+                 SOC must
+                 find this
+```
+
+This is important because real SOC investigations do not normally receive a file containing only malicious activity.
+
+The analyst must distinguish the signal from the surrounding operational noise.
+
+---
+
+## Relationship with Previous Tasks
+
+Task 13 is the consolidation point for the endpoint telemetry work.
+
+```text
+WINDOWS
+=======
+
+Task 3
+Windows telemetry export
+        │
+        ├───────────────┐
+        │               │
+Task 9                  │
+Windows attack sim      │
+        │               │
+        v               │
+windows_attack_log.json │
+                        │
+LINUX                   │
+=====                   │
+                        │
+Task 7                  │
+Linux telemetry export  │
+        │               │
+        ├───────────────┤
+        │               │
+Task 11                 │
+Linux attack sim        │
+        │               │
+        v               │
+linux_attack_log.json   │
+                        │
+                        v
+                    Task 13
+             Consolidated Export
+                        │
+                        v
+              telemetry_handoff/
+```
+
+Tasks 10 and 12 separately prove detection coverage.
+
+Task 13 prepares the broader raw telemetry and known ground truth for downstream SOC investigation.
+
+---
+
+## SOC Handoff Concept
+
+The output represents a realistic separation between the monitoring team and the analyst.
+
+```text
+Endpoint Engineering
+        │
+        │ collects and validates telemetry
+        v
+telemetry_handoff/
+        │
+        │ transferred to SOC
+        v
+SOC Analyst
+        │
+        ├── investigates events
+        ├── builds timeline
+        ├── identifies suspicious activity
+        ├── correlates Windows + Linux
+        └── validates findings against ground truth
+```
+
+The SOC should be able to work primarily from the telemetry package.
+
+Ground truth can then be used to measure whether the analyst or detection logic correctly identified the simulated behaviours.
+
+---
+
+## Defensive Security Value
+
+Task 13 demonstrates practical experience with:
+
+- telemetry normalization;
+- Windows/Linux schema consistency;
+- UTC timestamp normalization;
+- JSON processing with `jq`;
+- data-quality validation;
+- cross-platform event handling;
+- ground-truth packaging;
+- SOC data handoff;
+- timeline preparation;
+- defensive-security automation;
+- detection-validation methodology.
+
+It also demonstrates an important engineering principle:
+
+> Detection quality depends on telemetry quality.
+
+If timestamps, hostnames, source identifiers, or event categories are inconsistent, downstream SOC correlation becomes less reliable.
+
+---
+
+## Troubleshooting
+
+### Missing input file
+
+Example:
+
+```text
+[FAIL] Required input file not found: .../windows_events_export.json
+```
+
+Confirm:
+
+```bash
+ls -lh windows_events_export.json
+ls -lh linux_events_export.json
+ls -lh windows_attack_log.json
+ls -lh linux_attack_log.json
+```
+
+---
+
+### Invalid JSON
+
+Validate the affected file:
+
+```bash
+jq empty filename.json
+```
+
+Then inspect:
+
+```bash
+jq . filename.json
+```
+
+---
+
+### Missing required fields
+
+If the script reports:
+
+```text
+Required fields present in all events    [FAIL]
+```
+
+do not simply remove the validation.
+
+Determine which events are incomplete and correct the upstream export or normalization logic.
+
+The required fields are:
+
+```text
+timestamp
+hostname
+source_type
+event_category
+```
+
+---
+
+### Zero events
+
+If the script reports that an export contains no events, inspect the source structure:
+
+```bash
+jq 'keys' windows_events_export.json
+```
+
+and:
+
+```bash
+jq 'keys' linux_events_export.json
+```
+
+Then check:
+
+```bash
+jq '.events | length' windows_events_export.json
+jq '.events | length' linux_events_export.json
+```
+
+---
+
+## Recommended Validation Sequence
+
+```bash
+# 1. Validate source files
+jq empty windows_events_export.json
+jq empty linux_events_export.json
+jq empty windows_attack_log.json
+jq empty linux_attack_log.json
+
+# 2. Run consolidation
+chmod +x 13-consolidated_export.sh
+./13-consolidated_export.sh
+
+# 3. Inspect output
+ls -lh telemetry_handoff/
+
+# 4. Validate output JSON
+jq empty telemetry_handoff/windows_events.json
+jq empty telemetry_handoff/linux_events.json
+jq empty telemetry_handoff/attack_ground_truth.json
+
+# 5. Check event counts
+jq '.events | length' telemetry_handoff/windows_events.json
+jq '.events | length' telemetry_handoff/linux_events.json
+
+# 6. Check attacker actions
+jq '.actions | length' telemetry_handoff/attack_ground_truth.json
+```
+
+---
+
+## Expected Final Structure
+
+```text
+2x02_eyes_on_endpoint/
+│
+├── windows_events_export.json
+├── linux_events_export.json
+├── windows_attack_log.json
+├── linux_attack_log.json
+├── 13-consolidated_export.sh
+│
+└── telemetry_handoff/
+    ├── windows_events.json
+    ├── linux_events.json
+    └── attack_ground_truth.json
+```
+
+---
+
+## Author
+
+**Pedro Cabral**
+
+**Project:** 2x02 - Eyes on Endpoint  
+**Task:** 13 - Consolidated Telemetry Export
+
+---
+
+# Task 14 — Cross-Platform Coverage Assessment
+
+## Project
+
+**2x02 - Eyes on Endpoint**
+
+Task 14 is the final coverage assessment for the endpoint telemetry dataset.
+
+The script `14-coverage_assessment.sh` combines the consolidated SOC handoff package, Windows and Linux detection matrices, telemetry quality reports, and the Sysmon coverage matrix into a single operational metadata report:
+
+```text
+telemetry_coverage_assessment.json
+```
+
+The purpose is to allow a SOC analyst to understand the strengths and limitations of the dataset before beginning an investigation.
+
+---
+
+## Goal
+
+Answer five questions about the final telemetry package:
+
+1. **How much telemetry is available?**
+2. **How many simulated attacker actions were detected?**
+3. **Which MITRE ATT&CK techniques are covered, partial, or blind?**
+4. **What known visibility gaps remain?**
+5. **How much confidence should the SOC place in the handoff?**
+
+---
+
+## Required Inputs
+
+The script reads:
+
+```text
+telemetry_handoff/windows_events.json
+telemetry_handoff/linux_events.json
+telemetry_handoff/attack_ground_truth.json
+
+windows_detection_matrix.json
+linux_detection_matrix.json
+
+windows_telemetry_quality.json
+linux_telemetry_quality.json
+
+sysmon_coverage_matrix.json
+```
+
+All inputs must contain valid JSON.
+
+If any required input is missing or invalid, the assessment stops instead of silently producing incomplete metadata.
+
+---
+
+## Output
+
+```text
+telemetry_coverage_assessment.json
+```
+
+The report contains:
+
+```text
+metadata
+total_events
+detection_matrix_summary
+attack_coverage
+known_gaps
+quality_summary
+```
+
+---
+
+# 1. Total Events
+
+The report counts telemetry:
+
+- across both platforms;
+- by platform;
+- by source type;
+- by event category.
+
+Example structure:
+
+```json
+{
+  "total_events": {
+    "total": 4292,
+    "by_platform": {
+      "Windows": 2270,
+      "Linux": 2022
+    }
+  }
+}
+```
+
+Source and category distributions are calculated independently for Windows and Linux.
+
+This allows the SOC to understand the composition of the dataset before investigating it.
+
+---
+
+# 2. Detection Matrix Summary
+
+Task 14 combines the results of:
+
+```text
+windows_detection_matrix.json
+linux_detection_matrix.json
+```
+
+and compares them with:
+
+```text
+attack_ground_truth.json
+```
+
+The summary reports:
+
+```text
+total simulated actions
+captured actions
+missed actions
+multi-source detections
+```
+
+Example:
+
+```json
+{
+  "detection_matrix_summary": {
+    "total_simulated_actions": 12,
+    "captured_actions": 11,
+    "missed_actions": 1,
+    "multi_source_detections": 4
+  }
+}
+```
+
+The report also provides Windows and Linux subtotals.
+
+---
+
+# 3. MITRE ATT&CK Coverage
+
+The ground-truth actions contain the MITRE ATT&CK techniques associated with each simulated behaviour.
+
+Task 14 correlates those actions with the detection matrices and classifies each technique as:
+
+```text
+covered
+partial
+blind
+```
+
+## Covered
+
+The simulated technique was detected with adequate telemetry.
+
+The report records the telemetry source responsible for the coverage.
+
+Example:
+
+```json
+{
+  "technique_id": "T1136.001",
+  "technique_name": "Create Account: Local Account",
+  "platforms": ["Linux"],
+  "sources": ["auditd"],
+  "coverage": "covered"
+}
+```
+
+## Partial
+
+The behaviour was detected, but the available detection did not provide full-detail coverage, or a technique represented by multiple simulated actions has inconsistent coverage.
+
+## Blind
+
+No adequate detection was found for the simulated technique.
+
+A blind technique is a significant visibility gap because the ground truth confirms the behaviour occurred while the detection layer did not adequately observe it.
+
+---
+
+# 4. Known Gaps
+
+The report automatically creates known-gap records for blind and partially covered simulated actions.
+
+Each gap contains:
+
+```text
+description
+impacted platform
+impacted technique
+reason
+recommended instrumentation improvement
+```
+
+Example:
+
+```json
+{
+  "description": "No adequate detection was found for simulated action: ...",
+  "impacted_platform": "Windows",
+  "impacted_technique": "Txxxx",
+  "reason": "The detection matrix did not contain a captured event for this ground-truth action.",
+  "recommended_instrumentation_improvement": "Review Windows audit policy, Sysmon configuration, PowerShell logging, and required event fields for this technique."
+}
+```
+
+The script also inspects the Sysmon coverage matrix for entries explicitly marked as missed, blind, partial, disabled, or not covered and incorporates those limitations when the source structure supports them.
+
+---
+
+# 5. Quality Summary
+
+The assessment reads:
+
+```text
+windows_telemetry_quality.json
+linux_telemetry_quality.json
+```
+
+and extracts the quality scores.
+
+Example:
+
+```json
+{
+  "quality_summary": {
+    "Windows": {
+      "score": 94.2
+    },
+    "Linux": {
+      "score": 96.1
+    }
+  }
+}
+```
+
+It also calculates the average quality score.
+
+---
+
+# 6. Final Handoff Confidence
+
+The final confidence rating is:
+
+```text
+good
+acceptable
+poor
+```
+
+The script uses explicit operational logic:
+
+```text
+POOR
+- at least one blind ATT&CK technique
+OR
+- average telemetry quality below 65
+
+ACCEPTABLE
+- at least one partially covered ATT&CK technique
+OR
+- average telemetry quality below 90
+
+GOOD
+- no blind techniques
+- no partial techniques
+- average quality >= 90
+```
+
+This rating is intentionally stricter than simply averaging two quality scores.
+
+For example, excellent event completeness should not hide a known detection blind spot.
+
+---
+
+# 7. Requirements
+
+The script requires:
+
+```text
+bash
+jq
+date
+```
+
+Check:
+
+```bash
+jq --version
+```
+
+If required on Debian/Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install jq
+```
+
+---
+
+# 8. Running Task 14
+
+Make the script executable:
+
+```bash
+chmod +x 14-coverage_assessment.sh
+```
+
+Run:
+
+```bash
+./14-coverage_assessment.sh
+```
+
+Expected console structure:
+
+```text
+[*] Loading telemetry handoff package...
+Windows events: 2270
+Linux events: 2022
+Ground truth actions: 12
+Detection matrix: 11/12 captured
+ATT&CK covered: 9
+ATT&CK partial: 2
+ATT&CK blind: 1
+Windows quality: 94.2
+Linux quality: 96.1
+Confidence: acceptable
+Report saved to: telemetry_coverage_assessment.json
+```
+
+The actual values are calculated from your files and are not hard-coded.
+
+---
+
+# 9. Reading the Assessment
+
+Pretty-print the complete report:
+
+```bash
+jq . telemetry_coverage_assessment.json
+```
+
+View event totals:
+
+```bash
+jq '.total_events' telemetry_coverage_assessment.json
+```
+
+View the detection summary:
+
+```bash
+jq '.detection_matrix_summary' telemetry_coverage_assessment.json
+```
+
+View ATT&CK coverage:
+
+```bash
+jq '.attack_coverage' telemetry_coverage_assessment.json
+```
+
+View only covered techniques:
+
+```bash
+jq '.attack_coverage.covered_techniques' \
+    telemetry_coverage_assessment.json
+```
+
+View partial techniques:
+
+```bash
+jq '.attack_coverage.partially_covered_techniques' \
+    telemetry_coverage_assessment.json
+```
+
+View blind techniques:
+
+```bash
+jq '.attack_coverage.blind_techniques' \
+    telemetry_coverage_assessment.json
+```
+
+View known gaps:
+
+```bash
+jq '.known_gaps' telemetry_coverage_assessment.json
+```
+
+View quality and confidence:
+
+```bash
+jq '.quality_summary' telemetry_coverage_assessment.json
+```
+
+---
+
+# 10. SOC Interpretation
+
+The assessment should be read as a description of **visibility**, not simply as a scorecard.
+
+For example:
+
+```text
+12 simulated actions
+        |
+        +-- 11 captured
+        |
+        +-- 1 missed
+                |
+                v
+          detection gap
+                |
+                v
+       identify technique
+                |
+                v
+       identify missing source
+                |
+                v
+       improve instrumentation
+```
+
+A high event count does not automatically mean good detection coverage.
+
+Likewise:
+
+```text
+Telemetry volume ≠ telemetry quality
+Telemetry quality ≠ detection coverage
+Detection coverage ≠ multi-source confidence
+```
+
+Task 14 brings these dimensions together.
+
+---
+
+# 11. Relationship with Tasks 9–13
+
+The final methodology is:
+
+```text
+WINDOWS
+Task 3  → Windows telemetry
+Task 9  → Windows attack simulation
+Task 10 → Windows detection proof
+Task 4/8-style quality work → Windows quality
+
+LINUX
+Task 7  → Linux telemetry
+Task 11 → Linux attack simulation
+Task 12 → Linux detection proof
+Task 8  → Linux quality
+
+CROSS-PLATFORM
+Task 13 → Consolidated telemetry handoff
+Task 14 → Final coverage assessment
+```
+
+Task 14 therefore acts as the metadata layer that explains the dataset delivered by Task 13.
+
+---
+
+# 12. Handoff Architecture
+
+```text
+                    ENDPOINT TELEMETRY
+                           |
+             +-------------+-------------+
+             |                           |
+          Windows                       Linux
+             |                           |
+             v                           v
+     windows_events.json          linux_events.json
+             |                           |
+             +-------------+-------------+
+                           |
+                           v
+                  telemetry_handoff/
+                           |
+             +-------------+-------------+
+             |                           |
+      Detection matrices           Quality reports
+             |                           |
+             +-------------+-------------+
+                           |
+                    Sysmon coverage
+                           |
+                           v
+              14-coverage_assessment.sh
+                           |
+                           v
+          telemetry_coverage_assessment.json
+                           |
+                           v
+                          SOC
+```
+
+---
+
+# 13. Why This Matters for a SOC
+
+Before analysts investigate a dataset, they should understand what the sensors can and cannot see.
+
+For example:
+
+```text
+Technique: Process Execution
+Coverage: covered
+Source: Sysmon / auditd
+
+Technique: PowerShell
+Coverage: partial
+Source: PowerShell Operational
+
+Technique: Network Connection
+Coverage: blind
+Source: none
+```
+
+Without this context, an analyst could incorrectly conclude:
+
+> No event exists, therefore the activity did not happen.
+
+The correct conclusion may instead be:
+
+> The available instrumentation cannot reliably observe this behaviour.
+
+That distinction is fundamental to detection engineering and incident response.
+
+---
+
+# 14. Recommended Validation
+
+Validate all source files:
+
+```bash
+jq empty telemetry_handoff/windows_events.json
+jq empty telemetry_handoff/linux_events.json
+jq empty telemetry_handoff/attack_ground_truth.json
+jq empty windows_detection_matrix.json
+jq empty linux_detection_matrix.json
+jq empty windows_telemetry_quality.json
+jq empty linux_telemetry_quality.json
+jq empty sysmon_coverage_matrix.json
+```
+
+Run:
+
+```bash
+./14-coverage_assessment.sh
+```
+
+Validate the output:
+
+```bash
+jq empty telemetry_coverage_assessment.json
+```
+
+Then inspect:
+
+```bash
+jq . telemetry_coverage_assessment.json
+```
+
+---
+
+# 15. Useful Queries
+
+## Number of covered techniques
+
+```bash
+jq '.attack_coverage.covered_count' \
+    telemetry_coverage_assessment.json
+```
+
+## Number of blind techniques
+
+```bash
+jq '.attack_coverage.blind_count' \
+    telemetry_coverage_assessment.json
+```
+
+## Techniques and sources
+
+```bash
+jq -r '
+    (
+      .attack_coverage.covered_techniques
+      + .attack_coverage.partially_covered_techniques
+      + .attack_coverage.blind_techniques
+    )[]
+    | [
+        .technique_id,
+        .coverage,
+        (.sources | join(","))
+      ]
+    | @tsv
+' telemetry_coverage_assessment.json
+```
+
+## All known gaps
+
+```bash
+jq -r '
+    .known_gaps[]
+    | [
+        .impacted_platform,
+        .impacted_technique,
+        .description,
+        .recommended_instrumentation_improvement
+      ]
+    | @tsv
+' telemetry_coverage_assessment.json
+```
+
+---
+
+# 16. Expected Project Files
+
+```text
+2x02_eyes_on_endpoint/
+│
+├── windows_detection_matrix.json
+├── linux_detection_matrix.json
+├── windows_telemetry_quality.json
+├── linux_telemetry_quality.json
+├── sysmon_coverage_matrix.json
+│
+├── telemetry_handoff/
+│   ├── windows_events.json
+│   ├── linux_events.json
+│   └── attack_ground_truth.json
+│
+├── 14-coverage_assessment.sh
+├── telemetry_coverage_assessment.json
+└── README_task_14_coverage_assessment.md
+```
+
+---
+
+# 17. Defensive Security Skills Demonstrated
+
+Task 14 demonstrates:
+
+- cross-platform telemetry assessment;
+- detection engineering;
+- MITRE ATT&CK coverage analysis;
+- detection-gap identification;
+- telemetry-quality assessment;
+- Sysmon coverage interpretation;
+- Linux/Windows correlation;
+- SOC handoff design;
+- JSON automation with `jq`;
+- operational security reporting;
+- instrumentation recommendations;
+- evidence-based confidence scoring.
+
+The key outcome is not simply a percentage.
+
+The final report communicates:
+
+> what the SOC can see, what it can only partially see, and what it cannot currently see.
+
+---
+
+## Author
+
+**Pedro Cabral**
+
+**Project:** 2x02 - Eyes on Endpoint  
+**Task:** 14 - Cross-Platform Coverage Assessment
+
