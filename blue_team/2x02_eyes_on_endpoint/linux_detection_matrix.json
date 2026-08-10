@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "generated_at_utc": "2026-08-10T12:58:45Z",
+    "ground_truth_file": "/media/sf_dlh-cyber_security/blue_team/2x02_eyes_on_endpoint/linux_attack_log.json",
+    "window_seconds": 30,
+    "total_actions": 6,
+    "captured_actions": 6,
+    "capture_rate_percent": 100,
+    "multi_source_actions": 0
+  },
+  "detections": [
+    {
+      "action_number": 1,
+      "action": "Create user",
+      "source": "auditd",
+      "audit_key": "identity",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "user": "testattacker"
+      }
+    },
+    {
+      "action_number": 2,
+      "action": "Modify sudoers",
+      "source": "auditd",
+      "audit_key": "sudoers",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "path": "/etc/sudoers.d/backdoor",
+        "user": "testattacker"
+      }
+    },
+    {
+      "action_number": 3,
+      "action": "Execute from /tmp",
+      "source": "auditd",
+      "audit_key": "process_exec",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "executable_path": "/tmp/suspicious_bin"
+      }
+    },
+    {
+      "action_number": 4,
+      "action": "Reverse shell",
+      "source": "auditd",
+      "audit_key": "network_connect",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "destination_ip": "127.0.0.1",
+        "destination_port": "4444"
+      }
+    },
+    {
+      "action_number": 5,
+      "action": "Cron persistence",
+      "source": "auditd",
+      "audit_key": "cron_persist",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "cron_file": "/etc/cron.d/persistence_test",
+        "command": "/tmp/beacon.sh"
+      }
+    },
+    {
+      "action_number": 6,
+      "action": "Access /etc/shadow",
+      "source": "auditd",
+      "audit_key": "identity",
+      "detail": "Full",
+      "status": "[CAPTURED]",
+      "key_fields": {
+        "path": "/etc/shadow"
+      }
+    }
+  ]
+}
