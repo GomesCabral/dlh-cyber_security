@@ -157,7 +157,7 @@ cleanup_artifacts() {
     fi
 
     # Test account
-    if id "${SIMULATION_USER}" >/dev/null 2>&1; then
+    if /usr/bin/id "${SIMULATION_USER}" >/dev/null 2>&1; then
         if ! userdel -r "${SIMULATION_USER}" >/dev/null 2>&1; then
             CLEANUP_ERRORS+=("Failed to remove user ${SIMULATION_USER}")
         fi
