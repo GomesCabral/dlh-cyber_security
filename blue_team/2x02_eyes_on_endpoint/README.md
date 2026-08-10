@@ -2916,3 +2916,304 @@ Without these checks, analysts may miss attacker activity because critical field
 
 ---
 
+# Task 8 — Linux Telemetry Quality Gate
+
+## Project
+
+**2x02 - Eyes on Endpoint**
+
+This task evaluates the quality of Linux telemetry collected in the previous stage of the project. The script reads `linux_events_export.json` and generates a structured report in `linux_telemetry_quality.json`.
+
+The assessment is read-only with respect to system telemetry: it analyzes the exported JSON and writes a quality report only.
+
+## Objective
+
+The goal is to verify whether the collected Linux telemetry is sufficiently complete, continuous, and useful for security monitoring and investigation.
+
+The quality gate evaluates:
+
+- event distribution;
+- time coverage;
+- telemetry gaps;
+- field completeness;
+- overall weighted quality score.
+
+## Script
+
+```text
+8-linux_telemetry_quality.sh
+```
+
+### Input
+
+```text
+linux_events_export.json
+```
+
+### Output
+
+```text
+linux_telemetry_quality.json
+```
+
+## Requirements
+
+The script requires:
+
+```bash
+jq
+date
+awk
+sort
+head
+tail
+```
+
+## Usage
+
+Make the script executable:
+
+```bash
+chmod +x 8-linux_telemetry_quality.sh
+```
+
+Run it from the directory containing `linux_events_export.json`:
+
+```bash
+./8-linux_telemetry_quality.sh
+```
+
+If Task 7 has not yet generated the input file:
+
+```bash
+sudo ./7-linux_export.sh
+```
+
+## Input Validation
+
+Before analysis, the script verifies that:
+
+1. `linux_events_export.json` exists;
+2. the file contains valid JSON;
+3. the export contains telemetry events.
+
+If no events are available, the report is marked `poor` with a score of `0`.
+
+## Quality Dimensions
+
+### 1. Event Distribution
+
+The script counts events by:
+
+- `event_category`;
+- `source_type`.
+
+For each group, it calculates the total count and percentage of all events.
+
+### 2. Time Coverage
+
+The script determines the observation window from metadata when available. If metadata is missing, it uses the earliest and latest event timestamps.
+
+The window is divided into one-hour buckets and the script calculates:
+
+- total hours;
+- hours with events;
+- hours without events;
+- events per hour;
+- percentage of hours containing telemetry.
+
+Formula:
+
+```text
+Time Coverage % = Hours With Events / Total Hours × 100
+```
+
+### 3. Gap Detection
+
+All timestamps are sorted chronologically. A significant telemetry gap is any period longer than:
+
+```text
+30 minutes
+```
+
+The report records:
+
+- number of gaps;
+- start and end of each gap;
+- duration in minutes;
+- largest observed gap.
+
+The script also checks for an initial gap before the first event and a final gap after the last event.
+
+### 4. Field Completeness
+
+#### Common fields
+
+Every event is expected to contain:
+
+```text
+timestamp
+hostname
+source_type
+event_category
+```
+
+#### execve events
+
+For `event_category == "execve"`, the script checks:
+
+```text
+command_line
+```
+
+#### SSH events
+
+For `ssh_login_success` and `ssh_login_failure`, the script checks:
+
+```text
+source_ip
+user
+```
+
+A source IP equal to `-` is treated as incomplete.
+
+#### auditd file events
+
+For events where:
+
+```text
+source_type == "auditd"
+event_category == "file_access"
+```
+
+the script checks:
+
+```text
+path
+operation
+key
+```
+
+It also accepts the aliases:
+
+```text
+syscall   -> operation
+audit_key -> key
+```
+
+The auditd file-event completeness score is the average of path, operation, and key completeness.
+
+## Weighted Quality Score
+
+The final score ranges from `0` to `100`.
+
+| Quality Dimension | Weight |
+|---|---:|
+| Common field completeness | 20 |
+| execve command-line completeness | 20 |
+| SSH source IP completeness | 15 |
+| SSH user completeness | 10 |
+| auditd file-event completeness | 15 |
+| Time coverage | 10 |
+| Gap continuity | 10 |
+| **Total** | **100** |
+
+## Gap Continuity Score
+
+| Largest Gap | Score |
+|---|---:|
+| ≤ 30 minutes | 100 |
+| ≤ 60 minutes | 80 |
+| ≤ 120 minutes | 60 |
+| ≤ 240 minutes | 40 |
+| > 240 minutes | 20 |
+
+## Final Assessment
+
+| Score | Assessment |
+|---|---|
+| `>= 85` | `good` |
+| `>= 65` and `< 85` | `acceptable` |
+| `< 65` | `poor` |
+
+## Output Structure
+
+The generated JSON contains:
+
+```json
+{
+  "metadata": {},
+  "total_events": 0,
+  "event_distribution": {},
+  "time_coverage": {},
+  "gap_detection": {},
+  "field_completeness": {},
+  "quality_score": {}
+}
+```
+
+### Main sections
+
+`metadata` contains the generation time, source file, analysis window, and gap threshold.
+
+`event_distribution` contains statistics by event category and source type.
+
+`time_coverage` contains total hours, hours with and without events, coverage percentage, and events per hour.
+
+`gap_detection` contains the number of gaps, the largest gap, and detailed gap records.
+
+`field_completeness` contains results for common fields, execve, SSH, and auditd file events.
+
+`quality_score` contains the final score and assessment.
+
+## Useful Commands
+
+Validate the generated report:
+
+```bash
+jq empty linux_telemetry_quality.json
+```
+
+Pretty-print it:
+
+```bash
+jq . linux_telemetry_quality.json
+```
+
+Show only the final score:
+
+```bash
+jq '.quality_score' linux_telemetry_quality.json
+```
+
+Show detected gaps:
+
+```bash
+jq '.gap_detection' linux_telemetry_quality.json
+```
+
+Show field completeness:
+
+```bash
+jq '.field_completeness' linux_telemetry_quality.json
+```
+
+Show hourly telemetry coverage:
+
+```bash
+jq '.time_coverage.events_per_hour' linux_telemetry_quality.json
+```
+
+## Security Value
+
+A high event count does not automatically mean that telemetry is useful. A SOC analyst also needs to know whether important fields are populated, whether the expected monitoring window is covered, whether collection gaps exist, and whether investigation-critical information such as command lines, usernames, IP addresses, file paths, operations, and audit keys is available.
+
+This quality gate provides a repeatable way to assess telemetry before it is used for detection engineering or incident investigation.
+
+## Author
+
+**Pedro Cabral**
+
+Project: `2x02 - Eyes on Endpoint`  
+Task: `8 - Linux Telemetry Quality Gate`
+
