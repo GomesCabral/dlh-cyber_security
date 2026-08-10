@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "report": "2x02 Eyes on Endpoint - Handoff Validation",
+    "generated_at_utc": "2026-08-10T13:51:42Z",
+    "handoff_directory": "telemetry_handoff/"
+  },
+  "summary": {
+    "verdict": "FAIL",
+    "total_checks": 15,
+    "passed_checks": 14,
+    "failed_checks": 1,
+    "windows_events": 2544,
+    "linux_events": 11790,
+    "ground_truth_actions": 12
+  },
+  "checks": [
+    {
+      "category": "File Existence",
+      "check": "windows_events.json_exists",
+      "status": "PASS",
+      "message": "windows_events.json exists (11.3 MB)"
+    },
+    {
+      "category": "File Existence",
+      "check": "linux_events.json_exists",
+      "status": "PASS",
+      "message": "linux_events.json exists (4.2 MB)"
+    },
+    {
+      "category": "File Existence",
+      "check": "attack_ground_truth.json_exists",
+      "status": "PASS",
+      "message": "attack_ground_truth.json exists (14.4 KB)"
+    },
+    {
+      "category": "JSON Validity",
+      "check": "windows_events.json_json",
+      "status": "PASS",
+      "message": "windows_events.json: valid JSON, 2544 objects"
+    },
+    {
+      "category": "JSON Validity",
+      "check": "linux_events.json_json",
+      "status": "PASS",
+      "message": "linux_events.json: valid JSON, 11790 objects"
+    },
+    {
+      "category": "JSON Validity",
+      "check": "attack_ground_truth.json_json",
+      "status": "PASS",
+      "message": "attack_ground_truth.json: valid JSON, 12 objects"
+    },
+    {
+      "category": "Required Fields",
+      "check": "required_event_fields",
+      "status": "PASS",
+      "message": "All events have timestamp, hostname, source_type, event_category"
+    },
+    {
+      "category": "Minimum Event Counts",
+      "check": "windows_minimum",
+      "status": "PASS",
+      "message": "Windows: 2544 >= 1000"
+    },
+    {
+      "category": "Minimum Event Counts",
+      "check": "linux_minimum",
+      "status": "PASS",
+      "message": "Linux: 11790 >= 500"
+    },
+    {
+      "category": "Minimum Event Counts",
+      "check": "ground_truth_minimum",
+      "status": "PASS",
+      "message": "Ground truth: 12 >= 10"
+    },
+    {
+      "category": "Timestamp Consistency",
+      "check": "iso8601",
+      "status": "PASS",
+      "message": "All timestamps valid ISO 8601"
+    },
+    {
+      "category": "Timestamp Consistency",
+      "check": "no_future_timestamps",
+      "status": "PASS",
+      "message": "No future timestamps"
+    },
+    {
+      "category": "Timestamp Consistency",
+      "check": "reasonable_range",
+      "status": "PASS",
+      "message": "Range: 2026-08-08T09:38:53.2293366Z to 2026-08-09T09:53:33Z"
+    },
+    {
+      "category": "Cross-Platform Alignment",
+      "check": "timestamp_overlap",
+      "status": "FAIL",
+      "message": "Windows and Linux time ranges do not overlap"
+    },
+    {
+      "category": "Ground Truth Completeness",
+      "check": "detection_matrix_entries",
+      "status": "PASS",
+      "message": "12/12 actions have detection matrix entries"
+    }
+  ]
+}

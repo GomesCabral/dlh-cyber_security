@@ -7053,3 +7053,699 @@ The final report communicates:
 **Project:** 2x02 - Eyes on Endpoint  
 **Task:** 14 - Cross-Platform Coverage Assessment
 
+---
+
+# Task 15 — Handoff Validation
+
+## Project
+
+**2x02 - Eyes on Endpoint**
+
+Task 15 is the final quality gate before moving from the telemetry-builder role into the SOC analyst role.
+
+The script:
+
+```text
+15-handoff_validation.sh
+```
+
+validates the consolidated telemetry package created in Task 13 and verifies that it is structurally sound, sufficiently populated, time-consistent, cross-platform aligned, and correlated with the detection matrices.
+
+The final validation report is:
+
+```text
+handoff_validation.json
+```
+
+---
+
+# Goal
+
+Determine whether:
+
+```text
+telemetry_handoff/
+```
+
+is ready for analyst consumption.
+
+The validator checks:
+
+1. file existence;
+2. JSON validity;
+3. required fields;
+4. minimum event counts;
+5. timestamp consistency;
+6. cross-platform time alignment;
+7. ground truth completeness against the detection matrices.
+
+The script produces individual:
+
+```text
+[PASS]
+```
+
+or:
+
+```text
+[FAIL]
+```
+
+results and finishes with an overall verdict.
+
+---
+
+# Handoff Files
+
+Task 15 expects:
+
+```text
+telemetry_handoff/
+├── windows_events.json
+├── linux_events.json
+└── attack_ground_truth.json
+```
+
+It also uses:
+
+```text
+windows_detection_matrix.json
+linux_detection_matrix.json
+```
+
+to validate ground-truth correlation.
+
+---
+
+# 1. File Existence
+
+The validator confirms that all three required handoff files exist.
+
+Example:
+
+```text
+=== File Existence ===
+[PASS] windows_events.json exists (4.2 MB)
+[PASS] linux_events.json exists (3.1 MB)
+[PASS] attack_ground_truth.json exists (12 KB)
+```
+
+A missing file causes a failed quality gate.
+
+---
+
+# 2. JSON Validity
+
+Every handoff file must parse successfully with `jq`.
+
+Example:
+
+```text
+=== JSON Validity ===
+[PASS] windows_events.json: valid JSON, 2270 objects
+[PASS] linux_events.json: valid JSON, 2022 objects
+[PASS] attack_ground_truth.json: valid JSON, 12 objects
+```
+
+Manual validation:
+
+```bash
+jq empty telemetry_handoff/windows_events.json
+jq empty telemetry_handoff/linux_events.json
+jq empty telemetry_handoff/attack_ground_truth.json
+```
+
+No output means valid JSON.
+
+---
+
+# 3. Required Fields
+
+Every Windows and Linux event must contain:
+
+```text
+timestamp
+hostname
+source_type
+event_category
+```
+
+Successful validation:
+
+```text
+[PASS] All events have timestamp, hostname, source_type, event_category
+```
+
+These fields form the minimum normalized schema required for SOC analysis.
+
+---
+
+# 4. Minimum Event Counts
+
+The quality gates are:
+
+```text
+Windows >= 1000 events
+Linux   >= 500 events
+Ground truth >= 10 actions
+```
+
+Example:
+
+```text
+=== Minimum Event Counts ===
+[PASS] Windows: 2270 >= 1000
+[PASS] Linux: 2022 >= 500
+[PASS] Ground truth: 12 >= 10
+```
+
+The thresholds help prevent an incomplete or nearly empty export from being accepted as a valid handoff.
+
+---
+
+# 5. Timestamp Consistency
+
+The validator checks that event timestamps use normalized UTC ISO 8601 format.
+
+Expected format:
+
+```text
+2026-08-10T12:58:45Z
+```
+
+The validator also checks:
+
+```text
+valid ISO 8601
+no future timestamps
+overall event range
+```
+
+Example:
+
+```text
+=== Timestamp Consistency ===
+[PASS] All timestamps valid ISO 8601
+[PASS] No future timestamps
+[PASS] Range: 2026-08-10T00:00:00Z to 2026-08-10T23:59:59Z
+```
+
+Timestamp consistency is essential for building a reliable incident timeline.
+
+---
+
+# 6. Cross-Platform Alignment
+
+Windows and Linux telemetry should represent overlapping observation periods.
+
+Conceptually:
+
+```text
+Windows
+|--------------------------------------|
+
+Linux
+       |-------------------------------|
+
+       <------ shared coverage -------->
+```
+
+The validator calculates the overlap.
+
+Example:
+
+```text
+[PASS] Windows and Linux time ranges overlap (23.50 hours shared)
+```
+
+If the ranges do not overlap, cross-platform correlation becomes unreliable.
+
+---
+
+# 7. Ground Truth Completeness
+
+Task 15 verifies that the attacker ground truth is represented in the detection matrices.
+
+Inputs:
+
+```text
+attack_ground_truth.json
+windows_detection_matrix.json
+linux_detection_matrix.json
+```
+
+Expected:
+
+```text
+[PASS] 12/12 actions have detection matrix entries
+```
+
+Important distinction:
+
+This check does **not** require every action to have been successfully detected.
+
+A detection matrix can legitimately contain:
+
+```text
+[CAPTURED]
+```
+
+or:
+
+```text
+[MISSED]
+```
+
+The requirement is that every simulated ground-truth action has been evaluated and therefore has a corresponding detection-matrix entry.
+
+---
+
+# 8. Final Verdict
+
+If every quality gate passes:
+
+```text
+VERDICT: PASS
+Handoff package is ready for Module 3.
+```
+
+If one or more checks fail:
+
+```text
+VERDICT: FAIL
+Handoff package is NOT ready for Module 3. Review failed checks.
+```
+
+The script returns:
+
+```text
+exit 0
+```
+
+for PASS and:
+
+```text
+exit 1
+```
+
+for FAIL.
+
+This makes the validator suitable for future automation or CI-style quality gates.
+
+---
+
+# Requirements
+
+The script requires:
+
+```text
+bash
+jq
+date
+stat
+awk
+```
+
+Check:
+
+```bash
+jq --version
+date --version
+```
+
+---
+
+# Running Task 15
+
+Make the script executable:
+
+```bash
+chmod +x 15-handoff_validation.sh
+```
+
+Run:
+
+```bash
+./15-handoff_validation.sh
+```
+
+---
+
+# Expected Output
+
+A successful run should resemble:
+
+```text
+[*] Validating telemetry_handoff/ ...
+=== File Existence ===
+[PASS] windows_events.json exists (4.2 MB)
+[PASS] linux_events.json exists (3.1 MB)
+[PASS] attack_ground_truth.json exists (12 KB)
+
+=== JSON Validity ===
+[PASS] windows_events.json: valid JSON, 2270 objects
+[PASS] linux_events.json: valid JSON, 2022 objects
+[PASS] attack_ground_truth.json: valid JSON, 12 objects
+
+=== Required Fields ===
+[PASS] All events have timestamp, hostname, source_type, event_category
+
+=== Minimum Event Counts ===
+[PASS] Windows: 2270 >= 1000
+[PASS] Linux: 2022 >= 500
+[PASS] Ground truth: 12 >= 10
+
+=== Timestamp Consistency ===
+[PASS] All timestamps valid ISO 8601
+[PASS] No future timestamps
+[PASS] Range: 2026-08-10T00:00:00Z to 2026-08-10T23:59:59Z
+
+=== Cross-Platform Alignment ===
+[PASS] Windows and Linux time ranges overlap
+
+=== Ground Truth Completeness ===
+[PASS] 12/12 actions have detection matrix entries
+
+VERDICT: PASS
+Handoff package is ready for Module 3.
+Report saved to: handoff_validation.json
+```
+
+Actual event counts, sizes, timestamps, and overlap depend on the collected telemetry.
+
+---
+
+# Reading the JSON Report
+
+Pretty-print:
+
+```bash
+jq . handoff_validation.json
+```
+
+View only the final summary:
+
+```bash
+jq '.summary' handoff_validation.json
+```
+
+View all checks:
+
+```bash
+jq '.checks' handoff_validation.json
+```
+
+Show only failed checks:
+
+```bash
+jq '
+    .checks[]
+    | select(.status == "FAIL")
+' handoff_validation.json
+```
+
+Show only passed checks:
+
+```bash
+jq '
+    .checks[]
+    | select(.status == "PASS")
+' handoff_validation.json
+```
+
+---
+
+# Example Report Structure
+
+```json
+{
+  "metadata": {
+    "report": "2x02 Eyes on Endpoint - Handoff Validation",
+    "generated_at_utc": "2026-08-10T14:00:00Z",
+    "handoff_directory": "telemetry_handoff/"
+  },
+  "summary": {
+    "verdict": "PASS",
+    "total_checks": 14,
+    "passed_checks": 14,
+    "failed_checks": 0,
+    "windows_events": 2270,
+    "linux_events": 2022,
+    "ground_truth_actions": 12
+  },
+  "checks": []
+}
+```
+
+---
+
+# Validation Workflow
+
+```text
+Task 13
+Consolidated Export
+        |
+        v
+telemetry_handoff/
+        |
+        v
+Task 14
+Coverage Assessment
+        |
+        v
+Task 15
+Handoff Validation
+        |
+        +------ FAIL ------> Fix telemetry/export problem
+        |
+        |
+       PASS
+        |
+        v
+      Module 3
+        |
+        v
+   SOC Analyst Role
+```
+
+---
+
+# Why This Quality Gate Matters
+
+A SOC analyst should not begin an investigation without knowing whether the dataset is usable.
+
+For example:
+
+```text
+Missing hostname
+      ↓
+Cannot reliably identify affected endpoint
+
+Invalid timestamp
+      ↓
+Cannot build trustworthy timeline
+
+Missing event category
+      ↓
+Harder to classify activity
+
+Insufficient telemetry
+      ↓
+Possible false conclusions
+
+Non-overlapping Windows/Linux ranges
+      ↓
+Cross-platform correlation becomes misleading
+
+Missing ground-truth evaluation
+      ↓
+Detection coverage cannot be validated
+```
+
+Task 15 prevents these problems from being silently passed downstream.
+
+---
+
+# Troubleshooting
+
+## Missing handoff directory
+
+Check:
+
+```bash
+ls -lah telemetry_handoff/
+```
+
+If it does not exist, run Task 13 first:
+
+```bash
+./13-consolidated_export.sh
+```
+
+---
+
+## Invalid JSON
+
+Run:
+
+```bash
+jq empty FILE.json
+```
+
+Then inspect:
+
+```bash
+jq . FILE.json
+```
+
+---
+
+## Event count below threshold
+
+Check:
+
+```bash
+jq '.events | length' telemetry_handoff/windows_events.json
+jq '.events | length' telemetry_handoff/linux_events.json
+```
+
+Do not fabricate additional events to pass the threshold.
+
+Return to the telemetry collection/export stage and determine why insufficient data was collected.
+
+---
+
+## Required fields missing
+
+Find incomplete Windows events:
+
+```bash
+jq '
+.events[]
+| select(
+    (.timestamp // "") == ""
+    or (.hostname // "") == ""
+    or (.source_type // "") == ""
+    or (.event_category // "") == ""
+)
+' telemetry_handoff/windows_events.json
+```
+
+Use the same query against Linux if necessary.
+
+---
+
+## Detection matrix completeness fails
+
+Check the matrix counts:
+
+```bash
+jq '.detections | length' windows_detection_matrix.json
+jq '.detections | length' linux_detection_matrix.json
+```
+
+Then compare with:
+
+```bash
+jq '
+.actions
+| group_by(.platform)
+| map({
+    platform: .[0].platform,
+    actions: length
+})
+' telemetry_handoff/attack_ground_truth.json
+```
+
+Remember:
+
+```text
+MISS is acceptable as an assessment result.
+Missing matrix entry is not.
+```
+
+---
+
+# SOC Interpretation
+
+Task 15 answers:
+
+> Can the SOC safely begin working with this dataset?
+
+Task 14 answers a different question:
+
+> What can the SOC detect with this dataset?
+
+Together:
+
+```text
+Task 14
+Coverage Assessment
+        ↓
+"What visibility do we have?"
+
+Task 15
+Handoff Validation
+        ↓
+"Can we trust the package structure and quality?"
+
+        ↓
+
+SOC investigation
+```
+
+---
+
+# Expected Project Structure
+
+```text
+2x02_eyes_on_endpoint/
+│
+├── windows_detection_matrix.json
+├── linux_detection_matrix.json
+│
+├── telemetry_handoff/
+│   ├── windows_events.json
+│   ├── linux_events.json
+│   └── attack_ground_truth.json
+│
+├── 14-coverage_assessment.sh
+├── telemetry_coverage_assessment.json
+│
+├── 15-handoff_validation.sh
+├── handoff_validation.json
+└── README_task_15_handoff_validation.md
+```
+
+---
+
+# Defensive Security Skills Demonstrated
+
+Task 15 demonstrates:
+
+- telemetry quality assurance;
+- SOC handoff validation;
+- JSON validation with `jq`;
+- normalized schema validation;
+- event-volume quality gates;
+- UTC timestamp validation;
+- cross-platform timeline alignment;
+- ground-truth correlation;
+- detection-matrix validation;
+- defensive automation;
+- operational readiness assessment;
+- machine-readable PASS/FAIL reporting.
+
+The final principle is:
+
+> **Do not hand telemetry to an analyst until you know what is in it, whether it is structurally valid, and whether it covers the observation period you claim it covers.**
+
+---
+
+## Author
+
+**Pedro Cabral**
+
+**Project:** 2x02 - Eyes on Endpoint  
+**Task:** 15 - Handoff Validation
+
