@@ -7,6 +7,11 @@
 # Project: 2x02 - Eyes on Endpoint
 # Task: 14 - Cross-Platform Coverage Assessment
 #
+# Detection summary:
+# - captured
+# - missed
+# - multi-source
+#
 # Output:
 # - telemetry_coverage_assessment.json
 #
@@ -79,7 +84,8 @@ printf 'Linux events: %s\n' "${LINUX_EVENT_COUNT}"
 printf 'Ground truth actions: %s\n' "${GROUND_TRUTH_COUNT}"
 
 # -----------------------------------------------------------------------------
-# Build normalized detection/action summaries in jq.
+# Build normalized detection/action summaries:
+# captured, missed, and multi-source detections.
 #
 # Windows and Linux detection reports may differ slightly in schema.  The
 # function below supports:
