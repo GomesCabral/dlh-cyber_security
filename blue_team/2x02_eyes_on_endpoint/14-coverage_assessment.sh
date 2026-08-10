@@ -7,10 +7,11 @@
 # Project: 2x02 - Eyes on Endpoint
 # Task: 14 - Cross-Platform Coverage Assessment
 #
-# Detection summary:
-# - captured
-# - missed
-# - multi-source
+# Detection matrix summary:
+# - total simulated actions
+# - captured actions
+# - missed actions
+# - multi-source detections
 #
 # Output:
 # - telemetry_coverage_assessment.json
