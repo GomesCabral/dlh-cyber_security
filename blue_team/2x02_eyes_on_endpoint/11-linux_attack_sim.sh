@@ -25,9 +25,7 @@
 # - No destructive commands
 # - All created artifacts are removed
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 # =============================================================================
 # Configuration
