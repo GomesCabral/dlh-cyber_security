@@ -1,3 +1,26 @@
+# name: 10-windows_detection_proof.ps1
+# purpose: Correlate the Task 9 attacker-simulation ground truth against captured Windows telemetry (Security, Sysmon, PowerShell logs) and produce a detection matrix proving which actions were captured, by which source, and with what detail.
+# author: Pedro Cabral
+#
+# Project: 2x02 - Eyes on Endpoint
+# Task: 10 - Windows Detection Proof
+#
+# What it does:
+# 1. Loads windows_attack_log.json (ground truth produced by Task 9)
+# 2. For each simulated action, searches the Security, Sysmon, and PowerShell
+#    Operational Event Logs within a +/- 30 second window around the recorded
+#    timestamp
+# 3. Uses the contextual details captured in Task 9 (account name, task name,
+#    destination IP, target file path, encoded command, etc.) to confirm the
+#    candidate event actually corresponds to the simulated action
+# 4. Classifies each match as Full / Partial / Missing detail
+#
+# Output:
+# - windows_detection_matrix.json
+#
+# DC compatibility:
+# Works against Domain Controllers and member servers alike; detection
+# quality still depends on the audit policy / Sysmon config in place.
 <#
 .SYNOPSIS
     Correlates the Task 9 attacker-simulation ground truth (windows_attack_log.json)
