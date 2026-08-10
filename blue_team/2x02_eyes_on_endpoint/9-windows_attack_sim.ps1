@@ -694,21 +694,16 @@ if ($StartupFileCreated -and (Test-Path $StartupFile)) {
 # ---------------------------------------------------------------------------
 
 if ($ScheduledTaskCreated) {
-
+ 
     try {
-
-        $null = & "$env:SystemRoot\System32\schtasks.exe" `
-            /Delete `
-            /TN $TaskName `
-            /F
-
-        if ($LASTEXITCODE -ne 0) {
-
-            throw "schtasks /delete returned exit code $LASTEXITCODE."
-        }
+ 
+        Unregister-ScheduledTask `
+            -TaskName $TaskName `
+            -Confirm:$false `
+            -ErrorAction Stop
     }
     catch {
-
+ 
         $CleanupErrors += "Scheduled task: $($_.Exception.Message)"
     }
 }
