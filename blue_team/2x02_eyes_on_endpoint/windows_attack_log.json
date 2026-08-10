@@ -4,7 +4,7 @@
                      "hostname":  "DC01",
                      "platform":  "Windows",
                      "host_type":  "Domain Controller",
-                     "generated_at":  "2026-08-10T09:14:25.2959095Z",
+                     "generated_at":  "2026-08-10T10:31:12.7592890Z",
                      "action_count":  6,
                      "controlled_simulation":  true
                  },
@@ -12,7 +12,7 @@
                     {
                         "action_number":  1,
                         "description":  "Created temporary support_update account",
-                        "timestamp":  "2026-08-10T09:13:13.4132452Z",
+                        "timestamp":  "2026-08-10T10:29:58.9803923Z",
                         "expected_detection_source":  [
                                                           "Security Event ID 4720",
                                                           "Sysmon Event ID 1"
@@ -30,7 +30,7 @@
                     {
                         "action_number":  2,
                         "description":  "Added support_update to Administrators group",
-                        "timestamp":  "2026-08-10T09:13:13.6885766Z",
+                        "timestamp":  "2026-08-10T10:29:59.1681554Z",
                         "expected_detection_source":  [
                                                           "Security Event ID 4732",
                                                           "Sysmon Event ID 1"
@@ -48,7 +48,7 @@
                     {
                         "action_number":  3,
                         "description":  "Executed harmless encoded PowerShell payload",
-                        "timestamp":  "2026-08-10T09:13:15.3229826Z",
+                        "timestamp":  "2026-08-10T10:30:00.4834655Z",
                         "expected_detection_source":  [
                                                           "Sysmon Event ID 1",
                                                           "PowerShell Event ID 4104",
@@ -67,7 +67,7 @@
                     {
                         "action_number":  4,
                         "description":  "Created controlled scheduled task persistence artifact",
-                        "timestamp":  "2026-08-10T09:13:15.6427206Z",
+                        "timestamp":  "2026-08-10T10:30:00.7377083Z",
                         "expected_detection_source":  [
                                                           "Security Event ID 4698",
                                                           "Sysmon Event ID 1"
@@ -85,7 +85,7 @@
                     {
                         "action_number":  5,
                         "description":  "Initiated controlled outbound TCP connection",
-                        "timestamp":  "2026-08-10T09:14:25.1550095Z",
+                        "timestamp":  "2026-08-10T10:31:12.5024432Z",
                         "expected_detection_source":  [
                                                           "Sysmon Event ID 3"
                                                       ],
@@ -103,7 +103,7 @@
                     {
                         "action_number":  6,
                         "description":  "Dropped harmless file in Windows Startup directory",
-                        "timestamp":  "2026-08-10T09:14:25.2356233Z",
+                        "timestamp":  "2026-08-10T10:31:12.7190111Z",
                         "expected_detection_source":  [
                                                           "Sysmon Event ID 11"
                                                       ],

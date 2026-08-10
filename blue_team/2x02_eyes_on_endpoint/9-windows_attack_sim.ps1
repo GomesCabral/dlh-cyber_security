@@ -48,8 +48,17 @@ $StartupFile = Join-Path `
     $StartupDirectory `
     "meddefense_simulation.txt"
 
+# $PSScriptRoot can come back empty when the script is launched via
+# `powershell -File` from a UNC path (e.g. a VirtualBox shared folder),
+# because the child process cannot set its working directory to a UNC path.
+# Fall back to $MyInvocation, then to the current location.
+$ScriptDir =
+    if ($PSScriptRoot) { $PSScriptRoot }
+    elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path }
+    else { (Get-Location).ProviderPath }
+
 $OutputFile = Join-Path `
-    $PSScriptRoot `
+    $ScriptDir `
     "windows_attack_log.json"
 
 $SafeDestination = "1.1.1.1"
@@ -399,6 +408,7 @@ try {
         $PSHOME `
         "powershell.exe"
 
+    # NOTE: -enc is the standard abbreviation for -EncodedCommand.
     & $PowerShellExecutable `
         -NoProfile `
         -NonInteractive `
@@ -694,16 +704,16 @@ if ($StartupFileCreated -and (Test-Path $StartupFile)) {
 # ---------------------------------------------------------------------------
 
 if ($ScheduledTaskCreated) {
- 
+
     try {
- 
+
         Unregister-ScheduledTask `
             -TaskName $TaskName `
             -Confirm:$false `
             -ErrorAction Stop
     }
     catch {
- 
+
         $CleanupErrors += "Scheduled task: $($_.Exception.Message)"
     }
 }
