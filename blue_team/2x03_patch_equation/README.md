@@ -1789,3 +1789,112 @@ Whatever fails here is exactly what the next task (drift detection / rollback) n
 
 **Author:** Pedro Cabral  
 **Project:** 2x03 — Patch Equation
+
+---
+
+## Running Task 6
+
+Project directory:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Requires, in this directory:
+
+```text
+pre_patch_state.json        (baseline snapshot, including its conffile_hashes block)
+patch_execution_log.json    (Task 4)
+```
+
+Make the script executable:
+
+```bash
+chmod +x 6-config_drift.sh
+```
+
+Run:
+
+```bash
+sudo ./6-config_drift.sh
+```
+
+The script only reads files and package metadata — it never modifies a conffile, and it never runs `dpkg --configure` or answers a conffile prompt on your behalf.
+
+## Exit codes
+
+```text
+0   no unexpected drift found
+1   at least one unexpected drift was detected
+```
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . config_drift.json
+```
+
+Only unexpected drift (what actually needs investigating):
+
+```bash
+jq '.files[] | select(.expected == false)' config_drift.json
+```
+
+Everything that changed, expected or not:
+
+```bash
+jq '.files[] | select(.classification != "unchanged")' config_drift.json
+```
+
+Just the summary:
+
+```bash
+jq '.summary' config_drift.json
+```
+
+Validate JSON:
+
+```bash
+jq empty config_drift.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 6 separates "something changed" from "something changed that we can't explain":
+
+```text
+drift + an upgrade that explains it   → expected, no action needed
+drift + nothing that explains it      → unexpected, exit 1, investigate
+```
+
+not:
+
+```text
+alert on every configuration change, expected or not, and let the noise drown the real signal
+```
+
+An `unexpected` entry in this report is exactly the kind of finding that should feed back into the incident process — someone or something touched a config file outside of the patch run this script already accounted for.
+
+---
+
+## Project progress
+
+| Task | Name | Status |
+|---|---|---|
+| 0 | The Vulnerability Inventory | ✅ Implemented |
+| 1 | The Service Dependency Map | ✅ Implemented |
+| 2 | (not yet requested) | ⏳ Pending |
+| 3 | The Patch Plan | ✅ Implemented |
+| 4 | The Safe Patch Execution | ✅ Implemented |
+| 5 | The Post-Patch Service Validation | ✅ Implemented |
+| 6 | The Configuration Drift Detector | ✅ Implemented |
+| 7–19 | Upcoming tasks | ⏳ Pending |
+
+---
+
+**Author:** Pedro Cabral  
+**Project:** 2x03 — Patch Equation

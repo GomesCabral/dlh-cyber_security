@@ -11,5 +11,11 @@
     {"port": 80, "proto": "tcp", "service": "apache2.service"},
     {"port": 443, "proto": "tcp", "service": "apache2.service"},
     {"port": 3306, "proto": "tcp", "service": "mysql.service"}
+  ],
+  "conffile_hashes": [
+    {"path": "/etc/ssh/sshd_config", "sha256": "d1a5f6c3b8e2a9f0c4d7b1e6a3f8c5d2b9e6a1f4c7d0b3e6a9f2c5d8b1e4a7f0", "owning_package": "openssh-server"},
+    {"path": "/etc/ssl/openssl.cnf", "sha256": "9e3c6f1b4a7d0c3f6b9e2a5d8c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c5", "owning_package": "openssl"},
+    {"path": "/etc/apache2/apache2.conf", "sha256": "5b8e1a4d7c0f3b6e9a2d5c8f1b4e7a0d3c6f9b2e5a8d1c4f7b0e3a6d9c2f5b8", "owning_package": "apache2"},
+    {"path": "/etc/mysql/my.cnf", "sha256": "2c5f8b1e4a7d0c3f6b9e2a5d8c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c5", "owning_package": "mysql-server"}
   ]
 }

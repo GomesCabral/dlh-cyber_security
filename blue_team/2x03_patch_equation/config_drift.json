@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "total": 4,
+    "unchanged": 0,
+    "modified": 1,
+    "missing": 3,
+    "new": 0,
+    "unexpected_drift": true
+  },
+  "files": [
+    {
+      "path": "/etc/ssh/sshd_config",
+      "owning_package": "openssh-server",
+      "classification": "missing",
+      "pre_sha256": "d1a5f6c3b8e2a9f0c4d7b1e6a3f8c5d2b9e6a1f4c7d0b3e6a9f2c5d8b1e4a7f0",
+      "current_sha256": null,
+      "expected": false,
+      "diff": null
+    },
+    {
+      "path": "/etc/ssl/openssl.cnf",
+      "owning_package": "openssl",
+      "classification": "modified",
+      "pre_sha256": "9e3c6f1b4a7d0c3f6b9e2a5d8c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c5",
+      "current_sha256": "d244aaf05e647054247fb41489ddf086d35349325c7c8b1340f4f639b8e53017",
+      "expected": false,
+      "diff": "(diff unavailable: neither /etc/ssl/openssl.cnf.dpkg-old nor /etc/ssl/openssl.cnf.dpkg-dist exist)"
+    },
+    {
+      "path": "/etc/apache2/apache2.conf",
+      "owning_package": "apache2",
+      "classification": "missing",
+      "pre_sha256": "5b8e1a4d7c0f3b6e9a2d5c8f1b4e7a0d3c6f9b2e5a8d1c4f7b0e3a6d9c2f5b8",
+      "current_sha256": null,
+      "expected": false,
+      "diff": null
+    },
+    {
+      "path": "/etc/mysql/my.cnf",
+      "owning_package": "mysql-server",
+      "classification": "missing",
+      "pre_sha256": "2c5f8b1e4a7d0c3f6b9e2a5d8c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c5",
+      "current_sha256": null,
+      "expected": false,
+      "diff": null
+    }
+  ]
+}
