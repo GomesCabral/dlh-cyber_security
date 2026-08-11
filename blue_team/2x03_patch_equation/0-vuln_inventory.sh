@@ -68,27 +68,32 @@ get_pocket() {
     local candidate="$2"
 
     apt-cache policy "${pkg}" 2>/dev/null | awk -v cand="${candidate}" '
-        function classify(line,   tag) {
-            if (match(line, /[A-Za-z0-9._-]+-security/)) {
-                tag = substr(line, RSTART, RLENGTH)
-                print tag
-                found = 1
-                exit
+        # A version block can have MULTIPLE origin lines at the same
+        # priority (e.g. the same fixed version is published to both
+        # -updates and -security simultaneously). We must collect every
+        # origin line under the matching version header and THEN pick by
+        # priority (security > updates > backports) -- deciding on the
+        # first origin line alone is wrong, since -updates commonly sorts
+        # before -security in apt-cache policy output.
+        function decide(   i, tag) {
+            for (i=1;i<=n;i++) {
+                if (match(tags[i], /[A-Za-z0-9._-]+-security/)) {
+                    print substr(tags[i],RSTART,RLENGTH); return 1
+                }
             }
-            if (match(line, /[A-Za-z0-9._-]+-updates/)) {
-                tag = substr(line, RSTART, RLENGTH)
-                print tag
-                found = 1
-                exit
+            for (i=1;i<=n;i++) {
+                if (match(tags[i], /[A-Za-z0-9._-]+-updates/)) {
+                    print substr(tags[i],RSTART,RLENGTH); return 1
+                }
             }
-            if (match(line, /[A-Za-z0-9._-]+-backports/)) {
-                tag = substr(line, RSTART, RLENGTH)
-                print tag
-                found = 1
-                exit
+            for (i=1;i<=n;i++) {
+                if (match(tags[i], /[A-Za-z0-9._-]+-backports/)) {
+                    print substr(tags[i],RSTART,RLENGTH); return 1
+                }
             }
+            return 0
         }
-        BEGIN { in_block = 0; found = 0 }
+        BEGIN { in_block = 0; n = 0; done = 0 }
         # A version header line looks like:
         #    1.2.3-4 500   (or "*** 1.2.3-4 500" for the installed one)
         # The version token must NOT contain a colon, which excludes the
@@ -96,20 +101,22 @@ get_pocket() {
         # and the trailing priority must be purely numeric to the end of
         # the line (excludes "Candidate: 5.15.0-97.107" style lines too).
         /^[[:space:]]*(\*\*\*[[:space:]]+)?[^[:space:]:]+[[:space:]]+[0-9]+[[:space:]]*$/ {
+            if (in_block) { done = decide(); if (done) exit }
             ver = $0
             gsub(/^[[:space:]]*\*\*\*[[:space:]]*/, "", ver)
             gsub(/^[[:space:]]+/, "", ver)
             gsub(/[[:space:]]+$/, "", ver)
             split(ver, parts, /[[:space:]]+/)
             in_block = (parts[1] == cand)
+            n = 0
             next
         }
         in_block && /^[[:space:]]+[0-9]+[[:space:]]+/ {
-            classify($0)
-            if (found) exit
+            n++
+            tags[n] = $0
             next
         }
-        END { if (!found) print "" }
+        END { if (in_block && !done) decide() }
     '
 }
 
