@@ -10,3 +10,4 @@ blue_team/2x02_eyes_on_endpoint/telemetry_handoff/linux_events.json
 blue_team/2x02_eyes_on_endpoint/telemetry_handoff/windows_events.json
 blue_team/2x02_eyes_on_endpoint/linux_telemetry_quality.json
 blue_team/2x02_eyes_on_endpoint/telemetry_coverage_assessment.json
+blue_team/2x03_patch_equation/cve_feed.json
