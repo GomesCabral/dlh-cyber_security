@@ -4,6 +4,10 @@
 # author: Pedro Cabral
 # Project: 2x03 - Patch Equation
 # Task: 0 - The Vulnerability Inventory
+# CVE discovery:
+# - Primary source: apt-get changelog
+# - Fallback source: locally cached Ubuntu Security Notice (USN) mapping
+# - USN cache location: /usr/share/ubuntu-advantage-tools
 
 set -euo pipefail
 
