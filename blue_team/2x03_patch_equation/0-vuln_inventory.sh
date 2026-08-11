@@ -122,9 +122,26 @@ get_pocket() {
 
 get_changelog_cves() {
     local pkg="$1"
-    apt-get changelog "${pkg}" 2>/dev/null |
-        grep -Eo 'CVE-[0-9]{4}-[0-9]{4,7}' |
-        sort -u
+    local installed="$2"
+
+    # apt-get changelog returns the FULL history of the package (every
+    # release ever shipped), newest first. We only care about CVEs fixed
+    # in versions NEWER than what is currently installed -- otherwise a
+    # package with a long changelog would report CVEs that are already
+    # patched. Stop reading as soon as we reach the changelog entry whose
+    # version equals the installed version.
+    apt-get changelog "${pkg}" 2>/dev/null | awk -v inst="${installed}" '
+        /^[^[:space:]]+[[:space:]]*\([^)]*\)/ {
+            line = $0
+            start = index(line, "(")
+            endp = index(line, ")")
+            if (start > 0 && endp > start) {
+                ver = substr(line, start+1, endp-start-1)
+                if (ver == inst) { stop = 1 }
+            }
+        }
+        !stop { print }
+    ' | grep -Eo 'CVE-[0-9]{4}-[0-9]{4,7}' | sort -u
     return 0
 }
 
@@ -222,7 +239,7 @@ while IFS= read -r line; do
 
     echo "    [security] ${pkg}: ${installed_version} -> ${candidate} (${pocket})"
 
-    cves="$(get_changelog_cves "${pkg}")"
+    cves="$(get_changelog_cves "${pkg}" "${installed_version}")"
     if [[ -z "${cves}" ]]; then
         cves="$(get_local_usn_cves "${pkg}")"
     fi
