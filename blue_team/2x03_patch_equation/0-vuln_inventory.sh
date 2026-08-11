@@ -90,10 +90,16 @@ get_pocket() {
         }
         BEGIN { in_block = 0; found = 0 }
         # A version header line looks like:
-        #    1.2.3-4 500 (or "*** 1.2.3-4 500" for the installed/candidate one)
-        /^[[:space:]]*(\*\*\*[[:space:]]+)?[^[:space:]]+[[:space:]]+[0-9]+/ {
+        #    1.2.3-4 500   (or "*** 1.2.3-4 500" for the installed one)
+        # The version token must NOT contain a colon, which excludes the
+        # unrelated "Installed:"/"Candidate:" summary lines above the table,
+        # and the trailing priority must be purely numeric to the end of
+        # the line (excludes "Candidate: 5.15.0-97.107" style lines too).
+        /^[[:space:]]*(\*\*\*[[:space:]]+)?[^[:space:]:]+[[:space:]]+[0-9]+[[:space:]]*$/ {
             ver = $0
-            sub(/^[[:space:]]*\*\*\*[[:space:]]*/, "", ver)
+            gsub(/^[[:space:]]*\*\*\*[[:space:]]*/, "", ver)
+            gsub(/^[[:space:]]+/, "", ver)
+            gsub(/[[:space:]]+$/, "", ver)
             split(ver, parts, /[[:space:]]+/)
             in_block = (parts[1] == cand)
             next
