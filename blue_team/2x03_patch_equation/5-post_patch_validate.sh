@@ -8,8 +8,9 @@
 # Task:    5 - The Post-Patch Service Validation
 #
 # Checks performed:
-#   1. service state checks   -- pre_patch_state.json "services" block
-#   2. listening socket checks -- pre_patch_state.json "listening" block
+#   1. service state checks    -- pre_patch_state.json "services" block
+#   2. listening socket checks -- pre_patch_state.json "listening" block,
+#      verified against `ss -tulnp`
 #   3. critical liveness probes -- service_dependency_map.json criticality
 #      cross-referenced with service_probes.json (curl / mysqladmin ping /
 #      ssh -o BatchMode=yes probes)
@@ -94,15 +95,15 @@ LISTEN_PASS=0
 
 port_is_listening() {
     local port="$1" proto="${2:-tcp}"
-    local flag="-tln"
-    [[ "${proto}" == "udp" ]] && flag="-uln"
-    # Column count in `ss` output varies across iproute2 versions (the
-    # Netid column may or may not be present). Instead of trusting a fixed
-    # field index, scan every field of every LISTEN line for one that ends
-    # exactly in ":PORT" -- robust regardless of column layout, and avoids
-    # false positives from the peer address's "*:*" wildcard.
-    ss ${flag} 2>/dev/null | awk -v want="${port}" '
-        /LISTEN/ {
+    # A single combined call covers both protocols and includes the owning
+    # process, which is useful context even though this check only tests
+    # for presence of the port. Column count in `ss` output varies across
+    # iproute2 versions (the Netid column is sometimes absent), so rather
+    # than trust a fixed field index, every field of every LISTEN line is
+    # scanned for one ending exactly in ":PORT" -- robust to that variation
+    # and to the extra Process column -p adds.
+    ss -tulnp 2>/dev/null | awk -v want="${port}" -v proto="${proto}" '
+        $1 ~ ("^" proto) && /LISTEN/ {
             for (i = 1; i <= NF; i++) {
                 n = split($i, parts, ":")
                 if (n >= 2 && parts[n] == want) { found = 1 }
