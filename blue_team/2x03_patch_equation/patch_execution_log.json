@@ -1,0 +1,49 @@
+{
+  "started_at": "2026-08-11T14:56:08Z",
+  "finished_at": "2026-08-11T14:56:10Z",
+  "hostname": "gomescabral-VirtualBox",
+  "plan_source_hash": "d735755833aa8e829287894da17a6fe5a2e5972a0dbd654721a255598c7cf555",
+  "entries": [
+    {
+      "package": "curl",
+      "bucket": "emergency",
+      "status": "success",
+      "pre": {
+        "installed_version": "8.18.0-1ubuntu2.3",
+        "services": []
+      },
+      "post": {
+        "installed_version": "8.18.0-1ubuntu2.3",
+        "services": []
+      },
+      "duration_seconds": 0.8,
+      "stdout_tail": "Reading package lists...\nBuilding dependency tree...\nReading state information...\ncurl is already the newest version (8.18.0-1ubuntu2.3).\nSolving dependencies...\n0 upgraded, 0 newly installed, 0 to remove and 9 not upgraded.\n",
+      "stderr_tail": "",
+      "restarts": [],
+      "rollback_target_version": "8.18.0-1ubuntu2"
+    },
+    {
+      "package": "libcurl4t64",
+      "bucket": "emergency",
+      "status": "success",
+      "pre": {
+        "installed_version": "8.18.0-1ubuntu2.3",
+        "services": []
+      },
+      "post": {
+        "installed_version": "8.18.0-1ubuntu2.3",
+        "services": []
+      },
+      "duration_seconds": 0.8,
+      "stdout_tail": "Reading package lists...\nBuilding dependency tree...\nReading state information...\nlibcurl4t64 is already the newest version (8.18.0-1ubuntu2.3).\nSolving dependencies...\n0 upgraded, 0 newly installed, 0 to remove and 9 not upgraded.\n",
+      "stderr_tail": "",
+      "restarts": [],
+      "rollback_target_version": "8.18.0-1ubuntu2"
+    }
+  ],
+  "summary": {
+    "succeeded": 2,
+    "failed": 0,
+    "total": 2
+  }
+}
