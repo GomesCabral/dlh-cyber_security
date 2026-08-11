@@ -1,15 +1,24 @@
 #!/bin/bash
 # name: 0-vuln_inventory.sh
-# purpose: Build a structured inventory of installed packages with outstanding security updates and known CVE enrichment.
-# author: Pedro Cabral
+# purpose: Build a structured inventory of installed packages with outstanding
+#          security updates and known CVE enrichment.
 # Project: 2x03 - Patch Equation
-# Task: 0 - The Vulnerability Inventory
+# Task:    0 - The Vulnerability Inventory
+#
 # CVE discovery:
-# - Primary source: apt-get changelog
-# - Fallback source: locally cached Ubuntu Security Notice (USN) mapping
-# - USN cache location: /usr/share/ubuntu-advantage-tools
+#   - Primary source:  apt-get changelog
+#   - Fallback source: locally cached Ubuntu Security Notice (USN) mapping
+#   - USN cache path:  /usr/share/ubuntu-advantage-tools
+#
+# Notes:
+#   - Only packages whose upgrade candidate comes from the "security" pocket
+#     are enriched with CVE data (per spec, step 4).
+#   - Missing CVEs in cve_feed.json must not abort the run (per spec note).
 
-set -euo pipefail
+set -uo pipefail
+# NOTE: intentionally not using -e globally; several helper calls (apt-get
+# changelog, grep on absent dirs, etc.) are expected to fail/return non-zero
+# under normal conditions and must not kill the whole run.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
 CVE_FEED="${SCRIPT_DIR}/cve_feed.json"
@@ -22,76 +31,79 @@ UPGRADABLE="${TMP_DIR}/upgradable.txt"
 ROWS="${TMP_DIR}/rows.jsonl"
 : > "${ROWS}"
 
+log()  { echo "[*] $*"; }
+fail() { echo "[FAIL] $*" >&2; exit 1; }
+
 need() {
-    command -v "$1" >/dev/null 2>&1 || {
-        echo "[FAIL] Required command not found: $1"
-        exit 1
-    }
+    command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
 }
 
-for c in dpkg-query apt apt-cache apt-get jq awk grep sed sort date wc; do
+for c in dpkg-query apt apt-cache apt-get jq awk grep sed sort date wc hostname; do
     need "$c"
 done
 
-[[ -f "${CVE_FEED}" ]] || {
-    echo "[FAIL] cve_feed.json not found in ${SCRIPT_DIR}"
-    exit 1
-}
+[[ -f "${CVE_FEED}" ]] || fail "cve_feed.json not found in ${SCRIPT_DIR}"
+jq empty "${CVE_FEED}" >/dev/null 2>&1 || fail "cve_feed.json is invalid JSON"
 
-jq empty "${CVE_FEED}" >/dev/null 2>&1 || {
-    echo "[FAIL] cve_feed.json is invalid JSON"
-    exit 1
-}
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 severity_from_cvss() {
     awk -v s="$1" 'BEGIN {
-        if (s >= 9.0) print "critical";
+        if (s >= 9.0)      print "critical";
         else if (s >= 7.0) print "high";
         else if (s >= 4.0) print "medium";
-        else if (s > 0) print "low";
-        else print "unknown";
+        else if (s > 0)    print "low";
+        else               print "unknown";
     }'
 }
 
+# Determine the origin pocket (security / updates / backports / unknown) of
+# the currently pinned candidate version for a package, using apt-cache
+# policy. More robust than string-position matching: it walks the version
+# block for the exact candidate and inspects every origin line under it.
 get_pocket() {
     local pkg="$1"
     local candidate="$2"
 
-    apt-cache policy "${pkg}" 2>/dev/null |
-    awk -v cand="${candidate}" '
-        BEGIN { active=0 }
-        /^[[:space:]]*\*\*\*/ {
-            active=($2==cand)
+    apt-cache policy "${pkg}" 2>/dev/null | awk -v cand="${candidate}" '
+        function classify(line,   tag) {
+            if (match(line, /[A-Za-z0-9._-]+-security/)) {
+                tag = substr(line, RSTART, RLENGTH)
+                print tag
+                found = 1
+                exit
+            }
+            if (match(line, /[A-Za-z0-9._-]+-updates/)) {
+                tag = substr(line, RSTART, RLENGTH)
+                print tag
+                found = 1
+                exit
+            }
+            if (match(line, /[A-Za-z0-9._-]+-backports/)) {
+                tag = substr(line, RSTART, RLENGTH)
+                print tag
+                found = 1
+                exit
+            }
+        }
+        BEGIN { in_block = 0; found = 0 }
+        # A version header line looks like:
+        #    1.2.3-4 500 (or "*** 1.2.3-4 500" for the installed/candidate one)
+        /^[[:space:]]*(\*\*\*[[:space:]]+)?[^[:space:]]+[[:space:]]+[0-9]+/ {
+            ver = $0
+            sub(/^[[:space:]]*\*\*\*[[:space:]]*/, "", ver)
+            split(ver, parts, /[[:space:]]+/)
+            in_block = (parts[1] == cand)
             next
         }
-        /^[[:space:]]+[0-9]+[[:space:]]+/ {
-            active=($2==cand)
+        in_block && /^[[:space:]]+[0-9]+[[:space:]]+/ {
+            classify($0)
+            if (found) exit
             next
         }
-        active && /-security/ {
-            if (match($0, /[A-Za-z0-9._-]+-security/)) {
-                print substr($0,RSTART,RLENGTH)
-                exit
-            }
-            print "security"
-            exit
-        }
-        active && /-updates/ {
-            if (match($0, /[A-Za-z0-9._-]+-updates/)) {
-                print substr($0,RSTART,RLENGTH)
-                exit
-            }
-            print "updates"
-            exit
-        }
-        active && /-backports/ {
-            if (match($0, /[A-Za-z0-9._-]+-backports/)) {
-                print substr($0,RSTART,RLENGTH)
-                exit
-            }
-            print "backports"
-            exit
-        }
+        END { if (!found) print "" }
     '
 }
 
@@ -99,7 +111,8 @@ get_changelog_cves() {
     local pkg="$1"
     apt-get changelog "${pkg}" 2>/dev/null |
         grep -Eo 'CVE-[0-9]{4}-[0-9]{4,7}' |
-        sort -u || true
+        sort -u
+    return 0
 }
 
 get_local_usn_cves() {
@@ -110,11 +123,18 @@ get_local_usn_cves() {
 
     grep -RIl --include='*.json' --include='*.txt' -- "${pkg}" "${root}" 2>/dev/null |
     while IFS= read -r f; do
-        grep -Eo 'CVE-[0-9]{4}-[0-9]{4,7}' "${f}" 2>/dev/null || true
-    done |
-    sort -u
+        grep -Eo 'CVE-[0-9]{4}-[0-9]{4,7}' "${f}" 2>/dev/null
+    done | sort -u
+    return 0
 }
 
+# Look up a single CVE id in cve_feed.json regardless of its exact shape:
+#   {"CVE-xxxx": {...}}                (flat map)
+#   {"cves": {"CVE-xxxx": {...}}}      (nested map)
+#   {"cves": [{"id"/"cve"/"cve_id": "CVE-xxxx", ...}, ...]}  (array)
+# Accepts cvss under cvss / cvss_base / cvss_score / base_score, and the KEV
+# flag under in_cisa_kev / cisa_kev / kev. Returns {cvss:0,in_cisa_kev:false}
+# when not found, so a missing CVE never aborts the script.
 lookup_feed() {
     local cve="$1"
 
@@ -125,20 +145,26 @@ lookup_feed() {
           in_cisa_kev: ($r.in_cisa_kev // $r.cisa_kev // $r.kev // false)
         };
 
-      if type=="object" and has($id) then
-        norm(.[$id])
-      elif type=="object" and (.cves? | type)=="object" and .cves[$id] then
+      if type=="object" and (.cves? | type)=="object" and (.cves[$id]? != null) then
         norm(.cves[$id])
+      elif type=="object" and (.cves? | type)=="array" then
+        ([.cves[] | select((.id // .cve // .cve_id // "")==$id) | norm(.)][0]
+         // {cvss:0,in_cisa_kev:false})
+      elif type=="object" and (has($id)) then
+        norm(.[$id])
       elif type=="array" then
         ([.[] | select((.id // .cve // .cve_id // "")==$id) | norm(.)][0]
          // {cvss:0,in_cisa_kev:false})
       else
         {cvss:0,in_cisa_kev:false}
       end
-    ' "${CVE_FEED}"
+    ' "${CVE_FEED}" 2>/dev/null || echo '{"cvss":0,"in_cisa_kev":false}'
 }
 
-echo "[*] Enumerating installed packages..."
+# ---------------------------------------------------------------------------
+# 1. Enumerate installed packages
+# ---------------------------------------------------------------------------
+log "Enumerating installed packages..."
 dpkg-query -W -f='${binary:Package} ${Version} ${Status}\n' > "${INSTALLED}"
 
 INSTALLED_COUNT="$(
@@ -146,12 +172,18 @@ INSTALLED_COUNT="$(
 )"
 echo "    Installed packages: ${INSTALLED_COUNT}"
 
-echo "[*] Reading upgradable packages..."
+# ---------------------------------------------------------------------------
+# 2. Cross-reference against apt list --upgradable
+# ---------------------------------------------------------------------------
+log "Reading upgradable packages..."
 apt list --upgradable 2>/dev/null | sed '1d;/^[[:space:]]*$/d' > "${UPGRADABLE}"
 UPGRADABLE_COUNT="$(wc -l < "${UPGRADABLE}" | tr -d ' ')"
 echo "    Upgradable packages: ${UPGRADABLE_COUNT}"
 
-echo "[*] Identifying security-pocket upgrades..."
+# ---------------------------------------------------------------------------
+# 3-6. Pocket detection, CVE extraction, feed enrichment, row emission
+# ---------------------------------------------------------------------------
+log "Identifying security-pocket upgrades and enriching with CVE data..."
 
 while IFS= read -r line; do
     [[ -n "${line}" ]] || continue
@@ -165,7 +197,6 @@ while IFS= read -r line; do
         dpkg-query -W -f='${Version}\n' "${pkg}" 2>/dev/null ||
         true
     )"
-
     [[ -n "${installed_version}" ]] || continue
 
     pocket="$(get_pocket "${pkg}" "${candidate}")"
@@ -176,7 +207,7 @@ while IFS= read -r line; do
         *) continue ;;
     esac
 
-    echo "    [security] ${pkg}: ${installed_version} -> ${candidate}"
+    echo "    [security] ${pkg}: ${installed_version} -> ${candidate} (${pocket})"
 
     cves="$(get_changelog_cves "${pkg}")"
     if [[ -z "${cves}" ]]; then
@@ -260,12 +291,9 @@ jq -n \
      packages:$packages
    }' > "${OUTPUT_FILE}"
 
-jq empty "${OUTPUT_FILE}" >/dev/null 2>&1 || {
-    echo "[FAIL] vulnerability_inventory.json is invalid JSON"
-    exit 1
-}
+jq empty "${OUTPUT_FILE}" >/dev/null 2>&1 || fail "vulnerability_inventory.json is invalid JSON"
 
-echo "[*] Inventory complete."
+log "Inventory complete."
 echo "    Vulnerable security packages: ${vuln_count}"
 echo "    Packages with CISA KEV CVEs:  ${kev_count}"
 echo "Report saved to: vulnerability_inventory.json"
