@@ -1,0 +1,85 @@
+{
+  "total_checks": 8,
+  "passed": 1,
+  "failed": 7,
+  "details": [
+    {
+      "check_type": "service_state",
+      "name": "apache2.service",
+      "status": "regression",
+      "expected": "active",
+      "actual": "inactive",
+      "detail": "service is not active post-patch"
+    },
+    {
+      "check_type": "service_state",
+      "name": "ssh.service",
+      "status": "regression",
+      "expected": "active",
+      "actual": "inactive",
+      "detail": "service is not active post-patch"
+    },
+    {
+      "check_type": "service_state",
+      "name": "mysql.service",
+      "status": "regression",
+      "expected": "active",
+      "actual": "inactive",
+      "detail": "service is not active post-patch"
+    },
+    {
+      "check_type": "service_state",
+      "name": "cron.service",
+      "status": "pass",
+      "expected": "active",
+      "actual": "active",
+      "detail": "service is active"
+    },
+    {
+      "check_type": "listening_socket",
+      "name": "ssh.service",
+      "status": "regression",
+      "expected": "listening:22/tcp",
+      "actual": "not listening",
+      "detail": "port 22/tcp is no longer listening"
+    },
+    {
+      "check_type": "listening_socket",
+      "name": "apache2.service",
+      "status": "regression",
+      "expected": "listening:80/tcp",
+      "actual": "not listening",
+      "detail": "port 80/tcp is no longer listening"
+    },
+    {
+      "check_type": "listening_socket",
+      "name": "apache2.service",
+      "status": "regression",
+      "expected": "listening:443/tcp",
+      "actual": "not listening",
+      "detail": "port 443/tcp is no longer listening"
+    },
+    {
+      "check_type": "listening_socket",
+      "name": "mysql.service",
+      "status": "regression",
+      "expected": "listening:3306/tcp",
+      "actual": "not listening",
+      "detail": "port 3306/tcp is no longer listening"
+    }
+  ],
+  "categories": {
+    "service_state": {
+      "total": 4,
+      "passed": 1
+    },
+    "listening_socket": {
+      "total": 4,
+      "passed": 0
+    },
+    "liveness_probe": {
+      "total": 0,
+      "passed": 0
+    }
+  }
+}

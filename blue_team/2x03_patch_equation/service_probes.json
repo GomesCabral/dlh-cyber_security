@@ -1,0 +1,5 @@
+{
+  "apache2.service": {"type": "http", "url": "http://127.0.0.1/"},
+  "ssh.service": {"type": "ssh", "host": "127.0.0.1", "port": 22, "user": "probe"},
+  "mysql.service": {"type": "mysqladmin", "host": "127.0.0.1", "user": "root", "password": ""}
+}

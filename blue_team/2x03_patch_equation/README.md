@@ -1671,3 +1671,121 @@ Every patch that runs leaves behind proof of exactly what it touched, how long i
 
 **Author:** Pedro Cabral  
 **Project:** 2x03 — Patch Equation
+
+---
+
+## Running Task 5
+
+Project directory:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Requires, in this directory:
+
+```text
+pre_patch_state.json          (baseline snapshot -- see note above)
+service_dependency_map.json   (Task 1)
+service_probes.json           (companion probe definitions)
+```
+
+Make the script executable:
+
+```bash
+chmod +x 5-post_patch_validate.sh
+```
+
+Run:
+
+```bash
+sudo ./5-post_patch_validate.sh
+```
+
+Console output:
+
+```text
+Service state checks:     24/24   PASS
+Listening socket checks:  11/11   PASS
+Critical liveness probes: 3/3     PASS
+VERDICT: PASS (38/38)
+Report saved to: post_patch_validation.json
+```
+
+The script only reads system state and issues read-only probes (an HTTP GET-equivalent status check, a ping-style DB check, a no-login SSH connection) — it does not modify anything.
+
+## Exit codes
+
+```text
+0   every check passed
+1   at least one regression or probe failure was detected
+```
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . post_patch_validation.json
+```
+
+Only failures (regressions or failed probes):
+
+```bash
+jq '.details[] | select(.status != "pass")' post_patch_validation.json
+```
+
+Just the liveness probes:
+
+```bash
+jq '.details[] | select(.check_type == "liveness_probe")' post_patch_validation.json
+```
+
+Per-category pass rate:
+
+```bash
+jq '.categories' post_patch_validation.json
+```
+
+Validate JSON:
+
+```bash
+jq empty post_patch_validation.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 5 treats "the package manager said OK" and "the service actually works" as two different claims that both need evidence:
+
+```text
+apt-get exit 0  +  service active  +  socket listening  +  probe responds  →  actually validated
+```
+
+not:
+
+```text
+apt-get exit 0  →  assume everything downstream is fine
+```
+
+Whatever fails here is exactly what the next task (drift detection / rollback) needs to act on — a `regression` or `probe_failed` entry in this report is the trigger for rolling a specific package back to the `rollback_target_version` Task 3 already recorded for it.
+
+---
+
+## Project progress
+
+| Task | Name | Status |
+|---|---|---|
+| 0 | The Vulnerability Inventory | ✅ Implemented |
+| 1 | The Service Dependency Map | ✅ Implemented |
+| 2 | (not yet requested) | ⏳ Pending |
+| 3 | The Patch Plan | ✅ Implemented |
+| 4 | The Safe Patch Execution | ✅ Implemented |
+| 5 | The Post-Patch Service Validation | ✅ Implemented |
+| 6–19 | Upcoming tasks | ⏳ Pending |
+
+---
+
+**Author:** Pedro Cabral  
+**Project:** 2x03 — Patch Equation

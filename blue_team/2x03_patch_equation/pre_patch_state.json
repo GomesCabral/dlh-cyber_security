@@ -1,0 +1,15 @@
+{
+  "captured_at": "2026-08-11T14:30:00Z",
+  "services": [
+    {"service": "apache2.service", "active_state": "active", "sub_state": "running"},
+    {"service": "ssh.service", "active_state": "active", "sub_state": "running"},
+    {"service": "mysql.service", "active_state": "active", "sub_state": "running"},
+    {"service": "cron.service", "active_state": "active", "sub_state": "running"}
+  ],
+  "listening": [
+    {"port": 22, "proto": "tcp", "service": "ssh.service"},
+    {"port": 80, "proto": "tcp", "service": "apache2.service"},
+    {"port": 443, "proto": "tcp", "service": "apache2.service"},
+    {"port": 3306, "proto": "tcp", "service": "mysql.service"}
+  ]
+}
