@@ -1,7 +1,8 @@
 #!/bin/bash
 # name: 4-patch_execute.sh
 # purpose: Execute the ordered patch plan from Task 3 safely: one advisory
-#          lock, per-package pre/post state capture, controlled apt-get
+#          lock, per-package pre/post state capture (installed version and
+#          service states for every linked service), controlled apt-get
 #          upgrade, dpkg-lock backoff, service restarts, and a structured
 #          execution log -- consistent even if the run is interrupted.
 # Project: 2x03 - Patch Equation
@@ -88,8 +89,9 @@ service_state_json() {
       '{service:$service, active_state:$active_state, sub_state:$sub_state}'
 }
 
-# Builds the {installed_version, services:[...]} block used for both `pre`
-# and `post`. $2 is a newline-separated list of real service names.
+# Builds the pre/post block: installed version plus the service states
+# for every linked service. Used for both the `pre` and `post` snapshots.
+# $2 is a newline-separated list of real service names.
 state_block() {
     local pkg="$1"
     local services="$2"

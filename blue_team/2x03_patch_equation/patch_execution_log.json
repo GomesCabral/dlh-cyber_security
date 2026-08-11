@@ -1,6 +1,6 @@
 {
-  "started_at": "2026-08-11T14:56:08Z",
-  "finished_at": "2026-08-11T14:56:10Z",
+  "started_at": "2026-08-11T15:00:52Z",
+  "finished_at": "2026-08-11T15:00:54Z",
   "hostname": "gomescabral-VirtualBox",
   "plan_source_hash": "d735755833aa8e829287894da17a6fe5a2e5972a0dbd654721a255598c7cf555",
   "entries": [
@@ -16,7 +16,7 @@
         "installed_version": "8.18.0-1ubuntu2.3",
         "services": []
       },
-      "duration_seconds": 0.8,
+      "duration_seconds": 0.9,
       "stdout_tail": "Reading package lists...\nBuilding dependency tree...\nReading state information...\ncurl is already the newest version (8.18.0-1ubuntu2.3).\nSolving dependencies...\n0 upgraded, 0 newly installed, 0 to remove and 9 not upgraded.\n",
       "stderr_tail": "",
       "restarts": [],
