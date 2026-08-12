@@ -2550,13 +2550,254 @@ When an auditor asks "prove this was authorized," the answer is `within_window: 
 
 ---
 
+# Task 2 — The Pre-Patch State Snapshot
+
+## What is being asked
+
+Tasks 5, 6, and 9 all read a shared baseline file, `pre_patch_state.json`, that captures exactly what the system looked like right before a patch run: every installed package's version, every active service's state, every listening socket, and a SHA-256 per configuration file. This task is the script that actually produces it.
+
+This closes a gap in the numbered sequence: Tasks 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12 were all built first, and all of them either consume `pre_patch_state.json` or were tested against a hand-written example of it. Task 2 — the real capture script — was not requested until Task 13's pipeline named it as an explicit stage.
+
+The script is:
+
+```text
+2-pre_patch_snapshot.sh
+```
+
+and it produces:
+
+```text
+pre_patch_state.json
+```
+
+It is entirely read-only — a snapshot is, by definition, something that's always safe to take again.
+
+## What it captures
+
+```text
+packages           every installed package -> its currently installed version
+                    (dpkg-query -W -f='${binary:Package} ${Version} ${Status}\n')
+
+services            every ACTIVE systemd service -> {active_state, sub_state}
+                    (systemctl list-units --type=service --state=active)
+
+listening            every listening TCP/UDP socket -> {port, proto, service},
+                    the owning service resolved best-effort from the socket's
+                    PID via /proc/<pid>/cgroup (ss -tulnp; optional -- if `ss`
+                    isn't installed, this array is simply empty, with a warning)
+
+conffile_hashes      every conffile of every installed package, SHA-256'd
+                    (dpkg-query -W -f='${Conffiles}\n', then sha256sum on the
+                    readlink -f-resolved real path -- the same symlink lesson
+                    from Task 1's dpkg -S usage applies here too)
+```
+
+## Output structure
+
+```json
+{
+  "captured_at": "2026-08-12T09:44:49Z",
+  "packages": {"curl": "8.5.0-2ubuntu10.8", "bash": "5.2.21-2ubuntu4"},
+  "services": [
+    {"service": "ssh.service", "active_state": "active", "sub_state": "running"}
+  ],
+  "listening": [
+    {"port": 22, "proto": "tcp", "service": "ssh.service"}
+  ],
+  "conffile_hashes": [
+    {"path": "/etc/ssh/sshd_config", "sha256": "...", "owning_package": "openssh-server"}
+  ]
+}
+```
+
+## Running Task 2
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+chmod +x 2-pre_patch_snapshot.sh
+sudo ./2-pre_patch_snapshot.sh
+```
+
+Console output:
+
+```text
+[*] Snapshot captured: 866 packages, 12 active services, 11 listening sockets, 221 conffiles
+Report saved to: pre_patch_state.json
+```
+
+## Important principle
+
+Every other task that reads `pre_patch_state.json` was built and validated first, against a hand-written schema. Task 2 is the proof that schema is actually producible from a real, live system — not just a convenient fixture.
+
+---
+
+# Task 13 — The End-to-End Patch Pipeline
+
+## What is being asked
+
+Every prior task is a part. This task is the assembly: one script that runs inventory, dependency mapping, snapshotting, planning, the maintenance-window check, execution, validation, drift detection, and change logging — in that fixed order, stopping cleanly on any real failure, and producing one composite report an operator can read start to finish.
+
+It has to work identically whether a human runs it by hand today, cron runs it unattended tomorrow, or a different analyst runs it next week against the same system state.
+
+The script is:
+
+```text
+13-patch_pipeline.sh
+```
+
+and it produces:
+
+```text
+pipeline_run.json
+```
+
+## Stage order (fixed)
+
+```text
+0-vuln_inventory.sh          -> vulnerability_inventory.json
+1-service_deps.sh            -> service_dependency_map.json
+2-pre_patch_snapshot.sh      -> pre_patch_state.json
+3-patch_plan.sh              -> patch_plan.json
+11-maintenance_window.sh --check -> maintenance_window.json
+4-patch_execute.sh           -> patch_execution_log.json
+5-post_patch_validate.sh     -> post_patch_validation.json
+6-config_drift.sh            -> config_drift.json
+12-change_log.sh             -> patch_change_log.json
+```
+
+## The maintenance-window branch
+
+Stage 5 (`11-maintenance_window.sh --check`) has three possible outcomes, and the pipeline treats them differently:
+
+```text
+exit 0    inside a window          -> continue normally
+exit 10   emergency override used  -> continue normally (11 already validated MEDDEFENSE_EMERGENCY)
+exit 20   outside every window     -> if MEDDEFENSE_EMERGENCY=1 at the PIPELINE level, bypass and continue;
+                                       otherwise skip stages 4-6 and mark the run "deferred"
+```
+
+Deferring is a correct, intended outcome, not a failure — the pipeline still exits `0`. Stage 12 (the change log) always runs regardless of a defer, so the deferred run itself is recorded in the audit trail; only stages 4, 5, and 6 (the ones that touch or verify system state) are skipped, and each shows up explicitly as `SKIPPED` in both the console output and the report, rather than being silently omitted.
+
+## Stage failure
+
+If any stage exits with an unexpected code (not one of the maintenance-window guard's special codes), the pipeline stops immediately: no later stage is attempted, `pipeline_status` becomes `"failed"`, and every stage that would have run next is explicitly recorded as `"skipped"` with the reason, so the report always accounts for all 9 stages, whatever happened.
+
+## Idempotency
+
+The pipeline itself adds no extra state-tracking logic, because it doesn't need to: every stage it calls was already built to be idempotent on its own (Tasks 0, 1, 2, 3, 5, 6, 11, and 12 are read-only or fully-regenerate their output; Task 4's `apt-get install --only-upgrade` is naturally a no-op the second time a package is already at its target version; Task 8/10-style config regeneration, where relevant, overwrites in full rather than appending). Composing idempotent parts in a fixed order produces an idempotent whole — running this pipeline twice in a row on an already-patched system re-applies nothing and rewrites no JSON file with different content, beyond timestamps that are expected to change (`captured_at`, `started_at`, etc.).
+
+## Output structure
+
+```json
+{
+  "started_at": "2026-08-12T09:44:00Z",
+  "finished_at": "2026-08-12T09:44:43Z",
+  "hostname": "billing-srv-01",
+  "pipeline_status": "ok",
+  "duration_seconds": 43,
+  "stages": [
+    {
+      "name": "4-patch_execute.sh", "script": "4-patch_execute.sh", "status": "ok",
+      "exit_code": 0, "duration_seconds": 27.6,
+      "stdout_tail": "...", "stderr_tail": ""
+    }
+  ],
+  "artifacts": {
+    "0-vuln_inventory.sh": "vulnerability_inventory.json",
+    "4-patch_execute.sh": "patch_execution_log.json"
+  }
+}
+```
+
+`artifacts` only lists a stage's output file if that stage actually succeeded in *this* run — a stage that was skipped or failed never gets an entry, even if a stale copy of its output file happens to exist on disk from an earlier run.
+
+## Running Task 13
+
+Project directory, with every prior stage script and its companion input files present:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+chmod +x 13-patch_pipeline.sh
+sudo ./13-patch_pipeline.sh
+```
+
+Console output:
+
+```text
+[1/9] 0-vuln_inventory.sh           OK  (2.1s)
+[2/9] 1-service_deps.sh             OK  (3.4s)
+[3/9] 2-pre_patch_snapshot.sh       OK  (4.8s)
+[4/9] 3-patch_plan.sh               OK  (0.3s)
+[5/9] 11-maintenance_window.sh      OK  (standard window active)
+[6/9] 4-patch_execute.sh            OK  (27.6s, 6 packages)
+[7/9] 5-post_patch_validate.sh      OK  (2.9s, 38/38 checks)
+[8/9] 6-config_drift.sh             OK  (1.4s, no unexpected drift)
+[9/9] 12-change_log.sh              OK  (0.8s, 1 event)
+PIPELINE: ok
+Duration: 43.3s
+Report saved to: pipeline_run.json
+```
+
+This script changes the system exactly as much as its stages do — read-only stages stay read-only, and only Stage 6 (`4-patch_execute.sh`), when reached, actually installs anything.
+
+## Exit codes
+
+```text
+0   pipeline_status is "ok" or "deferred"
+1   pipeline_status is "failed" -- any stage exited unexpectedly
+```
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . pipeline_run.json
+```
+
+Just the stage outcomes:
+
+```bash
+jq '.stages[] | {name, status, exit_code}' pipeline_run.json
+```
+
+Where each artifact ended up:
+
+```bash
+jq '.artifacts' pipeline_run.json
+```
+
+Validate JSON:
+
+```bash
+jq empty pipeline_run.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 13 is the whole project's promise made literal: given the same starting state, the same pipeline run produces the same result, every time, whoever runs it:
+
+```text
+one script, one fixed order, one exit code, one composite report
+```
+
+not:
+
+```text
+nine separate scripts a human has to remember to run in the right sequence, by hand, correctly, every time
+```
+
+---
+
 ## Project progress
 
 | Task | Name | Status |
 |---|---|---|
 | 0 | The Vulnerability Inventory | ✅ Implemented |
 | 1 | The Service Dependency Map | ✅ Implemented |
-| 2 | (not yet requested) | ⏳ Pending |
+| 2 | The Pre-Patch State Snapshot | ✅ Implemented |
 | 3 | The Patch Plan | ✅ Implemented |
 | 4 | The Safe Patch Execution | ✅ Implemented |
 | 5 | The Post-Patch Service Validation | ✅ Implemented |
@@ -2567,7 +2808,8 @@ When an auditor asks "prove this was authorized," the answer is `within_window: 
 | 10 | The Version Hold Management | ✅ Implemented |
 | 11 | The Maintenance Window Enforcement | ✅ Implemented |
 | 12 | The Change Tracking Log | ✅ Implemented |
-| 13–19 | Upcoming tasks | ⏳ Pending |
+| 13 | The End-to-End Patch Pipeline | ✅ Implemented |
+| 14–19 | Upcoming tasks | ⏳ Pending |
 
 ---
 
