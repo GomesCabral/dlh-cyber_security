@@ -50,10 +50,14 @@ PACKAGES_JSON="$(
     | awk '$3=="install" && $4=="ok" && $5=="installed" {print $1, $2}' \
     | jq -Rsc '
         split("\n") | map(select(length > 0) | split(" ")) |
+        map(select(length >= 2)) |
         map({(.[0]): .[1]}) | add // {}
-      '
+      ' 2>/dev/null
 )"
+jq empty <<< "${PACKAGES_JSON}" >/dev/null 2>&1 || PACKAGES_JSON='{}'
 PACKAGE_COUNT="$(jq 'keys | length' <<< "${PACKAGES_JSON}")"
+PACKAGES_JSON_FILE="${TMP_DIR}/packages.json"
+printf '%s' "${PACKAGES_JSON}" > "${PACKAGES_JSON_FILE}"
 
 # ---------------------------------------------------------------------------
 # 2. services: every active systemd service -> ActiveState, SubState,
@@ -86,8 +90,11 @@ while IFS= read -r svc; do
       >> "${SERVICES_FILE}"
 done < <(systemctl list-units --type=service --state=active --no-legend --plain 2>/dev/null | awk '{print $1}')
 
-SERVICES_JSON="$(jq -cs '.' "${SERVICES_FILE}" 2>/dev/null || echo '[]')"
+SERVICES_JSON="$(jq -cs '.' "${SERVICES_FILE}" 2>/dev/null)"
+jq empty <<< "${SERVICES_JSON}" >/dev/null 2>&1 || SERVICES_JSON='[]'
 SERVICE_COUNT="$(jq 'length' <<< "${SERVICES_JSON}")"
+SERVICES_JSON_FILE="${TMP_DIR}/services_out.json"
+printf '%s' "${SERVICES_JSON}" > "${SERVICES_JSON_FILE}"
 
 # ---------------------------------------------------------------------------
 # 3. listening: every listening TCP/UDP socket via `ss -tulnp`, best-effort
@@ -132,7 +139,10 @@ if [[ "${HAVE_SS}" -eq 1 ]]; then
     done < <(ss -tulnp 2>/dev/null | tail -n +2)
 fi
 
-LISTENING_JSON="$(jq -cs 'unique_by([.port, .proto])' "${LISTENING_FILE}" 2>/dev/null || echo '[]')"
+LISTENING_JSON="$(jq -cs 'unique_by([.port, .proto])' "${LISTENING_FILE}" 2>/dev/null)"
+jq empty <<< "${LISTENING_JSON}" >/dev/null 2>&1 || LISTENING_JSON='[]'
+LISTENING_JSON_FILE="${TMP_DIR}/listening_out.json"
+printf '%s' "${LISTENING_JSON}" > "${LISTENING_JSON_FILE}"
 
 # ---------------------------------------------------------------------------
 # 4. conffile_hashes: SHA-256 of every conffile under /etc tracked by a
@@ -157,31 +167,39 @@ while IFS= read -r line; do
     done
 done < <(dpkg-query -W -f='${binary:Package}\n' 2>/dev/null)
 
-CONFFILES_JSON="$(jq -cs 'unique_by(.path)' "${CONFFILES_FILE}" 2>/dev/null || echo '[]')"
+CONFFILES_JSON="$(jq -cs 'unique_by(.path)' "${CONFFILES_FILE}" 2>/dev/null)"
+jq empty <<< "${CONFFILES_JSON}" >/dev/null 2>&1 || CONFFILES_JSON='[]'
 CONFFILE_COUNT="$(jq 'length' <<< "${CONFFILES_JSON}")"
+CONFFILES_JSON_FILE="${TMP_DIR}/conffiles_out.json"
+printf '%s' "${CONFFILES_JSON}" > "${CONFFILES_JSON_FILE}"
 
 # ---------------------------------------------------------------------------
 # 5-6. Emit pre_patch_state.json
 # ---------------------------------------------------------------------------
+JQ_ERR="${TMP_DIR}/jq_final.err"
 jq -n \
   --arg timestamp "${TIMESTAMP}" \
   --arg hostname "${HOSTNAME_VAL}" \
   --arg kernel "${KERNEL_VAL}" \
-  --argjson packages "${PACKAGES_JSON}" \
-  --argjson services "${SERVICES_JSON}" \
-  --argjson listening "${LISTENING_JSON}" \
-  --argjson conffile_hashes "${CONFFILES_JSON}" \
   --argjson reboot_required "${REBOOT_REQUIRED}" \
+  --slurpfile packages_arr "${PACKAGES_JSON_FILE}" \
+  --slurpfile services_arr "${SERVICES_JSON_FILE}" \
+  --slurpfile listening_arr "${LISTENING_JSON_FILE}" \
+  --slurpfile conffile_hashes_arr "${CONFFILES_JSON_FILE}" \
   '{
      timestamp: $timestamp,
      hostname: $hostname,
      kernel: $kernel,
-     packages: $packages,
-     services: $services,
-     listening: $listening,
-     conffile_hashes: $conffile_hashes,
+     packages: $packages_arr[0],
+     services: $services_arr[0],
+     listening: $listening_arr[0],
+     conffile_hashes: $conffile_hashes_arr[0],
      reboot_required: $reboot_required
-   }' > "${OUTPUT_FILE}"
+   }' > "${OUTPUT_FILE}" 2> "${JQ_ERR}"
+
+if [[ ! -s "${OUTPUT_FILE}" ]]; then
+    fail "jq failed to build pre_patch_state.json: $(cat "${JQ_ERR}")"
+fi
 
 jq empty "${OUTPUT_FILE}" >/dev/null 2>&1 || fail "pre_patch_state.json is invalid JSON"
 
