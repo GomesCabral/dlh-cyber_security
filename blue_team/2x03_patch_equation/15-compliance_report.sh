@@ -21,7 +21,7 @@
 # Each is expected to carry the same schema as the current file,
 # including .metadata.generated_at, used as that snapshot's timestamp.
 #
-# CVE state:
+# For every CVE ever seen, this script determines its current state:
 #   resolved         no longer present in the CURRENT vulnerability_inventory.json
 #                     (having been seen in some prior snapshot), OR explicitly
 #                     listed in any patch_change_log.json event's cves_resolved
