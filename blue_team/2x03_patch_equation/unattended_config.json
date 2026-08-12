@@ -1,0 +1,34 @@
+{
+  "installed": true,
+  "config_paths": [
+    "/etc/apt/apt.conf.d/50unattended-upgrades",
+    "/etc/apt/apt.conf.d/20auto-upgrades"
+  ],
+  "blacklist": [
+    "linux-image*",
+    "linux-headers*",
+    "mysql-server*",
+    "apache2*",
+    "libapache2-mod-php*"
+  ],
+  "timer_state": [
+    {
+      "timer": "apt-daily.timer",
+      "active_state": "active",
+      "enabled_state": "enabled"
+    },
+    {
+      "timer": "apt-daily-upgrade.timer",
+      "active_state": "active",
+      "enabled_state": "enabled"
+    }
+  ],
+  "dry_run_summary": {
+    "would_upgrade": 0,
+    "would_upgrade_packages": [],
+    "skipped_blacklisted": 0,
+    "skipped_blacklisted_packages": [],
+    "skipped_held": 0,
+    "skipped_held_packages": []
+  }
+}
