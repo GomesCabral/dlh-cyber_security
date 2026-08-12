@@ -2180,6 +2180,196 @@ An overdue review in this report is a prompt, not a failure — it means a decis
 
 ---
 
+# Task 11 — The Maintenance Window Enforcement
+
+## What is being asked
+
+A policy that says "only patch inside the window" means nothing if enforcement is a human reading a clock. This task turns the policy into a predicate: a guard script that any patch operation calls first. If the guard says "out of window", the operation simply does not proceed — there's no judgment call left to make at 3am.
+
+The script is:
+
+```text
+11-maintenance_window.sh
+```
+
+and it produces:
+
+```text
+maintenance_window.json
+```
+
+It **never** touches package state. This is pure decision logic — the only things it ever reads are the clock and `maintenance_windows.json`.
+
+## Real-world use
+
+```text
+Is it safe to run 4-patch_execute.sh right now, or should it wait?
+If we're outside the window, when does the next one open, and how long is that?
+Is there a legitimate way to patch right now anyway, for a genuine emergency -- and is that fact logged distinctly?
+```
+
+Every other script in this project that changes system state should be preceded by a call to this guard, so "only patch inside the window" is enforced the same way every time, not remembered by whoever happens to be on call.
+
+## Modes
+
+```bash
+11-maintenance_window.sh --check            # decide now, exit immediately
+11-maintenance_window.sh --wait <seconds>    # poll until a window opens or the timeout elapses
+11-maintenance_window.sh --report            # print the JSON report only, no text summary
+```
+
+All three modes write `maintenance_window.json` and share the exact same decision logic — `--wait` is simply `--check`, repeated on a poll interval, until either the answer changes or the budget runs out.
+
+## Exit codes
+
+```text
+0    inside a standard/extended window -> proceed
+10   only the "emergency" (always: true) window applies, AND
+     MEDDEFENSE_EMERGENCY=1 was set -> proceed via emergency override
+20   outside every window (including "emergency" present but no override) -> defer
+```
+
+Code `10` is deliberately distinct from `0` — a caller (or an audit log) can tell "this ran during a routine window" apart from "this ran via the emergency bypass" just from the exit code, without parsing the report.
+
+## Window matching logic
+
+```text
+days              the window applies on these weekdays (3-letter abbrev: Mon, Tue, ... Sat, Sun)
+start / end       "HH:MM" 24-hour local time, in the configured timezone
+week_of_month     optional; 1 = the days 1-7 occurrence of that weekday, 2 = days 8-14, etc.
+                  (i.e. "the Nth <weekday> of the month" in the conventional sense)
+always            a window that applies at all times, regardless of day/time -- this is how
+                  "emergency" is expressed; it never contributes to the next-window search
+```
+
+All time comparisons happen in the timezone declared in `maintenance_windows.json` (`TZ="<timezone>" date ...`), never the host's local timezone — a server in UTC and a maintenance window declared in `Europe/Paris` will be compared correctly regardless of what timezone the box itself is set to.
+
+## Computing the next window
+
+When nothing is active right now, the script looks up to 60 days ahead, day by day, for the soonest date that satisfies any non-emergency window's `days` (and `week_of_month`, if set), and reports whichever one starts earliest — which is not always the same window that matches first. If two windows both fall on the same day, the one with the earlier `start` time wins (e.g. an `extended` window starting at `00:00` beats a `standard` window on the same Saturday starting at `02:00`, even though `standard` has no `week_of_month` restriction and would otherwise seem like the more "generic" match).
+
+## Output structure
+
+```json
+{
+  "now": "2026-03-30 10:22 Europe/Paris (Mon)",
+  "timezone": "Europe/Paris",
+  "active_window": null,
+  "next_window": {"name": "standard", "at": "2026-04-04T02:00:00+02:00"},
+  "seconds_until_next": 394680,
+  "decision": "defer",
+  "exit_code": 20
+}
+```
+
+## Running Task 11
+
+Project directory:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Requires, in this directory:
+
+```text
+maintenance_windows.json
+```
+
+Make the script executable:
+
+```bash
+chmod +x 11-maintenance_window.sh
+```
+
+Run:
+
+```bash
+./11-maintenance_window.sh --check
+```
+
+Console output, inside a window:
+
+```text
+now:            2026-03-28 14:07 Europe/Paris (Sat)
+active window:  standard
+decision:       proceed
+Report saved to: maintenance_window.json
+```
+
+```bash
+$ echo $?
+0
+```
+
+Outside every window:
+
+```text
+now:            2026-03-30 10:22 Europe/Paris (Mon)
+active window:  (none)
+next window:    standard  at 2026-04-04 02:00
+seconds until:  403080
+decision:       defer
+```
+
+```bash
+$ echo $?
+20
+```
+
+This script requires no `sudo` and changes nothing on the system — it can be run by any user, at any time, as often as needed.
+
+## Testing without waiting for the real calendar
+
+For development and testing, the "current time" can be pinned to a specific epoch with an environment variable, entirely bypassing the real clock:
+
+```bash
+MEDDEFENSE_NOW_OVERRIDE=$(TZ="Europe/Paris" date -d "2026-03-28 03:00" +%s) \
+  ./11-maintenance_window.sh --check
+```
+
+When unset (normal use), the script always uses the real current time. This is how the window-matching, week-of-month, and next-window logic were validated deterministically during development, across multiple scenarios, without waiting for an actual Saturday.
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . maintenance_window.json
+```
+
+Just the decision:
+
+```bash
+jq -r '.decision' maintenance_window.json
+```
+
+Validate JSON:
+
+```bash
+jq empty maintenance_window.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 11 makes the maintenance window a fact the system can check, not a rule someone has to remember:
+
+```text
+call the guard first  →  proceed / defer / emergency-override, with an exit code any script can act on
+```
+
+not:
+
+```text
+"we only patch on Saturdays" written in a wiki page nobody re-reads under pressure
+```
+
+Exit code `10` — the emergency path — exists specifically so that when the rule *is* bypassed, that fact is never silent. It shows up in the exit code, in the report, and in whatever calls this guard next.
+
+---
+
 ## Project progress
 
 | Task | Name | Status |
@@ -2195,7 +2385,8 @@ An overdue review in this report is a prompt, not a failure — it means a decis
 | 8 | The Unattended Upgrades Configuration | ✅ Implemented |
 | 9 | The Rollback Capability | ✅ Implemented |
 | 10 | The Version Hold Management | ✅ Implemented |
-| 11–19 | Upcoming tasks | ⏳ Pending |
+| 11 | The Maintenance Window Enforcement | ✅ Implemented |
+| 12–19 | Upcoming tasks | ⏳ Pending |
 
 ---
 
