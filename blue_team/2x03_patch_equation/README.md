@@ -1965,6 +1965,221 @@ Every other task in this project measures, plans, executes, and validates *forwa
 
 ---
 
+# Task 10 — The Version Hold Management
+
+## What is being asked
+
+A held package with no recorded reason becomes permanent by accident. Six months later, nobody remembers why `mysql-server` is pinned, and nobody dares touch it. This task makes hold management a **data-driven, convergent operation**: every hold is declared once, in one file, with a reason, an owner, and a review date — and one script is the only thing ever allowed to change `apt-mark` state or the pin file on disk.
+
+The script is:
+
+```text
+10-version_hold.sh
+```
+
+and it produces:
+
+```text
+hold_management.json
+```
+
+## Real-world use
+
+```text
+Why is mysql-server-8.0 held? Who owns that decision, and when should it be revisited?
+Is there a hold on the system that isn't in the registry -- who put that there, and why?
+Which holds are overdue for review right now?
+```
+
+The registry is the single source of truth. If a hold exists on the system but isn't declared in `hold_registry.json`, this script treats that as drift and removes it — the same convergence philosophy Task 6 applies to configuration files, applied here to package holds.
+
+## The registry is the only writer
+
+This script is explicitly the **only** thing that should ever call `apt-mark hold`/`unhold` or touch `/etc/apt/preferences.d/meddefense-pins`. A manual `apt-mark hold` run outside this script will be silently reverted the next time `10-version_hold.sh` runs, because the script always converges the system to exactly what the registry declares — nothing more, nothing less. If a hold needs to exist, it needs an entry in `hold_registry.json` first.
+
+## Idempotency
+
+The preferences fragment is regenerated in full and written atomically (temp file + `mv`) from the registry on every run — the same pattern Task 8 uses for its config files. Verified directly: re-running the script against an already-converged system produces a byte-identical `meddefense-pins` file (same MD5 before and after) and an empty "releasing holds" section.
+
+## Native tooling used
+
+Current state and convergence:
+
+```bash
+apt-mark showhold
+apt-mark hold <package>
+apt-mark unhold <package>
+```
+
+Preferences pin, `Pin-Priority: 1001` per registry entry:
+
+```text
+Package: mysql-server-8.0
+Pin: version 8.0.35-0ubuntu0.22.04.1
+Pin-Priority: 1001
+```
+
+Review-date math:
+
+```bash
+date -u -d "<review_date>" +%s
+```
+
+JSON processing:
+
+```bash
+jq
+```
+
+## Registry schema
+
+```json
+{
+  "holds": [
+    {
+      "package": "mysql-server-8.0",
+      "reason": "billing app v8.0.35 dependency",
+      "owner": "analyst",
+      "review_date": "2026-05-28",
+      "pin_version": "8.0.35-0ubuntu0.22.04.1"
+    }
+  ]
+}
+```
+
+`days_to_review` is `review_date` minus today, in days — negative means the review is overdue.
+
+## Output structure
+
+```json
+{
+  "applied": [
+    {
+      "package": "mysql-server-8.0", "reason": "billing app v8.0.35 dependency",
+      "owner": "analyst", "review_date": "2026-05-28",
+      "pin_version": "8.0.35-0ubuntu0.22.04.1",
+      "hold_applied": true, "days_to_review": -76
+    }
+  ],
+  "released": [
+    {"package": "old-stale-pkg", "released": true}
+  ],
+  "overdue_reviews": [
+    {"package": "mysql-server-8.0", "owner": "analyst", "review_date": "2026-05-28", "days_to_review": -76}
+  ],
+  "total_held": 4
+}
+```
+
+## Running Task 10
+
+Project directory:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Requires, in this directory:
+
+```text
+hold_registry.json
+```
+
+Make the script executable:
+
+```bash
+chmod +x 10-version_hold.sh
+```
+
+Run:
+
+```bash
+sudo ./10-version_hold.sh
+```
+
+Console output:
+
+```text
+[*] Reading hold_registry.json...           (4 entries)
+[*] Reading current apt-mark showhold...    (1 entry)
+Applying holds:
+  mysql-server-8.0        hold + pin 8.0.35-0ubuntu0.22.04.1   OK
+  mysql-client-8.0        hold + pin 8.0.35-0ubuntu0.22.04.1   OK
+  libapache2-mod-php8.1   hold + pin 8.1.2-1ubuntu2.14         OK
+  php8.1-mysql            hold + pin 8.1.2-1ubuntu2.14         OK
+Releasing holds no longer in registry:
+  (none)
+Overdue reviews: 0
+Report saved to: hold_management.json
+```
+
+This script **does** change the system: it applies and releases `apt-mark` holds and rewrites `/etc/apt/preferences.d/meddefense-pins` in full on every run.
+
+## Exit codes
+
+The task spec doesn't define exit codes explicitly for this script (unlike Tasks 4, 5, 6, 7, and 9). For consistency with the rest of the project, this script exits non-zero if any individual hold or release action actually failed, so a caller can detect a partially-applied registry rather than only finding out by reading the report:
+
+```text
+0   every hold and release in this run succeeded
+1   at least one hold or release action failed
+```
+
+## Testing without touching the real preferences file
+
+The pin file path can be overridden with an environment variable, defaulting to the real system path when unset:
+
+```bash
+PREFERENCES_FILE_PATH=/tmp/test/meddefense-pins ./10-version_hold.sh
+```
+
+This is how idempotency was validated during development, without ever writing to the host's real `/etc/apt/preferences.d/`.
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . hold_management.json
+```
+
+Just the overdue reviews:
+
+```bash
+jq '.overdue_reviews' hold_management.json
+```
+
+Any hold or release that failed:
+
+```bash
+jq '.applied[] | select(.hold_applied == false), .released[] | select(.released == false)' hold_management.json
+```
+
+Validate JSON:
+
+```bash
+jq empty hold_management.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 10 makes "why is this held" a question the system can answer itself:
+
+```text
+one registry, one owner, one review date per hold  →  one script converges the system to match it
+```
+
+not:
+
+```text
+someone runs apt-mark hold by hand during an incident, and six months later nobody remembers why
+```
+
+An overdue review in this report is a prompt, not a failure — it means a decision that was meant to be revisited is due for a second look, before "temporary" quietly becomes "permanent".
+
+---
+
 ## Project progress
 
 | Task | Name | Status |
@@ -1979,7 +2194,8 @@ Every other task in this project measures, plans, executes, and validates *forwa
 | 7 | The Broken Upgrade Recovery | ✅ Implemented |
 | 8 | The Unattended Upgrades Configuration | ✅ Implemented |
 | 9 | The Rollback Capability | ✅ Implemented |
-| 10–19 | Upcoming tasks | ⏳ Pending |
+| 10 | The Version Hold Management | ✅ Implemented |
+| 11–19 | Upcoming tasks | ⏳ Pending |
 
 ---
 
