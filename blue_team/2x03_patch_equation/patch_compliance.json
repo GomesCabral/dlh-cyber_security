@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-08-12T10:21:12Z",
+  "hostname": "gomescabral-VirtualBox",
+  "kernel": "7.0.0-29-generic",
+  "summary": {
+    "resolved": 0,
+    "open": 0,
+    "deferred_held": 0,
+    "deferred_window": 0,
+    "score": 100.00,
+    "target_score": 95.00,
+    "overdue": 0
+  },
+  "cves": []
+}
