@@ -181,6 +181,7 @@ write_report_and_exit() {
 # 2. Refuse to proceed if a live dpkg/apt process is detected
 # ---------------------------------------------------------------------------
 if [[ -n "${LIVE_PROCS}" ]]; then
+    # Refuse to proceed: a live dpkg/apt process was detected -- exit 2.
     add_action "abort" "refused" "live dpkg/apt process detected, refusing to touch locks or package state"
     write_report_and_exit "false" "aborted: live dpkg/apt process detected" 2
 fi
