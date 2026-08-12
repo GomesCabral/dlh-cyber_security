@@ -2370,6 +2370,186 @@ Exit code `10` — the emergency path — exists specifically so that when the r
 
 ---
 
+# Task 12 — The Change Tracking Log
+
+## What is being asked
+
+An auditor asks one question: "show me every change to this system in the last 30 days, and prove it was authorized." A change log a human wrote is never complete. A change log a script derives from `/var/log/apt/history.log*` and this project's own JSON artifacts always is, because it's built from the same source of truth the system itself used.
+
+The script is:
+
+```text
+12-change_log.sh
+```
+
+and it produces:
+
+```text
+patch_change_log.json
+```
+
+It's read-only: it parses log files and other tasks' already-generated JSON, and writes only its own report. It never touches package state.
+
+## Real-world use
+
+```text
+Every change in the last 30 days, who made it, and was it inside the maintenance window?
+Does this change event line up with a Task 4 execution run, or was it something else entirely?
+Which CVEs did this specific event actually resolve?
+```
+
+This turns Tasks 0 (what's vulnerable), 1 (what depends on what), 4 (what was executed), and 11 (was it in-window) into a single timeline an auditor — or a future version of yourself — can actually read.
+
+## Parsing `/var/log/apt/history.log*`
+
+Every rotated file is included, plain or gzipped:
+
+```bash
+/var/log/apt/history.log
+/var/log/apt/history.log.1
+/var/log/apt/history.log.2.gz
+...
+```
+
+Each transaction block (`Start-Date` through the next blank line) is parsed for `Start-Date`, `End-Date`, `Commandline`, `Requested-By`, `Install`, `Upgrade`, `Remove`, `Purge`, and `Reinstall`.
+
+> A significant, easy-to-miss bash pitfall was found and fixed while building this: `TAB` belongs to the classic "IFS whitespace" set, so even with `IFS=$'\t'` explicitly set, bash's `read` still **collapses consecutive tabs into one delimiter** — exactly like default word-splitting collapses runs of spaces. This silently drops empty fields (e.g. a transaction with no `Requested-By:` line) and shifts everything after it one or more positions to the left. The entire internal record pipeline uses `\x01` (a byte that never appears in real log text) as the field separator instead, including an explicit `sort -t $'\x01'`, which does not have this collapsing behavior.
+
+## Grouping into change events
+
+Per the spec: transactions within **15 minutes of the previous transaction's start** join the same event (single-linkage clustering along the sorted timeline). Note this is the literal written rule — the task's own example output shows two transactions 12.5 minutes apart as *separate* events, which the 15-minute rule as written would actually merge. This implementation follows the written rule; if the intended threshold or grouping key is different (e.g. a shorter window, or "same user and same commandline"), that's a one-line change to `GROUP_WINDOW_SECONDS` and the grouping condition.
+
+## Per-event enrichment
+
+```text
+user                  the first transaction's Requested-By name, falling back to
+                       "unattended-upgrades" (commandline mentions it) or "root"
+within_window          Task 11's guard, called with MEDDEFENSE_NOW_OVERRIDE pinned to
+                       this event's own historical start time -- the same env-var
+                       hook built for testing Task 11 is what makes this possible
+linked_execution_log   "patch_execution_log.json" if the event's time range overlaps
+                       Task 4's started_at/finished_at, else null
+cves_resolved          for every package touched in this event, if it appears in
+                       vulnerability_inventory.json and the version reached is >=
+                       its recorded candidate_version (compared with
+                       `dpkg --compare-versions`), that package's CVEs count as
+                       resolved by this event
+```
+
+## Output structure
+
+```json
+{
+  "period_start": "2026-03-21T23:01:05+01:00",
+  "period_end": "2026-03-28T02:15:50+01:00",
+  "events": [
+    {
+      "started": "2026-03-21T23:01:05+01:00",
+      "ended": "2026-03-21T23:04:40+01:00",
+      "user": "mike",
+      "within_window": "outside",
+      "packages": 47,
+      "linked_execution_log": null,
+      "cves_resolved": ["CVE-2024-1234"]
+    }
+  ],
+  "summary": {
+    "total_events": 3,
+    "inside_window": 2,
+    "outside_window": 1,
+    "cves_resolved": 2
+  }
+}
+```
+
+## Idempotency
+
+Every input this script reads is static: log files already on disk, other tasks' already-generated JSON, and Task 11's guard invoked with a *fixed historical* timestamp override — never the real clock. Running the script twice against the same inputs was verified to produce byte-identical output.
+
+## Running Task 12
+
+Project directory:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Optional (used for enrichment, if present):
+
+```text
+11-maintenance_window.sh + maintenance_windows.json   (Task 11)
+patch_execution_log.json                              (Task 4)
+vulnerability_inventory.json                          (Task 0)
+```
+
+Make the script executable:
+
+```bash
+chmod +x 12-change_log.sh
+```
+
+Run:
+
+```bash
+sudo ./12-change_log.sh
+```
+
+## Testing without a real 30-day-old log
+
+The log directory can be overridden with an environment variable, defaulting to the real system path when unset:
+
+```bash
+HISTORY_LOG_DIR=/tmp/test-apt-logs ./12-change_log.sh
+```
+
+This is how grouping, enrichment, and idempotency were validated during development, using synthetic `history.log`/`history.log.N.gz` fixtures instead of waiting on real patch history.
+
+## Reading the result
+
+Complete log:
+
+```bash
+jq . patch_change_log.json
+```
+
+Everything outside the maintenance window:
+
+```bash
+jq '.events[] | select(.within_window == "outside")' patch_change_log.json
+```
+
+Every event tied to a specific Task 4 run:
+
+```bash
+jq '.events[] | select(.linked_execution_log != null)' patch_change_log.json
+```
+
+Validate JSON:
+
+```bash
+jq empty patch_change_log.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 12 makes the change log something the system produces, not something someone writes after the fact:
+
+```text
+apt's own logs + this project's own artifacts  →  one authoritative timeline
+```
+
+not:
+
+```text
+a wiki page someone updates when they remember to
+```
+
+When an auditor asks "prove this was authorized," the answer is `within_window: "inside"` and a `linked_execution_log` pointing at a specific Task 4 run — not someone's memory of a Saturday morning.
+
+---
+
 ## Project progress
 
 | Task | Name | Status |
@@ -2386,7 +2566,8 @@ Exit code `10` — the emergency path — exists specifically so that when the r
 | 9 | The Rollback Capability | ✅ Implemented |
 | 10 | The Version Hold Management | ✅ Implemented |
 | 11 | The Maintenance Window Enforcement | ✅ Implemented |
-| 12–19 | Upcoming tasks | ⏳ Pending |
+| 12 | The Change Tracking Log | ✅ Implemented |
+| 13–19 | Upcoming tasks | ⏳ Pending |
 
 ---
 
