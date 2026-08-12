@@ -1,5 +1,12 @@
 {
   "captured_at": "2026-08-11T14:30:00Z",
+  "packages": {
+    "curl": "8.18.0-1ubuntu2",
+    "libcurl4t64": "8.18.0-1ubuntu2",
+    "libssl3": "3.5.5-1ubuntu3",
+    "openssh-server": "1:10.2p1-2ubuntu3",
+    "linux-image-generic": "5.15.0-91.101"
+  },
   "services": [
     {"service": "apache2.service", "active_state": "active", "sub_state": "running"},
     {"service": "ssh.service", "active_state": "active", "sub_state": "running"},
