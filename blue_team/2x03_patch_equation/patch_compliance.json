@@ -3,7 +3,7 @@
   "hostname": "gomescabral-VirtualBox",
   "kernel": "7.0.0-29-generic",
   "summary": {
-    "resolved": 0,
+    "resolved": 2,
     "open": 0,
     "deferred_held": 0,
     "deferred_window": 0,
@@ -11,5 +11,24 @@
     "target_score": 95.00,
     "overdue": 0
   },
-  "cves": []
+  "cves": [
+    {
+      "id": "CVE-2023-38545",
+      "package": "curl",
+      "severity": "high",
+      "state": "resolved",
+      "first_seen": "2026-07-01T10:00:00Z",
+      "resolved_at": "2026-08-12T10:26:42Z",
+      "justification": null
+    },
+    {
+      "id": "CVE-2023-38546",
+      "package": "curl",
+      "severity": "high",
+      "state": "resolved",
+      "first_seen": "2026-07-01T10:00:00Z",
+      "resolved_at": "2026-08-12T10:26:42Z",
+      "justification": null
+    }
+  ]
 }
