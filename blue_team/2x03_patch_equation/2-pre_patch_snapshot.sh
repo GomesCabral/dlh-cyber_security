@@ -1,17 +1,19 @@
 #!/bin/bash
 # name: 2-pre_patch_snapshot.sh
-# purpose: Capture the pre-patch baseline snapshot that Tasks 5, 6, and 9
-#          read: every installed package's version, every active
-#          service's state, every listening socket, and a SHA-256 per
-#          conffile. Pure read-only capture -- always safe to re-run.
+# purpose: Capture the full state of the system before any patch
+#          operation, so every subsequent change can be measured against
+#          an exact baseline: package versions, active service state
+#          (ActiveState, SubState, MainPID), listening sockets, a
+#          SHA-256 per tracked conffile, kernel release, and whether a
+#          reboot is already pending. Pure read-only capture -- always
+#          safe to re-run.
 # Project: 2x03 - Patch Equation
 # Task:    2 - The Pre-Patch State Snapshot
 #
-# This closes a gap in the numbered task sequence: Tasks 0, 1, 3, 4, 5, 6,
-# 7, 8, 9, 10, 11, 12 were already built and all consume
-# pre_patch_state.json; Task 2, the script that actually produces it, had
-# not been requested yet. It is built now because Task 13's pipeline
-# requires it as an explicit stage.
+# This is the reference point every later validation task compares
+# against (Tasks 5, 6, and 9 all read pre_patch_state.json). Skipping
+# this step means flying blind: there is nothing to compare the
+# post-patch state to.
 
 set -uo pipefail
 
@@ -21,7 +23,7 @@ OUTPUT_FILE="${SCRIPT_DIR}/pre_patch_state.json"
 fail() { echo "[FAIL] $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"; }
 
-for c in jq dpkg-query systemctl sha256sum readlink awk sed grep date; do need "$c"; done
+for c in jq dpkg-query systemctl sha256sum readlink awk sed grep date hostname uname; do need "$c"; done
 HAVE_SS=0
 command -v ss >/dev/null 2>&1 && HAVE_SS=1
 [[ "${HAVE_SS}" -eq 0 ]] && echo "[WARN] 'ss' not found -- listening sockets will be empty" >&2
@@ -29,10 +31,19 @@ command -v ss >/dev/null 2>&1 && HAVE_SS=1
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
-CAPTURED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+TIMESTAMP="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+HOSTNAME_VAL="$(hostname)"
+KERNEL_VAL="$(uname -r)"
 
 # ---------------------------------------------------------------------------
-# packages: every installed package -> its currently installed version
+# reboot_required: presence of /var/run/reboot-required
+# ---------------------------------------------------------------------------
+REBOOT_REQUIRED="false"
+[[ -f /var/run/reboot-required ]] && REBOOT_REQUIRED="true"
+
+# ---------------------------------------------------------------------------
+# 1. packages: every installed package -> its currently installed version,
+#    via dpkg-query.
 # ---------------------------------------------------------------------------
 PACKAGES_JSON="$(
     dpkg-query -W -f='${binary:Package} ${Version} ${Status}\n' 2>/dev/null \
@@ -42,28 +53,45 @@ PACKAGES_JSON="$(
         map({(.[0]): .[1]}) | add // {}
       '
 )"
+PACKAGE_COUNT="$(jq 'keys | length' <<< "${PACKAGES_JSON}")"
 
 # ---------------------------------------------------------------------------
-# services: every active systemd service -> its state
+# 2. services: every active systemd service -> ActiveState, SubState,
+#    MainPID, queried by their literal systemctl property names.
 # ---------------------------------------------------------------------------
 SERVICES_FILE="${TMP_DIR}/services.jsonl"
 : > "${SERVICES_FILE}"
 
 while IFS= read -r svc; do
     [[ -n "${svc}" ]] || continue
-    active="$(systemctl is-active "${svc}" 2>/dev/null)"
-    [[ -z "${active}" ]] && active="unknown"
-    sub="$(systemctl show -p SubState --value "${svc}" 2>/dev/null)"
-    [[ -z "${sub}" ]] && sub="unknown"
-    jq -cn --arg service "${svc}" --arg active_state "${active}" --arg sub_state "${sub}" \
-      '{service:$service, active_state:$active_state, sub_state:$sub_state}' >> "${SERVICES_FILE}"
+
+    # A single `systemctl show` call with a comma-separated property list
+    # returns all three properties in one shot, each on its own "Key=Value"
+    # line -- more efficient than three separate calls per service.
+    props="$(systemctl show -p ActiveState -p SubState -p MainPID "${svc}" 2>/dev/null)"
+    active_state="$(sed -n 's/^ActiveState=//p' <<< "${props}")"
+    sub_state="$(sed -n 's/^SubState=//p' <<< "${props}")"
+    main_pid="$(sed -n 's/^MainPID=//p' <<< "${props}")"
+
+    [[ -z "${active_state}" ]] && active_state="unknown"
+    [[ -z "${sub_state}" ]] && sub_state="unknown"
+    [[ -z "${main_pid}" ]] && main_pid="0"
+
+    jq -cn \
+      --arg service "${svc}" \
+      --arg active_state "${active_state}" \
+      --arg sub_state "${sub_state}" \
+      --argjson main_pid "${main_pid}" \
+      '{service:$service, active_state:$active_state, sub_state:$sub_state, main_pid:$main_pid}' \
+      >> "${SERVICES_FILE}"
 done < <(systemctl list-units --type=service --state=active --no-legend --plain 2>/dev/null | awk '{print $1}')
 
 SERVICES_JSON="$(jq -cs '.' "${SERVICES_FILE}" 2>/dev/null || echo '[]')"
+SERVICE_COUNT="$(jq 'length' <<< "${SERVICES_JSON}")"
 
 # ---------------------------------------------------------------------------
-# listening: every listening TCP/UDP socket, best-effort mapped to a
-# systemd unit via the owning process's PID -> cgroup.
+# 3. listening: every listening TCP/UDP socket via `ss -tulnp`, best-effort
+#    mapped to a systemd unit via the owning process's PID -> cgroup.
 # ---------------------------------------------------------------------------
 LISTENING_FILE="${TMP_DIR}/listening.jsonl"
 : > "${LISTENING_FILE}"
@@ -82,16 +110,13 @@ if [[ "${HAVE_SS}" -eq 1 ]]; then
 
         # Column layout varies across iproute2 versions (Netid column may or
         # may not be present). Find the LISTEN state's local address:port by
-        # scanning every field for one matching IP:PORT or *:PORT, rather than
-        # trusting a fixed column index.
+        # scanning every field for one matching IP:PORT or *:PORT, rather
+        # than trusting a fixed column index (verified necessary: real `ss`
+        # output does not reliably keep the local address in a fixed column).
         port=""
         for tok in ${line}; do
             if [[ "${tok}" =~ ^[^[:space:]]*:([0-9]+)$ ]]; then
-                candidate="${BASH_REMATCH[1]}"
-                # Skip the peer address column, which for LISTEN sockets is
-                # always the wildcard "*:*" and never matches this pattern
-                # anyway -- the first IP:PORT-shaped token is the local one.
-                port="${candidate}"
+                port="${BASH_REMATCH[1]}"
                 break
             fi
         done
@@ -110,7 +135,8 @@ fi
 LISTENING_JSON="$(jq -cs 'unique_by([.port, .proto])' "${LISTENING_FILE}" 2>/dev/null || echo '[]')"
 
 # ---------------------------------------------------------------------------
-# conffile_hashes: every conffile of every installed package, SHA-256'd
+# 4. conffile_hashes: SHA-256 of every conffile under /etc tracked by a
+#    package, per `dpkg-query`.
 # ---------------------------------------------------------------------------
 CONFFILES_FILE="${TMP_DIR}/conffiles.jsonl"
 : > "${CONFFILES_FILE}"
@@ -132,25 +158,37 @@ while IFS= read -r line; do
 done < <(dpkg-query -W -f='${binary:Package}\n' 2>/dev/null)
 
 CONFFILES_JSON="$(jq -cs 'unique_by(.path)' "${CONFFILES_FILE}" 2>/dev/null || echo '[]')"
+CONFFILE_COUNT="$(jq 'length' <<< "${CONFFILES_JSON}")"
 
 # ---------------------------------------------------------------------------
-# Emit pre_patch_state.json
+# 5-6. Emit pre_patch_state.json
 # ---------------------------------------------------------------------------
 jq -n \
-  --arg captured_at "${CAPTURED_AT}" \
+  --arg timestamp "${TIMESTAMP}" \
+  --arg hostname "${HOSTNAME_VAL}" \
+  --arg kernel "${KERNEL_VAL}" \
   --argjson packages "${PACKAGES_JSON}" \
   --argjson services "${SERVICES_JSON}" \
   --argjson listening "${LISTENING_JSON}" \
   --argjson conffile_hashes "${CONFFILES_JSON}" \
+  --argjson reboot_required "${REBOOT_REQUIRED}" \
   '{
-     captured_at: $captured_at,
+     timestamp: $timestamp,
+     hostname: $hostname,
+     kernel: $kernel,
      packages: $packages,
      services: $services,
      listening: $listening,
-     conffile_hashes: $conffile_hashes
+     conffile_hashes: $conffile_hashes,
+     reboot_required: $reboot_required
    }' > "${OUTPUT_FILE}"
 
 jq empty "${OUTPUT_FILE}" >/dev/null 2>&1 || fail "pre_patch_state.json is invalid JSON"
 
-echo "[*] Snapshot captured: $(jq '.packages | length' "${OUTPUT_FILE}") packages, $(jq '.services | length' "${OUTPUT_FILE}") active services, $(jq '.listening | length' "${OUTPUT_FILE}") listening sockets, $(jq '.conffile_hashes | length' "${OUTPUT_FILE}") conffiles"
-echo "Report saved to: pre_patch_state.json"
+FILE_SIZE_KB="$(( $(stat -c%s "${OUTPUT_FILE}" 2>/dev/null || wc -c < "${OUTPUT_FILE}") / 1024 ))"
+
+echo "Snapshot: pre_patch_state.json"
+echo "Size: ${FILE_SIZE_KB} KB"
+echo "Kernel: ${KERNEL_VAL}"
+echo "Reboot required: ${REBOOT_REQUIRED}"
+echo "(${PACKAGE_COUNT} packages, ${SERVICE_COUNT} services, ${CONFFILE_COUNT} conffiles)"
