@@ -8,8 +8,9 @@
 # Project: 2x03 - Patch Equation
 # Task:    15 - The Patch Compliance Artifact
 #
-# Read-only: aggregates Tasks 0, 10, 12, and 13's artifacts. Changes
-# nothing on the system.
+# Read-only: aggregates vulnerability_inventory.json (Task 0),
+# hold_management.json (Task 10), patch_change_log.json (Task 12), and
+# pipeline_run.json (Task 13). Changes nothing on the system.
 #
 # --- Documented assumptions (this task's schema is not fully specified
 #     by prior tasks, so these choices are made explicit rather than
@@ -50,6 +51,7 @@ HISTORY_DIR="${SCRIPT_DIR}/history"
 CHANGE_LOG_FILE="${SCRIPT_DIR}/patch_change_log.json"
 HOLD_FILE="${SCRIPT_DIR}/hold_management.json"
 PLAN_FILE="${SCRIPT_DIR}/patch_plan.json"
+PIPELINE_RUN_FILE="${SCRIPT_DIR}/pipeline_run.json"
 OUTPUT_FILE="${SCRIPT_DIR}/patch_compliance.json"
 
 TARGET_SCORE="95.00"
@@ -133,6 +135,19 @@ if [[ -f "${PLAN_FILE}" ]]; then
     jq -r '.plan // [] | .[].package' "${PLAN_FILE}" | sort -u > "${PLANNED_PACKAGES}"
 fi
 
+# pipeline_run.json: corroborates *why* a planned package hasn't been
+# executed yet -- if the most recent pipeline run was itself "deferred"
+# (stopped by 11-maintenance_window.sh, per Task 13), that's the concrete
+# reason a planned fix is still pending, not just "it's in the plan."
+PIPELINE_STATUS=""
+PIPELINE_FINISHED_AT=""
+if [[ -f "${PIPELINE_RUN_FILE}" ]]; then
+    jq empty "${PIPELINE_RUN_FILE}" >/dev/null 2>&1 && {
+        PIPELINE_STATUS="$(jq -r '.pipeline_status // empty' "${PIPELINE_RUN_FILE}")"
+        PIPELINE_FINISHED_AT="$(jq -r '.finished_at // empty' "${PIPELINE_RUN_FILE}")"
+    }
+fi
+
 # "Now" for the overdue clock: patch_change_log.json's period_end first,
 # per the task's instruction to use the change log for the clock.
 NOW_FOR_CLOCK="${CHANGE_LOG_PERIOD_END:-${CURRENT_GENERATED_AT}}"
@@ -183,7 +198,12 @@ while IFS= read -r cve; do
         elif grep -qxF "${pkg}" "${PLANNED_PACKAGES}" 2>/dev/null; then
             state="deferred_window"
             DEFERRED_WINDOW=$((DEFERRED_WINDOW + 1))
-            justification="$(jq -Rn '"scheduled in current patch plan, pending next maintenance window"')"
+            if [[ "${PIPELINE_STATUS}" == "deferred" ]]; then
+                justification="$(jq -n --arg fin "${PIPELINE_FINISHED_AT}" \
+                  '"scheduled in current patch plan; last pipeline run (\($fin)) was deferred, waiting on the maintenance window"')"
+            else
+                justification="$(jq -Rn '"scheduled in current patch plan, pending next maintenance window"')"
+            fi
         else
             state="open"
             OPEN=$((OPEN + 1))
