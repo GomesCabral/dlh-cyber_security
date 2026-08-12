@@ -1,0 +1,12 @@
+{
+  "now": "2026-08-12 11:26 Europe/Paris (Wed)",
+  "timezone": "Europe/Paris",
+  "active_window": null,
+  "next_window": {
+    "name": "standard",
+    "at": "2026-08-15T02:00:00+02:00"
+  },
+  "seconds_until_next": 225210,
+  "decision": "defer",
+  "exit_code": 20
+}
