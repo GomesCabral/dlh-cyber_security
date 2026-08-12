@@ -1,0 +1,19 @@
+{
+  "generated_at": "TIMESTAMP",
+  "plan": [],
+  "summary": {
+    "emergency": 0,
+    "kernel_update_present": false,
+    "reboot_required": false,
+    "scheduled": 0,
+    "systemd_update_present": false,
+    "total_patches": 0,
+    "urgent": 0
+  },
+  "weights": {
+    "criticality_weight": 0.3,
+    "cvss_weight": 0.6,
+    "exposure_weight": 0.4,
+    "kev_weight": 1.5
+  }
+}

@@ -116,6 +116,11 @@ state_block() {
 # retry SPECIFICALLY when apt reports the dpkg lock is busy (up to a 120s
 # total budget). Any other failure is returned immediately, unretried.
 # Return codes: 0 = success, 3 = lock timeout, other = apt-get's own exit code.
+#
+# When PIPELINE_TEST=1 is set (used by Task 14's pipeline test), --dry-run
+# is added so apt-get simulates the install without changing anything --
+# this lets the full pipeline, including this stage, be exercised
+# end-to-end against a simulated advisory with zero real system impact.
 run_apt_install() {
     local pkg="$1"
     local out_file="$2"
@@ -124,8 +129,11 @@ run_apt_install() {
     local backoff=1
     local rc
 
+    local dry_run_flag=""
+    [[ "${PIPELINE_TEST:-0}" == "1" ]] && dry_run_flag="--dry-run"
+
     while true; do
-        DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y -- "${pkg}" \
+        DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y ${dry_run_flag} -- "${pkg}" \
             > "${out_file}" 2> "${err_file}"
         rc=$?
 

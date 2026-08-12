@@ -1,0 +1,14 @@
+{
+  "scenario": "simulated CVE advisory",
+  "started_at": "2026-08-12T10:07:59Z",
+  "finished_at": "2026-08-12T10:14:00Z",
+  "stages_ok": false,
+  "pipeline_status": "deferred",
+  "missing_artifacts": [
+    "pre_patch_state.json"
+  ],
+  "plan_matches_expected": true,
+  "compare_note": "no patch_plan.expected.json existed -- bootstrapped from this run",
+  "diff": [],
+  "verdict": "fail"
+}

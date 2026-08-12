@@ -1,0 +1,37 @@
+{
+  "feed_metadata": {
+    "source": "simulated-advisory-2026-08-15",
+    "generated": "2026-08-15T00:00:00Z",
+    "note": "SIMULATED feed for Task 14's pipeline test. Not real CVE data -- swapped in temporarily over cve_feed.json, then the original is restored automatically."
+  },
+  "cves": {
+    "CVE-2026-9001": {
+      "package": "curl",
+      "cvss": 8.6,
+      "severity": "high",
+      "in_cisa_kev": true,
+      "description": "Simulated: heap overflow in a hypothetical future curl advisory, used to exercise the pipeline against fresh data."
+    },
+    "CVE-2026-9002": {
+      "package": "libssl3",
+      "cvss": 9.1,
+      "severity": "critical",
+      "in_cisa_kev": false,
+      "description": "Simulated: critical memory-safety issue in a hypothetical future OpenSSL advisory."
+    },
+    "CVE-2026-9003": {
+      "package": "openssh-server",
+      "cvss": 7.2,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Simulated: authentication bypass in a hypothetical future OpenSSH advisory."
+    },
+    "CVE-2026-9004": {
+      "package": "linux-image-generic",
+      "cvss": 7.8,
+      "severity": "high",
+      "in_cisa_kev": true,
+      "description": "Simulated: local privilege escalation in a hypothetical future kernel advisory."
+    }
+  }
+}

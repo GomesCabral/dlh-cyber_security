@@ -1,9 +1,9 @@
 {
-  "started_at": "2026-08-12T09:52:26Z",
-  "finished_at": "2026-08-12T09:58:55Z",
+  "started_at": "2026-08-12T10:07:59Z",
+  "finished_at": "2026-08-12T10:14:00Z",
   "hostname": "gomescabral-VirtualBox",
   "pipeline_status": "deferred",
-  "duration_seconds": 389,
+  "duration_seconds": 361,
   "stages": [
     {
       "name": "0-vuln_inventory.sh",
@@ -19,7 +19,7 @@
       "script": "1-service_deps.sh",
       "status": "ok",
       "exit_code": 0,
-      "duration_seconds": 134.5,
+      "duration_seconds": 120.7,
       "stdout_tail": "    [medium] systemd-resolved.service -> systemd-resolved (7 linked pkgs resolved)\n    [low] systemd-sysctl.service -> systemd (7 linked pkgs resolved)\n    [low] systemd-tmpfiles-setup-dev-early.service -> unknown (0 linked pkgs resolved)\n    [low] systemd-tmpfiles-setup-dev.service -> unknown (0 linked pkgs resolved)\n    [low] systemd-tmpfiles-setup.service -> unknown (0 linked pkgs resolved)\n    [low] systemd-udev-load-credentials.service -> unknown (0 linked pkgs resolved)\n    [low] systemd-udev-trigger.service -> unknown (0 linked pkgs resolved)\n    [low] systemd-udevd.service -> udev (7 linked pkgs resolved)\n    [low] systemd-user-sessions.service -> systemd (7 linked pkgs resolved)\n    [low] udisks2.service -> udisks2 (22 linked pkgs resolved)\n    [high] ufw.service -> ufw (1 linked pkgs resolved)\n    [low] unattended-upgrades.service -> unattended-upgrades (1 linked pkgs resolved)\n    [low] upower.service -> upower (21 linked pkgs resolved)\n    [low] user-runtime-dir@1000.service -> systemd (7 linked pkgs resolved)\n    [low] user@1000.service -> systemd (7 linked pkgs resolved)\n    [low] uuidd.service -> uuid-runtime (4 linked pkgs resolved)\n    [low] virtualbox-guest-utils.service -> virtualbox-guest-utils (1 linked pkgs resolved)\n    [low] wpa_supplicant.service -> wpasupplicant (11 linked pkgs resolved)\n[*] Service dependency map complete.\nReport saved to: service_dependency_map.json\n",
       "stderr_tail": ""
     },
@@ -28,7 +28,7 @@
       "script": "2-pre_patch_snapshot.sh",
       "status": "ok",
       "exit_code": 0,
-      "duration_seconds": 145.6,
+      "duration_seconds": 133.8,
       "stdout_tail": "[*] Snapshot captured:  packages,  active services,  listening sockets,  conffiles\nReport saved to: pre_patch_state.json\n",
       "stderr_tail": "/media/sf_dlh-cyber_security/blue_team/2x03_patch_equation/2-pre_patch_snapshot.sh: line 139: /usr/bin/jq: Argument list too long\n"
     },
@@ -37,7 +37,7 @@
       "script": "3-patch_plan.sh",
       "status": "ok",
       "exit_code": 0,
-      "duration_seconds": 0.3,
+      "duration_seconds": 0.2,
       "stdout_tail": "Emergency: 0   Urgent: 0   Scheduled: 0\nReboot required by plan: no\nReport saved to: patch_plan.json\n",
       "stderr_tail": ""
     },
@@ -46,8 +46,8 @@
       "script": "11-maintenance_window.sh",
       "status": "deferred",
       "exit_code": 20,
-      "duration_seconds": 2.1,
-      "stdout_tail": "now:            2026-08-12 11:57 Europe/Paris (Wed)\nactive window:  (none)\nnext window:    standard  at 2026-08-15 02:00\nseconds until:  223371\ndecision:       defer\nReport saved to: maintenance_window.json\n",
+      "duration_seconds": 2.0,
+      "stdout_tail": "now:            2026-08-12 12:12 Europe/Paris (Wed)\nactive window:  (none)\nnext window:    standard  at 2026-08-15 02:00\nseconds until:  222464\ndecision:       defer\nReport saved to: maintenance_window.json\n",
       "stderr_tail": ""
     },
     {
@@ -85,7 +85,7 @@
       "script": "12-change_log.sh",
       "status": "ok",
       "exit_code": 0,
-      "duration_seconds": 104.4,
+      "duration_seconds": 101.6,
       "stdout_tail": "",
       "stderr_tail": ""
     }

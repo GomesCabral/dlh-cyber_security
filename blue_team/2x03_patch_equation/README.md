@@ -2791,6 +2791,188 @@ nine separate scripts a human has to remember to run in the right sequence, by h
 
 ---
 
+# Task 14 — The Pipeline Test Against a Simulated Advisory
+
+## What is being asked
+
+The pipeline (Task 13) working today, against today's real vulnerability data, proves very little about whether it will work tomorrow, against a CVE feed nobody has seen yet. This task is that proof: swap in a simulated advisory, run the entire pipeline end-to-end in dry-run mode (nothing is actually installed), and confirm the output — specifically the patch plan — reacts correctly to the new input, with zero code changes and zero real system impact.
+
+The script is:
+
+```text
+14-pipeline_test.sh
+```
+
+and it produces:
+
+```text
+pipeline_test_results.json
+```
+
+## What it does, step by step
+
+```text
+1. Back up the real cve_feed.json          -> cve_feed.json.bak
+2. Inject cve_feed.simulated.json           -> cve_feed.json
+3. Run 13-patch_pipeline.sh with PIPELINE_TEST=1
+4. Compare the resulting patch_plan.json against patch_plan.expected.json
+5. Confirm pipeline_run.json is "ok" or "deferred", every stage's artifact is non-empty
+6. Restore the real cve_feed.json           <- always, even on failure or interruption
+```
+
+## `PIPELINE_TEST=1` and Task 4
+
+This env var flows through the whole pipeline into `4-patch_execute.sh`, which was updated (alongside this task) to check for it:
+
+```bash
+[[ "${PIPELINE_TEST:-0}" == "1" ]] && dry_run_flag="--dry-run"
+DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade -y ${dry_run_flag} -- "${pkg}"
+```
+
+With `--dry-run`, `apt-get` simulates the install and reports what it *would* do, without touching anything. This is what makes it safe to run the entire pipeline, including the execution stage, against a fabricated advisory.
+
+## A note on `patch_plan.expected.json`
+
+What the "correct" plan looks like for a given `cve_feed.simulated.json` depends on which packages actually have upgrade candidates on the specific host running the test — something that cannot be authored by hand in the abstract; it depends on real system state. Rather than ship a fixture that would almost certainly never match a real machine (and make the comparison meaningless), this script uses a **golden-file bootstrap pattern**:
+
+- If `patch_plan.expected.json` doesn't exist yet, this run's `patch_plan.json` (with timestamps normalized) becomes the new baseline, and this run passes.
+- Every run after that genuinely compares against that baseline.
+- To intentionally re-baseline (e.g. after a legitimate change to the plan logic), delete `patch_plan.expected.json` and run once.
+
+## Timestamp normalization
+
+Before comparing, every field ending in `_at` (plus `generated_at`) is replaced with a fixed `"TIMESTAMP"` placeholder, and keys are sorted, so a plan that's otherwise identical never fails the comparison just because it was generated a few seconds later:
+
+```bash
+jq -S 'def normalize: if type=="object" then with_entries(if (.key|test("_at$")) or .key=="generated_at" then .value="TIMESTAMP" else .value|=normalize end) elif type=="array" then map(normalize) else . end; normalize'
+```
+
+## Cleanup is guaranteed, even on interruption
+
+A significant, non-obvious bash pitfall was found and fixed while building this: when the blocked foreground command is itself a **nested `bash` invocation calling another script** (here, `bash 13-patch_pipeline.sh`), a `SIGTERM`/`SIGINT` sent to this script does **not** reliably interrupt the wait — it can ride out the full remaining runtime of the nested pipeline before a trap fires, even with a trap registered. This was reproduced in isolation before the fix. The working technique is to run the pipeline as an **explicit background job** and `wait` on its PID specifically, which *is* interruptible by a trapped signal, and to forward the signal to that child in the handler:
+
+```bash
+trap restore_feed EXIT
+trap on_interrupt INT TERM   # forwards SIGTERM to $PIPELINE_PID, then exit 130
+
+PIPELINE_TEST=1 bash "${PIPELINE_SCRIPT}" &
+PIPELINE_PID=$!
+wait "${PIPELINE_PID}"
+```
+
+Verified directly: before the fix, interrupting mid-run took as long as the nested pipeline's remaining work; after the fix, the real `cve_feed.json` is restored within about a second of the interrupt, regardless of what the pipeline was doing.
+
+## Output structure
+
+```json
+{
+  "scenario": "simulated CVE advisory",
+  "started_at": "2026-08-12T10:00:00Z",
+  "finished_at": "2026-08-12T10:00:43Z",
+  "stages_ok": true,
+  "pipeline_status": "ok",
+  "missing_artifacts": [],
+  "plan_matches_expected": true,
+  "compare_note": null,
+  "diff": [],
+  "verdict": "pass"
+}
+```
+
+On a mismatch, `diff` contains a unified-diff-style array of lines (`--- expected`, `+++ actual`, `@@ ... @@`, `-`/`+` lines) rather than a raw string, so it's directly usable from `jq` without further parsing.
+
+## Running Task 14
+
+Project directory, with the full pipeline and its inputs already in place:
+
+```bash
+cd ~/dlh-cyber_security/blue_team/2x03_patch_equation
+```
+
+Requires:
+
+```text
+13-patch_pipeline.sh                (Task 13, and everything it in turn requires)
+cve_feed.simulated.json
+```
+
+Make the script executable:
+
+```bash
+chmod +x 14-pipeline_test.sh
+```
+
+Run:
+
+```bash
+sudo ./14-pipeline_test.sh
+```
+
+Console output:
+
+```text
+[*] Scenario: simulated CVE advisory
+[*] Backing up cve_feed.json...              OK
+[*] Injecting cve_feed.simulated.json...     OK
+[*] Running pipeline (PIPELINE_TEST=1)...
+[1/9] 0-vuln_inventory.sh           OK
+...
+[9/9] 12-change_log.sh              OK
+[*] Comparing patch_plan.json to expected...  match
+[*] Restoring cve_feed.json...                OK
+VERDICT: pass
+Report saved to: pipeline_test_results.json
+```
+
+`4-patch_execute.sh` runs in `--dry-run` mode throughout this test — nothing is actually installed. The only real, permanent side effect on disk is the (deliberate, temporary) swap and restore of `cve_feed.json`.
+
+## Exit codes
+
+```text
+0   verdict is "pass"
+1   verdict is "fail" -- pipeline itself failed, an artifact was empty/missing, or the plan didn't match
+```
+
+## Reading the result
+
+Complete report:
+
+```bash
+jq . pipeline_test_results.json
+```
+
+Just the diff, if any:
+
+```bash
+jq '.diff[]' pipeline_test_results.json
+```
+
+Validate JSON:
+
+```bash
+jq empty pipeline_test_results.json
+```
+
+No output means valid JSON.
+
+## Important principle
+
+Task 14 answers a different question than Task 13 ever can on its own:
+
+```text
+does the pipeline react correctly to an advisory it has never seen, with zero code changes?
+```
+
+not:
+
+```text
+did the pipeline work the one time we happened to run it against today's real data?
+```
+
+`cve_feed.json` is swapped and restored automatically, `4-patch_execute.sh` never actually installs anything during the test, and the real feed comes back even if the test is interrupted mid-run — this is meant to be safe to run as often as needed, including in CI, without ever risking the real system or the real vulnerability data.
+
+---
+
 ## Project progress
 
 | Task | Name | Status |
@@ -2809,7 +2991,8 @@ nine separate scripts a human has to remember to run in the right sequence, by h
 | 11 | The Maintenance Window Enforcement | ✅ Implemented |
 | 12 | The Change Tracking Log | ✅ Implemented |
 | 13 | The End-to-End Patch Pipeline | ✅ Implemented |
-| 14–19 | Upcoming tasks | ⏳ Pending |
+| 14 | The Pipeline Test Against a Simulated Advisory | ✅ Implemented |
+| 15–19 | Upcoming tasks | ⏳ Pending |
 
 ---
 
