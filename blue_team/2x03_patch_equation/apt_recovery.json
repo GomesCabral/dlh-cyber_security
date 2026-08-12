@@ -1,0 +1,29 @@
+{
+  "initial_diagnosis": {
+    "live_processes_detected": true,
+    "live_processes": "1227 /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal",
+    "stale_locks": [
+      "/var/lib/dpkg/lock-frontend",
+      "/var/lib/dpkg/lock",
+      "/var/cache/apt/archives/lock"
+    ],
+    "held_locks": [],
+    "dpkg_audit_raw": "",
+    "broken_packages": [],
+    "broken_package_count": 0,
+    "disk_free_kb": {
+      "root": 26971848,
+      "var": 26971844
+    }
+  },
+  "actions_taken": [
+    {
+      "step": "abort",
+      "status": "refused",
+      "detail": "live dpkg/apt process detected, refusing to touch locks or package state"
+    }
+  ],
+  "final_state": "aborted: live dpkg/apt process detected",
+  "recovered": false,
+  "duration_seconds": 0
+}
