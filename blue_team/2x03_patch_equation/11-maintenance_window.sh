@@ -15,10 +15,10 @@
 #   11-maintenance_window.sh --report           print JSON only
 #
 # Exit codes (--check and --wait):
-#   0    inside a standard/extended window -> proceed
-#   10   only the "emergency" (always:true) window applies, and
-#        MEDDEFENSE_EMERGENCY=1 was set -> proceed via emergency override
-#   20   outside every window (or emergency applies but no override) -> defer
+#   exit 0    inside a standard/extended window -> proceed
+#   exit 10   only the "emergency" (always:true) window applies, and
+#             MEDDEFENSE_EMERGENCY=1 was set -> proceed via emergency override
+#   exit 20   outside every window (or emergency applies but no override) -> defer
 
 set -uo pipefail
 
