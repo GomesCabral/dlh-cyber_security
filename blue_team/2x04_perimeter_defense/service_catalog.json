@@ -1,0 +1,52 @@
+[
+  {"process":"mysqld","proto":"tcp","port":3306,"function":"database"},
+  {"process":"mariadbd","proto":"tcp","port":3306,"function":"database"},
+  {"process":"postgres","proto":"tcp","port":5432,"function":"database"},
+  {"process":"mongod","proto":"tcp","port":27017,"function":"database"},
+  {"process":"redis-server","proto":"tcp","port":6379,"function":"database"},
+
+  {"process":"apache2","proto":"tcp","port":80,"function":"web"},
+  {"process":"apache2","proto":"tcp","port":443,"function":"web"},
+  {"process":"nginx","proto":"tcp","port":80,"function":"web"},
+  {"process":"nginx","proto":"tcp","port":443,"function":"web"},
+  {"process":"python3","proto":"tcp","port":8000,"function":"web"},
+
+  {"process":"sshd","proto":"tcp","port":22,"function":"ssh"},
+
+  {"process":"systemd-resolve","proto":"udp","port":53,"function":"dns"},
+  {"process":"systemd-resolve","proto":"tcp","port":53,"function":"dns"},
+  {"process":"named","proto":"udp","port":53,"function":"dns"},
+  {"process":"named","proto":"tcp","port":53,"function":"dns"},
+  {"process":"unbound","proto":"udp","port":53,"function":"dns"},
+  {"process":"unbound","proto":"tcp","port":53,"function":"dns"},
+  {"process":"avahi-daemon","proto":"udp","port":5353,"function":"dns"},
+
+  {"process":"chronyd","proto":"udp","port":323,"function":"ntp"},
+  {"process":"ntpd","proto":"udp","port":123,"function":"ntp"},
+  {"process":"systemd-timesyn","proto":"udp","port":123,"function":"ntp"},
+
+  {"process":"rpcbind","proto":"tcp","port":111,"function":"rpc"},
+  {"process":"rpcbind","proto":"udp","port":111,"function":"rpc"},
+  {"process":"python3","proto":"udp","port":3702,"function":"rpc"},
+
+  {"process":"smbd","proto":"tcp","port":139,"function":"smb"},
+  {"process":"smbd","proto":"tcp","port":445,"function":"smb"},
+
+  {"process":"cupsd","proto":"tcp","port":631,"function":"print"},
+  {"process":"cups-browsed","proto":"udp","port":631,"function":"print"},
+
+  {"process":"node_exporter","proto":"tcp","port":9100,"function":"telemetry"},
+  {"process":"prometheus","proto":"tcp","port":9090,"function":"telemetry"},
+  {"process":"zabbix_agentd","proto":"tcp","port":10050,"function":"telemetry"},
+  {"process":"wazuh-agentd","proto":"tcp","port":1514,"function":"telemetry"},
+
+  {"process":"telnetd","proto":"tcp","port":23,"function":"telnet"},
+  {"process":"in.telnetd","proto":"tcp","port":23,"function":"telnet"},
+  {"process":"vsftpd","proto":"tcp","port":21,"function":"ftp"},
+  {"process":"proftpd","proto":"tcp","port":21,"function":"ftp"},
+  {"process":"snmpd","proto":"udp","port":161,"function":"snmpv2c"},
+  {"process":"in.rlogind","proto":"tcp","port":513,"function":"rlogin"},
+  {"process":"rpc.rlogind","proto":"tcp","port":513,"function":"rlogin"},
+  {"process":"nfsd","proto":"tcp","port":2049,"function":"nfs v2/v3"},
+  {"process":"nfsd","proto":"udp","port":2049,"function":"nfs v2/v3"}
+]

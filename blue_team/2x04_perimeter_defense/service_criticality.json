@@ -1,0 +1,18 @@
+{
+  "database": {"criticality": "critical"},
+  "web": {"criticality": "high"},
+  "ssh": {"criticality": "high"},
+  "dns": {"criticality": "high"},
+  "ntp": {"criticality": "medium"},
+  "rpc": {"criticality": "high"},
+  "smb": {"criticality": "high"},
+  "print": {"criticality": "low"},
+  "telemetry": {"criticality": "medium"},
+  "telnet": {"criticality": "critical"},
+  "ftp": {"criticality": "high"},
+  "snmpv1": {"criticality": "critical"},
+  "snmpv2c": {"criticality": "high"},
+  "rlogin": {"criticality": "critical"},
+  "nfs v2/v3": {"criticality": "high"},
+  "unknown": {"criticality": "low"}
+}
