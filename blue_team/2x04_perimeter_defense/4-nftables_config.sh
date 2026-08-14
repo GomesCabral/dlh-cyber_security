@@ -351,6 +351,8 @@ nft -f "$OUTPUT_FILE"
 RULESET_APPLIED=true
 
 LOADED_RULESET="$(nft list ruleset)"
+# Verify the loaded ruleset by comparing the expected rule count with the
+# actual rule count returned after the atomic load.
 ACTUAL_RULE_COUNT="$(grep -c 'comment "md_rule_' <<< "$LOADED_RULESET" || true)"
 
 jq -n \
