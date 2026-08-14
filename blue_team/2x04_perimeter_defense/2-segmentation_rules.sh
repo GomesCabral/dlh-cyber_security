@@ -12,6 +12,8 @@ fi
 # Four zones: DMZ, INTERNAL, MGMT and MEDDEV.
 # Every zone uses default_inbound drop and default_outbound accept with
 # specific restrictions. Allow rules precede the final deny_all rules.
+# No flows from MEDDEV to DMZ or the public Internet.
+# No flows from any zone into MEDDEV except MGMT on tcp/22 and tcp/4242.
 jq -n '
     {
         zones: [
