@@ -84,7 +84,7 @@ ip -j route show table all > "$ROUTES_RAW"
 # ARP/neighbor table: retain neighbor IP, MAC address and reachability state.
 ip -j neigh show > "$NEIGHBORS_RAW"
 
-# Listening TCP/UDP sockets and established TCP connections with process ownership.
+# Listening TCP/UDP sockets and established TCP connections with process name and PID ownership.
 ss -tulnpH > "$LISTENING_RAW"
 ss -tnpH state established > "$ESTABLISHED_RAW"
 
