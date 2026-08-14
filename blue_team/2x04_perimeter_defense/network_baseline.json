@@ -1,0 +1,625 @@
+{
+  "timestamp": "2026-08-14T10:40:15Z",
+  "hostname": "gomescabral-VirtualBox",
+  "interfaces": [
+    {
+      "name": "lo",
+      "mac": "00:00:00:00:00:00",
+      "link_state": "UNKNOWN",
+      "mtu": 65536,
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "127.0.0.1",
+          "prefix_length": 8,
+          "scope": "host"
+        },
+        {
+          "family": "inet6",
+          "address": "::1",
+          "prefix_length": 128,
+          "scope": "host"
+        }
+      ]
+    },
+    {
+      "name": "enp0s3",
+      "mac": "08:00:27:9b:58:c4",
+      "link_state": "UP",
+      "mtu": 1500,
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "10.10.10.20",
+          "prefix_length": 24,
+          "scope": "global"
+        }
+      ]
+    },
+    {
+      "name": "enp0s8",
+      "mac": "08:00:27:61:41:12",
+      "link_state": "UP",
+      "mtu": 1500,
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "10.0.2.15",
+          "prefix_length": 24,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "address": "fd00::12e6:bf58:293c:3223",
+          "prefix_length": 64,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "address": "fd00::7988:c714:f5eb:6f0d",
+          "prefix_length": 64,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "address": "fe80::7715:b509:be1e:9a6",
+          "prefix_length": 64,
+          "scope": "link"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "destination": "default",
+      "gateway": "10.0.2.2",
+      "device": "enp0s8",
+      "preferred_source": "10.0.2.15",
+      "protocol": "dhcp",
+      "scope": null,
+      "metric": 20101,
+      "table": "main"
+    },
+    {
+      "destination": "10.0.2.0/24",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": "10.0.2.15",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": 101,
+      "table": "main"
+    },
+    {
+      "destination": "10.10.10.0/24",
+      "gateway": null,
+      "device": "enp0s3",
+      "preferred_source": "10.10.10.20",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": 100,
+      "table": "main"
+    },
+    {
+      "destination": "10.0.2.15",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": "10.0.2.15",
+      "protocol": "kernel",
+      "scope": "host",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "10.0.2.255",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": "10.0.2.15",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "10.10.10.20",
+      "gateway": null,
+      "device": "enp0s3",
+      "preferred_source": "10.10.10.20",
+      "protocol": "kernel",
+      "scope": "host",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "10.10.10.255",
+      "gateway": null,
+      "device": "enp0s3",
+      "preferred_source": "10.10.10.20",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "127.0.0.0/8",
+      "gateway": null,
+      "device": "lo",
+      "preferred_source": "127.0.0.1",
+      "protocol": "kernel",
+      "scope": "host",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "127.0.0.1",
+      "gateway": null,
+      "device": "lo",
+      "preferred_source": "127.0.0.1",
+      "protocol": "kernel",
+      "scope": "host",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "127.255.255.255",
+      "gateway": null,
+      "device": "lo",
+      "preferred_source": "127.0.0.1",
+      "protocol": "kernel",
+      "scope": "link",
+      "metric": null,
+      "table": "local"
+    },
+    {
+      "destination": "fd00::/64",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "ra",
+      "scope": null,
+      "metric": 101,
+      "table": "main"
+    },
+    {
+      "destination": "fe80::/64",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 1024,
+      "table": "main"
+    },
+    {
+      "destination": "default",
+      "gateway": "fe80::2",
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "ra",
+      "scope": null,
+      "metric": 101,
+      "table": "main"
+    },
+    {
+      "destination": "::1",
+      "gateway": null,
+      "device": "lo",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 0,
+      "table": "local"
+    },
+    {
+      "destination": "fd00::12e6:bf58:293c:3223",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 0,
+      "table": "local"
+    },
+    {
+      "destination": "fd00::7988:c714:f5eb:6f0d",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 0,
+      "table": "local"
+    },
+    {
+      "destination": "fe80::7715:b509:be1e:9a6",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 0,
+      "table": "local"
+    },
+    {
+      "destination": "ff00::/8",
+      "gateway": null,
+      "device": "enp0s8",
+      "preferred_source": null,
+      "protocol": "kernel",
+      "scope": null,
+      "metric": 256,
+      "table": "local"
+    }
+  ],
+  "neighbors": [
+    {
+      "ip": "10.10.10.10",
+      "mac": null,
+      "device": "enp0s3",
+      "state": "FAILED"
+    },
+    {
+      "ip": "10.0.2.2",
+      "mac": null,
+      "device": "enp0s8",
+      "state": "FAILED"
+    },
+    {
+      "ip": "10.0.2.3",
+      "mac": null,
+      "device": "enp0s8",
+      "state": "FAILED"
+    },
+    {
+      "ip": "fd00::2",
+      "mac": "52:56:00:00:00:02",
+      "device": "enp0s8",
+      "state": "STALE"
+    },
+    {
+      "ip": "fd00::3",
+      "mac": "52:56:00:00:00:03",
+      "device": "enp0s8",
+      "state": "REACHABLE"
+    },
+    {
+      "ip": "fe80::2",
+      "mac": "52:56:00:00:00:02",
+      "device": "enp0s8",
+      "state": "REACHABLE"
+    }
+  ],
+  "listening_sockets": [
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "0.0.0.0",
+        "port": "5353"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "avahi-daemon",
+      "pid": 807,
+      "details": "users:((\"avahi-daemon\",pid=807,fd=12))   "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "0.0.0.0",
+        "port": "59471"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=14))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "0.0.0.0",
+        "port": "52419"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=9))        "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "10.0.2.15",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=15))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "239.255.255.250",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=13))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "10.10.10.20",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=10))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "239.255.255.250",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=8))        "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "127.0.0.54",
+        "port": "53"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "systemd-resolve",
+      "pid": 399,
+      "details": "users:((\"systemd-resolve\",pid=399,fd=18))"
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "127.0.0.53%lo",
+        "port": "53"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "systemd-resolve",
+      "pid": 399,
+      "details": "users:((\"systemd-resolve\",pid=399,fd=16))"
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "127.0.0.1",
+        "port": "323"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "chronyd",
+      "pid": 1024,
+      "details": "users:((\"chronyd\",pid=1024,fd=4))        "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "::",
+        "port": "5353"
+      },
+      "peer": {
+        "address": "::",
+        "port": "*"
+      },
+      "process": "avahi-daemon",
+      "pid": 807,
+      "details": "users:((\"avahi-daemon\",pid=807,fd=13))   "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "*",
+        "port": "60892"
+      },
+      "peer": {
+        "address": "*",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=17))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "[fe80::7715:b509:be1e:9a6]%enp0s8",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "::",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=18))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "[ff02::c]%enp0s8",
+        "port": "3702"
+      },
+      "peer": {
+        "address": "::",
+        "port": "*"
+      },
+      "process": "python3",
+      "pid": 3885,
+      "details": "users:((\"python3\",pid=3885,fd=16))       "
+    },
+    {
+      "protocol": "udp",
+      "state": "UNCONN",
+      "receive_queue": 0,
+      "send_queue": 0,
+      "local": {
+        "address": "::1",
+        "port": "323"
+      },
+      "peer": {
+        "address": "::",
+        "port": "*"
+      },
+      "process": "chronyd",
+      "pid": 1024,
+      "details": "users:((\"chronyd\",pid=1024,fd=5))        "
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "receive_queue": 0,
+      "send_queue": 4096,
+      "local": {
+        "address": "127.0.0.54",
+        "port": "53"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "systemd-resolve",
+      "pid": 399,
+      "details": "users:((\"systemd-resolve\",pid=399,fd=19))"
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "receive_queue": 0,
+      "send_queue": 4096,
+      "local": {
+        "address": "127.0.0.1",
+        "port": "631"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "cupsd",
+      "pid": 1247,
+      "details": "users:((\"cupsd\",pid=1247,fd=7))          "
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "receive_queue": 0,
+      "send_queue": 4096,
+      "local": {
+        "address": "127.0.0.53%lo",
+        "port": "53"
+      },
+      "peer": {
+        "address": "0.0.0.0",
+        "port": "*"
+      },
+      "process": "systemd-resolve",
+      "pid": 399,
+      "details": "users:((\"systemd-resolve\",pid=399,fd=17))"
+    },
+    {
+      "protocol": "tcp",
+      "state": "LISTEN",
+      "receive_queue": 0,
+      "send_queue": 4096,
+      "local": {
+        "address": "::1",
+        "port": "631"
+      },
+      "peer": {
+        "address": "::",
+        "port": "*"
+      },
+      "process": "cupsd",
+      "pid": 1247,
+      "details": "users:((\"cupsd\",pid=1247,fd=6))          "
+    }
+  ],
+  "established_connections": [],
+  "dns_resolvers": {
+    "resolv_conf_nameservers": [
+      "127.0.0.53"
+    ],
+    "systemd_resolved_active": true,
+    "resolvectl_status": "Global\n         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n  resolv.conf mode: stub\n\nLink 2 (enp0s3)\n    Current Scopes: none\n         Protocols: -DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n     Default Route: no\n\nLink 3 (enp0s8)\n    Current Scopes: DNS\n         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\nCurrent DNS Server: fd00::3\n       DNS Servers: 10.0.2.3 fd00::3\n        DNS Domain: fritz.box\n     Default Route: yes"
+  }
+}
