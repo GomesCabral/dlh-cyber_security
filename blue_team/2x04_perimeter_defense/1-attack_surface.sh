@@ -7,6 +7,9 @@ SERVICE_CATALOG="${2:-service_catalog.json}"
 CRITICALITY_CATALOG="${3:-service_criticality.json}"
 OUTPUT_FILE="${4:-attack_surface.json}"
 
+# Function labels loaded from service_catalog.json:
+# database, web, ssh, dns, ntp, rpc, smb, print, telemetry and unknown.
+
 require_command() {
     local command_name="$1"
 
@@ -235,8 +238,10 @@ SOCKETS_JSON="$(jq -s '
         . as $socket
         | (
             []
-            + (if .bind_addr == "0.0.0.0" and (.function == "database" or .function == "rpc")
-               then ["bound_0.0.0.0", (.function + "_exposed")]
+            + (if .bind_addr == "0.0.0.0" and .function == "database"
+               then ["bound_0.0.0.0", "database_exposed"]
+               elif .bind_addr == "0.0.0.0" and .function == "rpc"
+               then ["bound_0.0.0.0", "rpc_exposed"]
                else []
                end)
             + ([insecure_flag(.function)] | map(select(. != null)))
