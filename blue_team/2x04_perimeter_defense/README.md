@@ -33,6 +33,8 @@ path:
 sudo ./0-network_baseline.sh evidence/network_baseline.json
 ```
 
+---
+
 ## Task 1 — Attack Surface Map
 
 `1-attack_surface.sh` enriches every listener in `network_baseline.json` with
@@ -143,4 +145,45 @@ Show the report summary:
 ```bash
 jq '.summary' attack_surface.json
 ```
+---
+
+## Task 2 — Segmentation Design
+
+`2-segmentation_rules.sh` creates the source-of-truth network contract consumed
+by later nftables and Windows Firewall tasks. It defines the DMZ, INTERNAL,
+MGMT and MEDDEV zones, their default policies, approved flows and explicit
+catch-all denies.
+
+The proposed zone ranges are:
+
+- DMZ: `10.10.20.0/24`
+- INTERNAL: `10.10.30.0/24`
+- MGMT: `10.10.40.0/24`
+- MEDDEV: `10.10.50.0/24`
+
+Generate and validate the contract:
+
+```bash
+chmod +x 2-segmentation_rules.sh
+shellcheck 2-segmentation_rules.sh
+./2-segmentation_rules.sh
+jq . segmentation_rules.json
+```
+
+Show only allowed flows:
+
+```bash
+jq '.flows[] | select(.action == "allow")' segmentation_rules.json
+```
+
+Show explicit denies:
+
+```bash
+jq '.flows[] | select(.action == "deny_all")' segmentation_rules.json
+```
+
+The script is idempotent: rerunning it recreates the same rule contract at the
+requested output path.
+
+---
 
