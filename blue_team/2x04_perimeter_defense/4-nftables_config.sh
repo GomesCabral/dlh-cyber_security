@@ -13,6 +13,9 @@ TEMP_FILE=""
 ROLLBACK_FILE=""
 RULESET_APPLIED=false
 
+# Named sets are rendered for every zone: DMZ, INTERNAL, MGMT and MEDDEV.
+# The resulting names are dmz_zone, internal_zone, mgmt_zone and meddev_zone.
+
 usage() {
     printf '%s\n' \
         'Usage: ./4-nftables_config.sh [--rules FILE] [--output FILE]' \
