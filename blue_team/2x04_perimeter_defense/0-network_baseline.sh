@@ -75,9 +75,16 @@ LISTENING_RAW="$TEMP_DIR/listening.txt"
 ESTABLISHED_RAW="$TEMP_DIR/established.txt"
 DNS_RAW="$TEMP_DIR/dns.json"
 
+# Active interfaces: retain interface name, MAC address, link state and addresses.
 ip -j addr show > "$INTERFACES_RAW"
+
+# Routes: retain every route, including the default gateway.
 ip -j route show table all > "$ROUTES_RAW"
+
+# ARP/neighbor table: retain neighbor IP, MAC address and reachability state.
 ip -j neigh show > "$NEIGHBORS_RAW"
+
+# Listening TCP/UDP sockets and established TCP connections with process ownership.
 ss -tulnpH > "$LISTENING_RAW"
 ss -tnpH state established > "$ESTABLISHED_RAW"
 
