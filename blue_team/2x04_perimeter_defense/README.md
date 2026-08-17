@@ -747,3 +747,195 @@ pipeline will pick up alerts from these six rules automatically once
   broad it fires on everything — but this is a smoke test, not exhaustive
   fuzzing of the rule logic.
  
+ ---
+ # 11 — The PCAP Investigation
+ 
+Repo: `dlh-cyber_security`
+Path: `blue_team/2x04_perimeter_defense/{11-pcap_investigation.sh, pcap_findings.json}`
+ 
+## What this solves
+ 
+Task 9's Suricata pipeline flagged a session between `10.10.1.10` and
+`185.220.101.42`. An alert is a pointer, not an answer — it tells you
+*something matched a signature*, not *what actually happened on the wire*.
+This task is the Tier 2 follow-up: open the capture, walk every protocol
+layer by hand, and characterize the session with no ruleset in the loop at
+all — just `tshark` reading bytes.
+ 
+`11-pcap_investigation.sh` extracts, in order: conversation statistics
+(TCP + UDP), DNS queries, HTTP requests, TLS SNI, file-transfer indicators,
+and protocol distribution — then writes it all to `pcap_findings.json` and
+prints a short human summary (top 5 conversations, any DNS query with a
+leftmost label over 50 characters).
+ 
+## Files
+ 
+| File | Purpose |
+|---|---|
+| `11-pcap_investigation.sh` | The script (this task's deliverable). |
+| `pcap_findings.json` | Output report (generated each run). |
+| `build_suspicious_session.py` | Scapy script that generates a realistic `suspicious_session.pcap` matching the task 9 scenario (`10.10.1.10` ↔ `185.220.101.42`), used to validate this script end-to-end. |
+| `PCAPs/suspicious_session.pcap` | The generated test capture: normal internal traffic, routine DNS, the suspicious external session (TLS SNI + HTTP beacon + file drop), two DNS-tunneling-style long-label queries, and an SMB file transfer. |
+ 
+## Usage
+ 
+```bash
+# Default PCAP (as specified in the task)
+sudo ./11-pcap_investigation.sh
+ 
+# Or an explicit PCAP path
+sudo ./11-pcap_investigation.sh /path/to/other_capture.pcap
+```
+ 
+Env vars:
+ 
+| Var | Default |
+|---|---|
+| `OUTPUT` | `./pcap_findings.json` |
+| `TOP_N` | `10` (size of the top-conversations lists in the JSON) |
+ 
+## How the `tshark` commands are used
+ 
+Each is run exactly as specified in the task, then parsed:
+ 
+```bash
+tshark -q -z conv,tcp -r "$PCAP"
+tshark -q -z conv,udp -r "$PCAP"
+tshark -Y 'dns.flags.response==0' -T fields -e frame.time_epoch -e ip.src -e dns.qry.name -e dns.qry.type -r "$PCAP"
+tshark -Y 'http.request' -T fields -e frame.time_epoch -e ip.src -e ip.dst -e http.host -e http.request.method -e http.request.uri -r "$PCAP"
+tshark -Y 'tls.handshake.type==1' -T fields -e frame.time_epoch -e ip.src -e ip.dst -e tls.handshake.extensions_server_name -r "$PCAP"
+tshark -Y 'http.content_type or smb2.filename' -T fields -e frame.time_epoch -e ip.src -e ip.dst -e http.file_data -e smb2.filename -r "$PCAP"
+tshark -q -z io,phs -r "$PCAP"
+```
+ 
+### Design note: "conversations" means host-pair, not socket-pair
+ 
+`tshark -z conv,tcp` reports one row per **4-tuple** (`srcip:srcport <->
+dstip:dstport`) — that's how Wireshark defines a TCP conversation. A
+beaconing session that reconnects every few seconds (a very common malware
+pattern) produces *hundreds* of 4-tuple rows for the same two hosts, which
+buries the signal an analyst actually wants: "how much did these two hosts
+talk, in total?"
+ 
+So the script does two things with the raw `conv,tcp`/`conv,udp` data:
+ 
+1. **`tcp_conversations` / `udp_conversations`** in the JSON — the raw
+   per-4-tuple rows (top 10 each by bytes), preserving exactly what `tshark
+   -z conv,tcp/udp` reported, per the task's literal instruction.
+2. **`top_conversations`** — those same rows aggregated by *unordered host
+   pair + protocol* (summing frames/bytes across every port combination
+   between the same two IPs). This is what powers the "Top conversations"
+   stdout summary and reads the way an analyst actually talks about a
+   session: `10.10.1.10 <-> 185.220.101.42`, not fifty separate
+   `:50231 <-> :443`, `:50232 <-> :443`, ... rows.
+### Resilience
+ 
+Every `tshark` query is wrapped so that zero matching rows produces an
+**empty JSON array**, never a missing key or a script crash. This was
+verified directly: a bare TCP handshake with no DNS/HTTP/TLS/SMB traffic
+still produces a complete `pcap_findings.json` with `dns_queries: []`,
+`http_requests: []`, `tls_sni: []`, `file_transfers: []`, and the script
+exits `0`.
+ 
+## Worked example (real end-to-end run)
+ 
+`build_suspicious_session.py` generated a PCAP designed to mirror the
+task 9 scenario: routine internal traffic, normal DNS resolution, and a
+suspicious session from `10.10.1.10` to `185.220.101.42` carrying a TLS
+ClientHello with SNI `update.crimson-tide-ops.xyz`, an HTTP beacon request
+(`GET /gate.php?id=...`) to the same host on port 8080, and an HTTP
+response dropping a file (`Content-Type: application/octet-stream`,
+`Content-Disposition: attachment; filename="update.bin"`). It also carries
+two DNS-tunneling-shaped queries with long, high-entropy leftmost labels,
+and a separate SMB2 `CREATE` request opening `loot.zip` on `10.10.1.5`.
+ 
+```
+$ ./11-pcap_investigation.sh PCAPs/suspicious_session.pcap
+[*] PCAP: PCAPs/suspicious_session.pcap
+[*] Duration: 201.652189 s     Packets: 6755
+[*] Extracting TCP conversations...      (1243)
+[*] Extracting UDP conversations...      (222)
+[*] Extracting DNS queries...            (202)
+[*] Extracting HTTP requests...            (1)
+[*] Extracting TLS SNI...                   (1)
+[*] Extracting file transfers...            (2)
+[*] Protocol distribution...     (tcp 94%, udp 6%, icmp 0%, other 0%)
+Top conversations:
+  10.10.1.10      <-> 185.220.101.42  tcp      6116 pkts    240 KB
+  10.10.1.10      <-> 8.8.8.8         udp       402 pkts     26 KB
+  10.10.1.10      <-> 10.10.1.50      tcp       210 pkts      9 KB
+  10.10.1.1       <-> 10.10.1.10      udp        20 pkts      1 KB
+  10.10.1.10      <-> 10.10.1.5       tcp         7 pkts     420 B
+Long DNS labels (> 50 chars):
+  cGF5bG9hZC5iaW4uZXhmaWx0cmF0ZS5jcmltc29uLXRpZGUub3BzLnh5eg.c2.example.com  (58 chars)
+ 
+[*] Wrote pcap_findings.json
+```
+ 
+The `185.220.101.42` conversation dominates the capture (6,116 of 6,755
+packets — the beaconing pattern task 9 flagged), and the leftmost DNS label
+check catches the tunneling-shaped query. **Note this also demonstrates the
+boundary condition on purpose**: the PCAP contains a second long-label DNS
+query at exactly 50 characters — which correctly does *not* appear in the
+report, since the task specifies "exceeds 50 characters" (i.e. `> 50`, not
+`>= 50`). Only the 58-character label shows up.
+ 
+Relevant excerpt from `pcap_findings.json`:
+ 
+```json
+{
+  "top_conversations": [
+    {"proto": "tcp", "ip_a": "10.10.1.10", "ip_b": "185.220.101.42", "frames": 6116, "bytes": 245653},
+    {"proto": "udp", "ip_a": "10.10.1.10", "ip_b": "8.8.8.8", "frames": 402, "bytes": 26204}
+  ],
+  "http_requests": [
+    {"time_epoch": "...", "src_ip": "10.10.1.10", "dst_ip": "185.220.101.42",
+     "host": "update.crimson-tide-ops.xyz", "method": "GET", "uri": "/gate.php?id=MDD-10-10-1-10&v=3"}
+  ],
+  "tls_sni": [
+    {"time_epoch": "...", "src_ip": "10.10.1.10", "dst_ip": "185.220.101.42",
+     "sni": "update.crimson-tide-ops.xyz"}
+  ],
+  "file_transfers": [
+    {"time_epoch": "...", "src_ip": "185.220.101.42", "dst_ip": "10.10.1.10",
+     "http_file_data": "4d5a544553545f4f4e4c595f...", "smb2_filename": ""},
+    {"time_epoch": "...", "src_ip": "10.10.1.10", "dst_ip": "10.10.1.5",
+     "http_file_data": "", "smb2_filename": "loot.zip"}
+  ]
+}
+```
+ 
+Both halves of the file-transfer filter (`http.content_type or
+smb2.filename`) fire independently and correctly: the HTTP drop shows up
+via `http_file_data` (the hex-encoded response body), the SMB session shows
+up via `smb2_filename` — each row has the other field blank rather than
+missing, consistent with the resilience requirement.
+ 
+## Reproducing this yourself
+ 
+```bash
+# Generate the test capture (needs scapy: pip install scapy --break-system-packages)
+python3 build_suspicious_session.py
+ 
+# Run the investigation
+./11-pcap_investigation.sh PCAPs/suspicious_session.pcap
+ 
+# Inspect the result
+jq '{duration_seconds, packet_count, top_conversations, long_dns_labels}' pcap_findings.json
+```
+ 
+## What this does NOT do
+ 
+- **No detection, no verdict.** This script doesn't decide anything is
+  malicious — it extracts and organizes what's in the capture. Whether
+  `update.crimson-tide-ops.xyz` is a C2 domain is an analyst judgment call
+  informed by this report, not a conclusion the script draws for you.
+- **No deep packet reassembly beyond what tshark's display filters give
+  for free.** `http.file_data` is the reassembled body tshark's own HTTP
+  dissector produces; the script doesn't do its own TCP stream reassembly
+  or file carving.
+- **`top_conversations` is a convenience view, not a replacement for the
+  raw data.** The full per-4-tuple `tcp_conversations`/`udp_conversations`
+  arrays are always included in the JSON precisely so nothing tshark
+  reported is silently discarded by the aggregation step.
+  

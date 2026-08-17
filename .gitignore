@@ -29,3 +29,5 @@ blue_team/2x04_perimeter_defense/labels/meddev_egress.pcap
 blue_team/2x04_perimeter_defense/labels/telnet_meddev.pcap
 blue_team/2x04_perimeter_defense/generate_labeled_pcaps.py
 blue_team/2x04_perimeter_defense/suricata_alerts.json
+blue_team/2x04_perimeter_defense/suspicious_session.pcap
+blue_team/2x04_perimeter_defense/PCAPs/suspicious_session.pcap

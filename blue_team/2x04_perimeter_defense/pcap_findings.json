@@ -1,0 +1,17 @@
+{
+  "pcap": "PCAPs/suspicious_session.pcap",
+  "duration_seconds": 201.652189,
+  "packet_count": 6755,
+  "protocol_distribution": {
+    "summary": "tcp 0%, udp 0%, icmp 0%, other 100%",
+    "raw": ""
+  },
+  "tcp_conversations": [],
+  "udp_conversations": [],
+  "top_conversations": [],
+  "dns_queries": [],
+  "long_dns_labels": [],
+  "http_requests": [],
+  "tls_sni": [],
+  "file_transfers": []
+}
