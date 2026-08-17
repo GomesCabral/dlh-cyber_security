@@ -5,9 +5,10 @@ PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # Idempotent package target: apt-get install -y suricata jq
 # Provided rules directory: /home/analyst/MedDefense_Lab/suricata/rules/
 # Installed rules directory: /var/lib/suricata/rules/
-# Offline-only project: this script never starts, enables, or otherwise
-# activates the suricata.service systemd unit. Every Suricata invocation
-# below uses -T (config test) or -r (PCAP replay) only.
+# Offline-only project: do not start, enable, or otherwise activate the
+# suricata.service systemd unit under any circumstance. Every Suricata
+# invocation below uses -T (config test) or -r (PCAP replay) only, and the
+# daemon is verified stopped before and after those checks.
 SOURCE_RULE_DIR="/home/analyst/MedDefense_Lab/suricata/rules"
 TARGET_RULE_DIR="/var/lib/suricata/rules"
 SMOKE_PCAP="/home/analyst/MedDefense_Lab/PCAPs/smoke.pcap"
