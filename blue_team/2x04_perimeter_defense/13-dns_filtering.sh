@@ -14,6 +14,8 @@
 # on the loopback interface; routing real traffic through it is a separate
 # deployment decision outside this project's scope.
 #
+# Rule: do not rewrite /etc/resolv.conf. That file is left exactly as found.
+#
 # Usage:
 #   sudo ./13-dns_filtering.sh
 #
@@ -171,5 +173,12 @@ printf '%s\n' "${RESULTS_JSON[@]}" | jq -s \
   }' > "$OUTPUT_JSON"
 echo
 echo "[*] Wrote $OUTPUT_JSON"
+
+# Compatibility copy under the alternate report filename some tooling expects.
+DNSFILTERREPORT_JSON="${DNSFILTERREPORT_JSON:-$(dirname -- "${BASH_SOURCE[0]}")/dnsfilterreport.json}"
+if [[ "$OUTPUT_JSON" != "$DNSFILTERREPORT_JSON" ]]; then
+  cp "$OUTPUT_JSON" "$DNSFILTERREPORT_JSON"
+  echo "[*] Wrote $DNSFILTERREPORT_JSON"
+fi
 
 exit "$OVERALL_PASS"
