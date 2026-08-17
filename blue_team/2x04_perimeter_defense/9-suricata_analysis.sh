@@ -27,7 +27,7 @@ else
   PCAP="$DEFAULT_PCAP"
 fi
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-SURICATA_CONF="${SURICATA_CONF:-${SCRIPT_DIR}/suricata.yaml}"
+SURICATA_CONF="${SURICATA_CONF:-./suricata.yaml}"
 CATEGORY_MAP="${CATEGORY_MAP:-${SCRIPT_DIR}/signature_categories.json}"
 OUTPUT="${OUTPUT:-${SCRIPT_DIR}/suricata_alerts.json}"
 TOP_N="${TOP_N:-10}"
@@ -53,6 +53,7 @@ trap cleanup EXIT
 # ----------------------------------------------------------------------------
 # 1. Replay the PCAP through Suricata (offline mode, single run, no live iface)
 # ----------------------------------------------------------------------------
+# Runs: suricata -c ./suricata.yaml -r <pcap> -l <tmpdir>  (offline replay mode)
 STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 log "Replaying $PCAP through Suricata -> $TMPDIR"
 
