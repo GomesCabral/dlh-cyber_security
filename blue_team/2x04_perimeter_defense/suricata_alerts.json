@@ -1,86 +1,91 @@
 {
-  "pcap": "/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap",
-  "started_at": "2026-08-17T10:00:00Z",
-  "finished_at": "2026-08-17T10:00:04Z",
-  "total_alerts": 3,
-  "unique_signatures": 3,
+  "pcap": "mixed_traffic_test.pcap",
+  "started_at": "2026-08-17T13:51:42Z",
+  "finished_at": "2026-08-17T13:51:43Z",
+  "total_alerts": 4,
+  "unique_signatures": 2,
   "severity_distribution": {
-    "1": 2,
-    "2": 1
+    "1": 4
   },
   "by_category": {
-    "exfiltration": 1,
-    "lateral_movement": 1,
-    "malware_c2": 1
+    "other": 4
   },
-  "by_signature": [
+  "by_signature": {
+    "MEDDEFENSE DNS Exfiltration Long TXT Query": 3,
+    "MEDDEFENSE EXPLOIT PsExec Service Install": 1
+  },
+  "top_sources": [
     {
-      "signature_id": 2029001,
-      "signature": "ET DNS Exfiltration Long TXT Query",
-      "classification": "exfiltration",
-      "count": 1
+      "ip": "10.10.1.10",
+      "count": 3
     },
     {
-      "signature_id": 2029002,
-      "signature": "ET EXPLOIT PsExec Service Install",
-      "classification": "lateral_movement",
-      "count": 1
-    },
-    {
-      "signature_id": 2029003,
-      "signature": "ET TROJAN Cobalt Strike Beacon",
-      "classification": "malware_c2",
+      "ip": "10.10.1.99",
       "count": 1
     }
   ],
-  "top_sources": [
-    {"src_ip": "10.10.1.10", "count": 2},
-    {"src_ip": "10.10.1.99", "count": 1}
-  ],
   "top_destinations": [
-    {"dst_ip": "10.10.1.10", "count": 1},
-    {"dst_ip": "185.220.101.42", "count": 1},
-    {"dst_ip": "8.8.8.8", "count": 1}
+    {
+      "ip": "8.8.8.8",
+      "count": 3
+    },
+    {
+      "ip": "10.10.1.10",
+      "count": 1
+    }
   ],
   "alerts": [
     {
-      "timestamp": "2026-08-17T10:00:01.000000+0000",
+      "timestamp": "2026-08-17T15:46:42.737069+0200",
       "src_ip": "10.10.1.99",
       "src_port": 49152,
       "dst_ip": "10.10.1.10",
       "dst_port": 445,
       "proto": "TCP",
-      "signature": "ET EXPLOIT PsExec Service Install",
-      "signature_id": 2029002,
-      "rule_category": "Attempted Administrator Privilege Gain",
+      "signature": "MEDDEFENSE EXPLOIT PsExec Service Install",
+      "signature_id": 9000002,
+      "category": "A Network Trojan was detected",
       "severity": 1,
-      "classification": "lateral_movement"
+      "classification": "other"
     },
     {
-      "timestamp": "2026-08-17T10:00:02.000000+0000",
-      "src_ip": "10.10.1.10",
-      "src_port": 51000,
-      "dst_ip": "185.220.101.42",
-      "dst_port": 443,
-      "proto": "TCP",
-      "signature": "ET TROJAN Cobalt Strike Beacon",
-      "signature_id": 2029003,
-      "rule_category": "A Network Trojan was detected",
-      "severity": 1,
-      "classification": "malware_c2"
-    },
-    {
-      "timestamp": "2026-08-17T10:00:03.000000+0000",
+      "timestamp": "2026-08-17T15:46:42.744069+0200",
       "src_ip": "10.10.1.10",
       "src_port": 53000,
       "dst_ip": "8.8.8.8",
       "dst_port": 53,
       "proto": "UDP",
-      "signature": "ET DNS Exfiltration Long TXT Query",
-      "signature_id": 2029001,
-      "rule_category": "Potential Corporate Privacy Violation",
-      "severity": 2,
-      "classification": "exfiltration"
+      "signature": "MEDDEFENSE DNS Exfiltration Long TXT Query",
+      "signature_id": 9000005,
+      "category": "Potential Corporate Privacy Violation",
+      "severity": 1,
+      "classification": "other"
+    },
+    {
+      "timestamp": "2026-08-17T15:46:42.754069+0200",
+      "src_ip": "10.10.1.10",
+      "src_port": 53001,
+      "dst_ip": "8.8.8.8",
+      "dst_port": 53,
+      "proto": "UDP",
+      "signature": "MEDDEFENSE DNS Exfiltration Long TXT Query",
+      "signature_id": 9000005,
+      "category": "Potential Corporate Privacy Violation",
+      "severity": 1,
+      "classification": "other"
+    },
+    {
+      "timestamp": "2026-08-17T15:46:42.764069+0200",
+      "src_ip": "10.10.1.10",
+      "src_port": 53002,
+      "dst_ip": "8.8.8.8",
+      "dst_port": 53,
+      "proto": "UDP",
+      "signature": "MEDDEFENSE DNS Exfiltration Long TXT Query",
+      "signature_id": 9000005,
+      "category": "Potential Corporate Privacy Violation",
+      "severity": 1,
+      "classification": "other"
     }
   ]
 }
