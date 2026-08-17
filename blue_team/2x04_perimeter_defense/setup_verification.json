@@ -1,0 +1,8 @@
+{
+  "installed_version": "not_run",
+  "rule_files_loaded": [],
+  "rule_count": 0,
+  "config_test_exit": null,
+  "smoke_pcap": "/home/analyst/MedDefense_Lab/PCAPs/smoke.pcap",
+  "smoke_alerts": 0
+}
