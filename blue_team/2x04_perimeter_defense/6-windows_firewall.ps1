@@ -1,3 +1,4 @@
+# File: 6-windows_firewall.ps1
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
     [Parameter()]
