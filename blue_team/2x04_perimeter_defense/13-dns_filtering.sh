@@ -45,6 +45,7 @@ DNSMASQ_VERSION="$(dnsmasq --version 2>&1 | head -1 | awk '{print $1, $3}')"
 printf '     %s\n' "$DNSMASQ_VERSION"
 
 command -v dig >/dev/null 2>&1 || die "dig (dnsutils/bind9-dnsutils) is required for validation"
+command -v jq  >/dev/null 2>&1 || die "jq is required to assemble dns_filtering.json"
 
 # ---------------------------------------------------------------------------
 # Preconditions on the inputs this script depends on but does not own
@@ -117,6 +118,7 @@ BLOCK_DOMAIN="$(grep -vE '^\s*(#|$)' "$BLOCKLIST" | head -1 | tr -d '[:space:]')
 [[ -n "$BLOCK_DOMAIN" ]] || die "blocklist has no usable entries: $BLOCKLIST"
 
 OVERALL_PASS=0
+declare -a RESULTS_JSON=()
 
 check_query() {
   local domain="$1" expected_label="$2" mode="$3"  # mode: allow | sinkhole
@@ -137,10 +139,37 @@ check_query() {
   printf '      -> %-24s expected %-9s %s\n' "${answer:-<no answer>}" "$expected_label" "$result"
 
   [[ "$result" == "PASS" ]] || OVERALL_PASS=1
+
+  RESULTS_JSON+=("$(jq -nc \
+    --arg domain "$domain" \
+    --arg expected "$expected_label" \
+    --arg answer "${answer:-}" \
+    --arg result "$result" \
+    '{domain: $domain, expected: $expected, answer: $answer, result: $result}')")
 }
 
 check_query "$ALLOW_DOMAIN" "allow" "allow"
 check_query "$BLOCK_DOMAIN" "sinkhole" "sinkhole"
 check_query "$UNLISTED_DOMAIN" "allow" "allow"
+
+# ---------------------------------------------------------------------------
+# Structured JSON summary (findings.json equivalent for this task) --
+# written with jq so the report is machine-parseable, not just stdout text.
+# ---------------------------------------------------------------------------
+OUTPUT_JSON="${OUTPUT_JSON:-$(dirname -- "${BASH_SOURCE[0]}")/dns_filtering.json}"
+printf '%s\n' "${RESULTS_JSON[@]}" | jq -s \
+  --arg dnsmasq_version "$DNSMASQ_VERSION" \
+  --argjson blocklist_domains "$DOMAIN_COUNT" \
+  --arg service_status "$STATUS" \
+  --argjson overall_pass "$([[ "$OVERALL_PASS" -eq 0 ]] && echo true || echo false)" \
+  '{
+    dnsmasq_version: $dnsmasq_version,
+    blocklist_domains: $blocklist_domains,
+    service_status: $service_status,
+    overall_pass: $overall_pass,
+    validations: .
+  }' > "$OUTPUT_JSON"
+echo
+echo "[*] Wrote $OUTPUT_JSON"
 
 exit "$OVERALL_PASS"
