@@ -5,6 +5,9 @@ PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # Idempotent package target: apt-get install -y suricata jq
 # Provided rules directory: /home/analyst/MedDefense_Lab/suricata/rules/
 # Installed rules directory: /var/lib/suricata/rules/
+# Offline-only project: this script never starts, enables, or otherwise
+# activates the suricata.service systemd unit. Every Suricata invocation
+# below uses -T (config test) or -r (PCAP replay) only.
 SOURCE_RULE_DIR="/home/analyst/MedDefense_Lab/suricata/rules"
 TARGET_RULE_DIR="/var/lib/suricata/rules"
 SMOKE_PCAP="/home/analyst/MedDefense_Lab/PCAPs/smoke.pcap"
@@ -12,6 +15,7 @@ SMOKE_LOG_DIR="/tmp/suricata-smoke"
 CONFIG_FILE="$PROJECT_DIR/suricata.yaml"
 PRECHANGE_FILE="$PROJECT_DIR/suricata_prechange_state.json"
 OUTPUT_FILE="$PROJECT_DIR/setup_verification.json"
+SURICATA_UNIT="suricata.service"
 
 require_root() {
     if [[ "$EUID" -ne 0 ]]; then
@@ -46,7 +50,8 @@ capture_prechange_state() {
         existing_rule_files="$(find "$TARGET_RULE_DIR" -maxdepth 1 -type f -name '*.rules' | wc -l)"
     fi
     if command -v systemctl >/dev/null 2>&1; then
-        service_state="$(systemctl is-active suricata 2>/dev/null || true)"
+        # Query-only: is-active never starts the unit, it only reports state.
+        service_state="$(systemctl is-active "$SURICATA_UNIT" 2>/dev/null || true)"
         service_state="${service_state:-unknown}"
     fi
 
@@ -80,10 +85,17 @@ install_dependencies() {
         printf '[*] Suricata and jq are already installed.\n'
     fi
 
-    # Offline-only project: ensure package installation did not leave a daemon running.
-    if command -v systemctl >/dev/null 2>&1 \
-        && systemctl is-active --quiet suricata 2>/dev/null; then
-        systemctl stop suricata
+    # Offline-only project: the suricata package may auto-enable and start
+    # suricata.service on install. This project never runs Suricata as a
+    # live daemon, so immediately stop and disable the unit if present.
+    if command -v systemctl >/dev/null 2>&1; then
+        if systemctl is-active --quiet "$SURICATA_UNIT" 2>/dev/null; then
+            printf '[*] Stopping %s (this project only runs Suricata in replay mode).\n' "$SURICATA_UNIT"
+            systemctl stop "$SURICATA_UNIT"
+        fi
+        if systemctl is-enabled --quiet "$SURICATA_UNIT" 2>/dev/null; then
+            systemctl disable "$SURICATA_UNIT" >/dev/null 2>&1 || true
+        fi
     fi
 }
 
@@ -241,6 +253,8 @@ main() {
     rule_count="$(count_active_rules)"
     installed_version="$(suricata -V 2>&1 | awk '{print $NF}' | tail -n 1)"
 
+    # Config test only: -T validates the ruleset/config and exits, it does
+    # not start suricata.service or bind to any interface.
     set +e
     suricata -T -c "$CONFIG_FILE" -v
     config_test_exit=$?
@@ -250,6 +264,8 @@ main() {
         install -d -m 0755 "$SMOKE_LOG_DIR"
         find "$SMOKE_LOG_DIR" -mindepth 1 -maxdepth 1 -type f -delete
 
+        # Offline replay only: -r reads a static PCAP file and exits when
+        # done. This does not start suricata.service or touch any interface.
         set +e
         suricata -c "$CONFIG_FILE" -r "$SMOKE_PCAP" -l "$SMOKE_LOG_DIR/"
         smoke_exit=$?
@@ -265,10 +281,20 @@ main() {
 
     write_verification "$installed_version" "$config_test_exit" "$smoke_alerts" "$rule_count"
 
+    # Final safety check: confirm suricata.service is not left running after
+    # the config test and smoke replay above.
+    if command -v systemctl >/dev/null 2>&1 \
+        && systemctl is-active --quiet "$SURICATA_UNIT" 2>/dev/null; then
+        printf 'Error: %s is active after setup; this project must not run the daemon.\n' \
+            "$SURICATA_UNIT" >&2
+        systemctl stop "$SURICATA_UNIT"
+        exit 1
+    fi
+
     printf '[*] Configuration: %s\n' "$CONFIG_FILE"
     printf '[*] Verification: %s\n' "$OUTPUT_FILE"
-    printf '[*] Config test exit: %d; smoke alerts: %d\n' \
-        "$config_test_exit" "$smoke_alerts"
+    printf '[*] %s left stopped; config test exit: %d; smoke alerts: %d\n' \
+        "$SURICATA_UNIT" "$config_test_exit" "$smoke_alerts"
 
     if [[ "$config_test_exit" -ne 0 || "$smoke_exit" -ne 0 || "$smoke_alerts" -lt 1 ]]; then
         printf 'Error: Suricata offline verification did not pass.\n' >&2
