@@ -79,6 +79,9 @@ jq -s \
   --slurpfile catmap "$CATEGORY_MAP" \
   '
   # ---- classify a signature string against the keyword/regex map ----------
+  # Each alert signature is labeled with one of the following categories
+  # (as defined in signature_categories.json): reconnaissance, exploit,
+  # lateral_movement, exfiltration, malware_c2, policy_violation, other.
   # First matching regex key (case-insensitive) wins; unmatched -> "other".
   def classify($sig):
     ($catmap[0] | to_entries
