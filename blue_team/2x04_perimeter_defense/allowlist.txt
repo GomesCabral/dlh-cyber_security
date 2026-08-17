@@ -1,0 +1,3 @@
+# MedDefense DNS allowlist -- known-good domains for validation
+billing.meddefense.local
+ubuntu.com

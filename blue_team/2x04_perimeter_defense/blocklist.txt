@@ -1,0 +1,12 @@
+# MedDefense DNS blocklist -- one domain per line
+# Lines starting with # are comments; blank lines are ignored
+c2.crimson-tide-ops.xyz
+update.crimson-tide-ops.xyz
+exfil.medthreatc2.net
+tunnel.example.net
+badactor-panel.ru
+stealer-c2.top
+phish-meddefense.com
+fake-billing-portal.net
+malware-drop.biz
+darkc2.onion.link
