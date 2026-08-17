@@ -181,4 +181,10 @@ if [[ "$OUTPUT_JSON" != "$DNSFILTERREPORT_JSON" ]]; then
   echo "[*] Wrote $DNSFILTERREPORT_JSON"
 fi
 
+DNS_FILTER_REPORT_JSON="${DNS_FILTER_REPORT_JSON:-$(dirname -- "${BASH_SOURCE[0]}")/dns_filter_report.json}"
+if [[ "$OUTPUT_JSON" != "$DNS_FILTER_REPORT_JSON" ]]; then
+  cp "$OUTPUT_JSON" "$DNS_FILTER_REPORT_JSON"
+  echo "[*] Wrote $DNS_FILTER_REPORT_JSON"
+fi
+
 exit "$OVERALL_PASS"
