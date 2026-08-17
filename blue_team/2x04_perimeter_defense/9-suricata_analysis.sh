@@ -20,7 +20,12 @@ set -euo pipefail
 # ----------------------------------------------------------------------------
 # Config / arguments
 # ----------------------------------------------------------------------------
-PCAP="${1:-/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap}"
+DEFAULT_PCAP="/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap"
+if [[ -n "${1:-}" ]]; then
+  PCAP="$1"
+else
+  PCAP="$DEFAULT_PCAP"
+fi
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 SURICATA_CONF="${SURICATA_CONF:-${SCRIPT_DIR}/suricata.yaml}"
 CATEGORY_MAP="${CATEGORY_MAP:-${SCRIPT_DIR}/signature_categories.json}"
