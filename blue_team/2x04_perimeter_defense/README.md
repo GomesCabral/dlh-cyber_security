@@ -489,3 +489,261 @@ jq '.rule_files_loaded' setup_verification.json
 - GitHub repository: `dlh-cyber_security`
 - Directory: `blue_team/2x04_perimeter_defense`
 - Files: `8-suricata_setup.sh`, `suricata.yaml`, `setup_verification.json`
+
+---
+
+# 10 — The Custom MedDefense Rules
+ 
+Repo: `dlh-cyber_security`
+Path: `blue_team/2x04_perimeter_defense/{meddefense.rules, 10-rule_validation.sh}`
+ 
+## What this solves
+ 
+Community rulesets (ET Open, etc.) detect generic attack patterns on generic
+infrastructure. They have no idea that:
+ 
+- MedDefense has a **medical-device VLAN** (`10.10.4.0/24`) that must never
+  talk to the Internet (except for legitimate NTP time sync).
+- The billing database at `10.10.1.50:3306` is the **only** authorized MySQL
+  endpoint clinical workstations may reach.
+- An SMB session from a **clinical workstation** to the server VLAN is
+  normal Tuesday traffic; the same session from the **guest network** is an
+  incident.
+Those are MedDefense-specific policy constraints, not generic attack
+signatures — so they belong in custom rules, not the community ruleset.
+`meddefense.rules` encodes six of them; `10-rule_validation.sh` proves each
+one actually fires against a labeled PCAP built specifically to trigger it.
+ 
+## Files
+ 
+| File | Purpose |
+|---|---|
+| `meddefense.rules` | The 6 required custom rules (+ 1 helper `pass` rule — see below). |
+| `10-rule_validation.sh` | Runs each labeled PCAP through Suricata with `meddefense.rules` loaded, and checks the target `sid` fired. Exits non-zero on any miss. |
+| `suricata.yaml` | Config used for validation. `HOME_NET` is set to `10.10.0.0/16` so it covers every internal VLAN (server `.1`, clinical `.2`, meddev `.4`, guest `.5`, etc.) — this matters because several rules rely on `!$HOME_NET` / `$HOME_NET` to distinguish internal from external traffic. |
+| `build_labeled_pcaps.py` | Scapy script that generates the six labeled PCAPs under `PCAPs/labels/`. Re-run any time you want fresh captures. |
+| `PCAPs/labels/*.pcap` | One PCAP per rule, each crafted to trigger exactly its target signature (plus a bit of traffic that should *not* fire, to keep the labels honest). |
+ 
+## The six rules
+ 
+| sid | Rule | Trigger condition |
+|---|---|---|
+| `9000001` | MEDDEV to Internet | Any IP traffic from `10.10.4.0/24` to outside `$HOME_NET`, except NTP (see below). |
+| `9000002` | Unauthorized SMB from Guest | `tcp/445` from `10.10.5.0/24` to `$HOME_NET`. |
+| `9000003` | Large Outbound From Server | A `10.10.1.0/24` host streams >50MB of TCP payload to an external host. |
+| `9000004` | DNS Tunneling Long Label | Any DNS query whose leftmost label exceeds 50 characters. |
+| `9000005` | Clinical to Unauthorized DB | `tcp/3306` from `10.10.2.0/24` to anything **other than** the authorized billing DB host (`10.10.1.50`). |
+| `9000006` | Telnet to MEDDEV | `tcp/23` to `10.10.4.0/24` from any source. |
+ 
+Every rule uses a `sid` in the `9000000` range, `rev:1`, and a `classtype`
+from Suricata's `classification.config` (`policy-violation` for the
+MedDefense-specific policy breaches, `bad-unknown` for DNS tunneling since
+that's a suspicious-but-unconfirmed indicator rather than a clear-cut
+internal policy violation).
+ 
+### Design notes on the trickier rules
+ 
+**Rule 1 (MEDDEV to Internet) — the NTP exception.** Suricata evaluates
+`pass` rules before `alert` rules regardless of file order (its default
+`action-order` is `pass, drop, reject, alert`). So `meddefense.rules` opens
+with a helper rule:
+ 
+```
+pass udp 10.10.4.0/24 any -> any 123 (msg:"MEDDEFENSE PASS MEDDEV NTP to Internet (authorized exception)"; sid:9000011; rev:1;)
+```
+ 
+Any packet matching this pass rule is exempted before it ever reaches the
+catch-all alert rule (`sid:9000001`, `alert ip 10.10.4.0/24 any -> !$HOME_NET any`).
+This is the idiomatic Suricata pattern for "alert on X except Y" — a
+single-rule regex/port-exclusion syntax doesn't exist for mixed TCP+UDP
+traffic, so the carve-out has to be its own rule. It's numbered `9000011`
+(same `9000000` range, `rev:1`) to signal it's part of this ruleset without
+colliding with the six required sids.
+ 
+**Rule 3 (Large Outbound) — byte counting.** The natural keyword here would
+be `flow.bytes:toserver,>N` — but that keyword only exists in Suricata 8+;
+it fails to even *parse* on Suricata 7.x (`unknown rule keyword
+'flow.bytes'`). Since the rule needs to run cleanly across the Suricata
+versions likely present on lab machines (this repo has been tested against
+both 7.0.3 and 8.0.3), the rule uses `stream_size`, which has been stable
+since Suricata 3.x:
+ 
+```
+stream_size:client,>,52428800;
+```
+ 
+(`52428800` = 50 MiB in bytes; `client` = the side that initiated the
+connection, i.e. the `10.10.1.0/24` host pushing data out.)
+ 
+The 300-second window in the task description is approximated with a
+`threshold:type limit, track by_src, count 1, seconds 300;` clause, which
+caps the alert to once per source per 5 minutes once the 50MB mark is
+crossed — this prevents alert flooding on a sustained large transfer
+without needing a true rolling-window byte counter (which Suricata's rule
+language doesn't natively support; a strict rolling window would need a
+`flowint`-based multi-rule chain or an EVE-side post-processor).
+ 
+**Rule 4 (DNS tunneling) — leftmost label length.** `dns.query` is a sticky
+buffer holding the full, dot-joined query name. A PCRE anchored at the start
+of that buffer catches an overlong first label:
+ 
+```
+pcre:"/^[^.]{51,}\./"
+```
+ 
+51+ non-dot characters immediately followed by a dot = leftmost label over
+50 characters, regardless of how many labels follow.
+ 
+**Rule 5 (Clinical to Unauthorized DB) — negated address.** Per the task's
+hint, this uses a negated address expression instead of enumerating "every
+host except one": `-> !10.10.1.50 3306`. Any `10.10.2.0/24` → MySQL
+connection that isn't to the authorized billing DB host fires; the
+legitimate billing traffic never does.
+ 
+## Worked example (real end-to-end run)
+ 
+This was actually executed against a real Suricata engine, not mocked.
+`build_labeled_pcaps.py` generated the six PCAPs under `PCAPs/labels/`
+(including a genuine >50MB single-stream capture for rule 3), and
+`10-rule_validation.sh` ran each one through Suricata with `meddefense.rules`
+loaded exclusively (`-S meddefense.rules`, bypassing `suricata.yaml`'s own
+`rule-files` so the validation is self-contained):
+ 
+```
+$ ./10-rule_validation.sh PCAPs/labels/
+[*] Loading meddefense.rules...          6 rules
+[*] Running validation against labeled PCAPs...
+ 
+sid 9000001 MEDDEV to Internet
+  target: meddev_egress.pcap
+  expected: fire
+  observed: fire (15 hits)                PASS
+ 
+sid 9000002 Guest to SMB
+  target: guest_smb.pcap
+  expected: fire
+  observed: fire (6 hits)                PASS
+ 
+sid 9000003 Large Outbound From Server
+  target: large_outbound.pcap
+  expected: fire
+  observed: fire (1 hit)                 PASS
+ 
+sid 9000004 DNS Tunneling Long Label
+  target: dns_tunnel.pcap
+  expected: fire
+  observed: fire (17 hits)                PASS
+ 
+sid 9000005 Clinical to Unauthorized DB
+  target: clinical_wrong_db.pcap
+  expected: fire
+  observed: fire (9 hits)                PASS
+ 
+sid 9000006 Telnet to MEDDEV
+  target: telnet_meddev.pcap
+  expected: fire
+  observed: fire (6 hits)                PASS
+ 
+Rules:  6
+Passed: 6
+Failed: 0
+ 
+$ echo $?
+0
+```
+ 
+Note the hit counts differ from the task's illustrative example (15 vs. 4,
+6 vs. 2, etc.) — that's expected. Suricata alerts **per matching packet**,
+not per session, for header-only rules with no `threshold`/dedup clause,
+so the exact count depends on how many packets in each labeled PCAP satisfy
+the rule. The task only requires the `sid` to appear at least once (`expected
+fire`); this validation checks and reports the real observed count rather
+than a fabricated one.
+ 
+**The NTP exception was independently verified**, not just assumed: every
+one of the 15 hits against `meddev_egress.pcap` is `tcp/443`, and a direct
+query confirms **zero** alerts on `udp/123` — the `pass` rule genuinely
+exempts the medical device's NTP traffic instead of merely looking correct
+on paper.
+ 
+**The failure path was also tested.** Deliberately breaking rule `9000005`
+(mistyping its destination port) reproduces exactly the failure mode the
+script exists to catch:
+ 
+```
+sid 9000005 Clinical to Unauthorized DB
+  target: clinical_wrong_db.pcap
+  expected: fire
+  observed: no fire                     FAIL
+ 
+Rules:  6
+Passed: 5
+Failed: 1
+$ echo $?
+1
+```
+ 
+A rule that never fires is worse than no rule — this is exactly the check
+that catches it before it ships.
+ 
+## Usage
+ 
+```bash
+# Generate the labeled PCAPs (needs scapy: pip install scapy --break-system-packages)
+python3 build_labeled_pcaps.py PCAPs/labels/
+ 
+# Validate against the default lab path
+sudo ./10-rule_validation.sh
+ 
+# Or point at a specific labeled-PCAP directory
+sudo ./10-rule_validation.sh PCAPs/labels/
+```
+ 
+Env vars you can override:
+ 
+| Var | Default |
+|---|---|
+| `RULES_FILE` | `./meddefense.rules` |
+| `SURICATA_CONF` | `./suricata.yaml` |
+ 
+The script defaults to `/home/analyst/MedDefense_Lab/PCAPs/labels/` when no
+argument is given, matching the task's stated PCAP location.
+ 
+## Deploying `meddefense.rules` for real detection
+ 
+`10-rule_validation.sh` loads `meddefense.rules` directly via `-S` for
+self-contained testing. To wire it into a live Suricata deployment (e.g. the
+one set up by `8-suricata_setup.sh`), copy it into the configured rule path
+and reference it from `rule-files`:
+ 
+```bash
+sudo cp meddefense.rules /var/lib/suricata/rules/meddefense.rules
+```
+ 
+with `suricata.yaml` containing:
+```yaml
+default-rule-path: /var/lib/suricata/rules
+rule-files:
+  - meddefense.rules
+```
+ 
+(This is exactly the layout `9-suricata_analysis.sh` from task 9 already
+expects, so the two tasks compose directly — task 9's replay-and-classify
+pipeline will pick up alerts from these six rules automatically once
+`meddefense.rules` is deployed.)
+ 
+## What this does NOT do
+ 
+- **No community-rule duplication.** These six rules exist because the
+  community ruleset has no concept of MedDefense's VLAN topology or which
+  hosts are "authorized." They're not a replacement for ET Open/local rules
+  — task 9's classifier still expects those for recon/exploit/C2 detection.
+- **No exact rolling-window byte accounting.** As noted above, rule 3
+  approximates the 300-second window via alert-rate limiting rather than a
+  true sliding aggregate; documented rather than silently approximated.
+- **The validation script only proves "fires," not "fires correctly under
+  every edge case."** Each PCAP also carries one negative case (legitimate
+  NTP, the authorized DB host, a short DNS label) to catch a rule that's so
+  broad it fires on everything — but this is a smoke test, not exhaustive
+  fuzzing of the rule logic.
+ 

@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 RULES="${RULE_FILE:-$SCRIPT_DIR/meddefense.rules}"
 LABEL_DIR="${LABEL_DIR:-/home/analyst/MedDefense_Lab/PCAPs/labels}"
 CONFIG="${SURICATA_CONFIG:-/etc/suricata/suricata.yaml}"
+OUTPUT_JSON="${OUTPUT_JSON:-$SCRIPT_DIR/rule_validation.json}"
 
 declare -a TESTS=(
   "9000001|MEDDEV TCP to Internet|meddev_egress.pcap"
@@ -42,6 +43,7 @@ unlink "$syntax_log"
 printf '[*] Running validation against labeled PCAPs...\n\n'
 passed=0
 failed=0
+declare -a RESULTS_JSON=()
 
 for test_case in "${TESTS[@]}"; do
   IFS='|' read -r sid name filename <<<"$test_case"
@@ -89,6 +91,15 @@ for test_case in "${TESTS[@]}"; do
     fi
   fi
   printf '%*s%s\n\n' 16 '' "$status"
+
+  RESULTS_JSON+=("$(jq -nc \
+    --argjson sid "$sid" \
+    --arg name "$name" \
+    --arg target "$filename" \
+    --argjson hits "$hits" \
+    --arg status "$status" \
+    '{sid: $sid, name: $name, target: $target, expected: "fire", observed_hits: $hits, status: $status}')")
+
   rm -rf -- "$logdir"
 done
 
@@ -96,4 +107,16 @@ printf 'Rules:  %s\n' "${#TESTS[@]}"
 printf 'Passed: %s\n' "$passed"
 printf 'Failed: %s\n' "$failed"
 
-((failed == 0))
+printf '%s\n' "${RESULTS_JSON[@]}" | jq -s \
+  --argjson rules "${#TESTS[@]}" \
+  --argjson passed "$passed" \
+  --argjson failed "$failed" \
+  '{rules: $rules, passed: $passed, failed: $failed, results: .}' \
+  > "$OUTPUT_JSON"
+printf '[*] Wrote %s\n' "$OUTPUT_JSON"
+
+if ((failed == 0)); then
+  exit 0
+else
+  exit 1
+fi
