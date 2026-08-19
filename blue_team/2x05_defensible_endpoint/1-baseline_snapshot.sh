@@ -21,6 +21,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CAPSTONE_DIR="${1:-$SCRIPT_DIR/capstone}"
 BASELINE_DIR="$CAPSTONE_DIR/baseline"
+# Writes: capstone/baseline/lynis_baseline.log
 LOG_FILE="$BASELINE_DIR/lynis_baseline.log"
 OUTPUT_JSON="$BASELINE_DIR/baseline_linux.json"
 LYNIS_REPORT_DAT="${LYNIS_REPORT_DAT:-/var/log/lynis-report.dat}"
