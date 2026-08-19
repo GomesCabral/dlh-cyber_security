@@ -172,6 +172,8 @@ fi
 
 # ---------------------------------------------------------------------------
 # Telemetry presence
+# Sysmon-for-Linux, if installed, ships a binary named `sysmon` (lowercase)
+# and/or lives at /opt/sysmon/sysmon -- both are checked below.
 # ---------------------------------------------------------------------------
 auditd_active="false"
 systemctl is-active --quiet auditd 2>/dev/null && auditd_active="true"
