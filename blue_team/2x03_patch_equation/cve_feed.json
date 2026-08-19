@@ -1,0 +1,114 @@
+{
+  "feed_metadata": {
+    "source": "exercise-snapshot",
+    "generated": "2026-08-01T00:00:00Z",
+    "note": "Static snapshot for training exercise. Not a live feed. Missing CVEs must not cause script failure."
+  },
+  "cves": {
+    "CVE-2024-1086": {
+      "package": "linux-image-generic",
+      "cvss": 7.8,
+      "severity": "high",
+      "in_cisa_kev": true,
+      "description": "Use-after-free in netfilter nf_tables component of the Linux kernel allowing local privilege escalation."
+    },
+    "CVE-2023-4911": {
+      "package": "libc6",
+      "cvss": 7.8,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Buffer overflow in the GNU C Library's dynamic loader (Looney Tunables)."
+    },
+    "CVE-2023-38408": {
+      "package": "openssh-client",
+      "cvss": 9.8,
+      "severity": "critical",
+      "in_cisa_kev": false,
+      "description": "PKCS#11 feature in ssh-agent allows remote code execution via a forwarded agent socket."
+    },
+    "CVE-2024-6387": {
+      "package": "openssh-server",
+      "cvss": 8.1,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Signal handler race condition in sshd (regreSSHion) allowing unauthenticated remote code execution."
+    },
+    "CVE-2023-5678": {
+      "package": "openssl",
+      "cvss": 5.3,
+      "severity": "medium",
+      "in_cisa_kev": false,
+      "description": "Excessive time spent checking DH keys and parameters in OpenSSL."
+    },
+    "CVE-2023-38545": {
+      "package": "curl",
+      "cvss": 7.5,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Heap buffer overflow in curl's SOCKS5 proxy handshake."
+    },
+    "CVE-2023-38546": {
+      "package": "curl",
+      "cvss": 3.7,
+      "severity": "low",
+      "in_cisa_kev": false,
+      "description": "Cookie injection with none file in curl."
+    },
+    "CVE-2023-4863": {
+      "package": "libwebp7",
+      "cvss": 8.8,
+      "severity": "high",
+      "in_cisa_kev": true,
+      "description": "Heap buffer overflow in WebP image handling."
+    },
+    "CVE-2022-3602": {
+      "package": "openssl",
+      "cvss": 7.5,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "X.509 email address 4-byte buffer overflow (punycode) in OpenSSL."
+    },
+    "CVE-2022-3786": {
+      "package": "openssl",
+      "cvss": 7.5,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "X.509 email address variable length buffer overflow (punycode) in OpenSSL."
+    },
+    "CVE-2023-32629": {
+      "package": "linux-image-generic",
+      "cvss": 7.8,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Improper privilege management in the Linux kernel OverlayFS subsystem (Ubuntu specific)."
+    },
+    "CVE-2023-2033": {
+      "package": "chromium-browser",
+      "cvss": 8.8,
+      "severity": "high",
+      "in_cisa_kev": true,
+      "description": "Type confusion in V8 in Google Chrome."
+    },
+    "CVE-2021-3156": {
+      "package": "sudo",
+      "cvss": 7.8,
+      "severity": "high",
+      "in_cisa_kev": false,
+      "description": "Heap-based buffer overflow in sudo (Baron Samedit)."
+    },
+    "CVE-2024-3094": {
+      "package": "xz-utils",
+      "cvss": 10.0,
+      "severity": "critical",
+      "in_cisa_kev": true,
+      "description": "Malicious backdoor introduced into xz/liblzma build process affecting sshd via systemd."
+    },
+    "CVE-2023-45853": {
+      "package": "zlib1g",
+      "cvss": 9.8,
+      "severity": "critical",
+      "in_cisa_kev": false,
+      "description": "Integer overflow in MiniZip component distributed with zlib."
+    }
+  }
+}

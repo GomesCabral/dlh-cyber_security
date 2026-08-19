@@ -1,0 +1,496 @@
+{
+  "metadata": {
+    "package": "2x02 Eyes on Endpoint - Consolidated Attacker Ground Truth",
+    "generated_at_utc": "2026-08-10T13:17:14Z",
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "windows_actions": 6,
+    "linux_actions": 6,
+    "total_actions": 12
+  },
+  "windows": {
+    "metadata": {
+      "simulation": "MedDefense Windows Attacker Simulation",
+      "hostname": "DC01",
+      "platform": "Windows",
+      "host_type": "Domain Controller",
+      "generated_at": "2026-08-10T10:31:12.7592890Z",
+      "action_count": 6,
+      "controlled_simulation": true
+    },
+    "actions": [
+      {
+        "action_number": 1,
+        "description": "Created temporary support_update account",
+        "timestamp": "2026-08-10T10:29:58.9803923Z",
+        "expected_detection_source": [
+          "Security Event ID 4720",
+          "Sysmon Event ID 1"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1136",
+          "technique_name": "Create Account"
+        },
+        "status": "executed",
+        "details": {
+          "account": "support_update",
+          "account_type": "domain"
+        },
+        "platform": "Windows"
+      },
+      {
+        "action_number": 2,
+        "description": "Added support_update to Administrators group",
+        "timestamp": "2026-08-10T10:29:59.1681554Z",
+        "expected_detection_source": [
+          "Security Event ID 4732",
+          "Sysmon Event ID 1"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1098",
+          "technique_name": "Account Manipulation"
+        },
+        "status": "executed",
+        "details": {
+          "account": "support_update",
+          "group": "Administrators"
+        },
+        "platform": "Windows"
+      },
+      {
+        "action_number": 3,
+        "description": "Executed harmless encoded PowerShell payload",
+        "timestamp": "2026-08-10T10:30:00.4834655Z",
+        "expected_detection_source": [
+          "Sysmon Event ID 1",
+          "PowerShell Event ID 4104",
+          "Security Event ID 4688"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1059.001",
+          "technique_name": "PowerShell"
+        },
+        "status": "executed",
+        "details": {
+          "encoded_command": "VwByAGkAdABlAC0ASABvAHMAdAAgACIAQwAyACAAYgBlAGEAYwBvAG4AIgA=",
+          "payload": "Write-Host \"C2 beacon\""
+        },
+        "platform": "Windows"
+      },
+      {
+        "action_number": 4,
+        "description": "Created controlled scheduled task persistence artifact",
+        "timestamp": "2026-08-10T10:30:00.7377083Z",
+        "expected_detection_source": [
+          "Security Event ID 4698",
+          "Sysmon Event ID 1"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1053.005",
+          "technique_name": "Scheduled Task/Job: Scheduled Task"
+        },
+        "status": "executed",
+        "details": {
+          "command": "cmd.exe /c exit 0",
+          "task_name": "MedDefense-Sim-Persistence"
+        },
+        "platform": "Windows"
+      },
+      {
+        "action_number": 5,
+        "description": "Initiated controlled outbound TCP connection",
+        "timestamp": "2026-08-10T10:31:12.5024432Z",
+        "expected_detection_source": [
+          "Sysmon Event ID 3"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1071",
+          "technique_name": "Application Layer Protocol"
+        },
+        "status": "executed",
+        "details": {
+          "tcp_test_succeeded": false,
+          "destination_ip": "1.1.1.1",
+          "destination_port": 443
+        },
+        "platform": "Windows"
+      },
+      {
+        "action_number": 6,
+        "description": "Dropped harmless file in Windows Startup directory",
+        "timestamp": "2026-08-10T10:31:12.7190111Z",
+        "expected_detection_source": [
+          "Sysmon Event ID 11"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1547.001",
+          "technique_name": "Registry Run Keys / Startup Folder"
+        },
+        "status": "executed",
+        "details": {
+          "target_file": "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\meddefense_simulation.txt"
+        },
+        "platform": "Windows"
+      }
+    ]
+  },
+  "linux": {
+    "metadata": {
+      "simulation": "MedDefense Linux Attacker Simulation",
+      "hostname": "gomescabral-VirtualBox",
+      "platform": "Linux",
+      "generated_at": "2026-08-10T11:06:08Z",
+      "action_count": 6,
+      "controlled_simulation": true
+    },
+    "actions": [
+      {
+        "action_number": 1,
+        "description": "Created temporary local account testattacker",
+        "timestamp": "2026-08-10T11:06:06Z",
+        "expected_detection_source": [
+          "auditd user/account management",
+          "auth log"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1136.001",
+          "technique_name": "Create Account: Local Account"
+        },
+        "status": "executed",
+        "details": {
+          "user": "testattacker"
+        },
+        "platform": "Linux"
+      },
+      {
+        "action_number": 2,
+        "description": "Created sudoers rule granting passwordless sudo",
+        "timestamp": "2026-08-10T11:06:06Z",
+        "expected_detection_source": [
+          "auditd file modification",
+          "auditd syscall"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1548.003",
+          "technique_name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching"
+        },
+        "status": "executed",
+        "details": {
+          "path": "/etc/sudoers.d/backdoor",
+          "user": "testattacker"
+        },
+        "platform": "Linux"
+      },
+      {
+        "action_number": 3,
+        "description": "Executed copied binary from /tmp",
+        "timestamp": "2026-08-10T11:06:06Z",
+        "expected_detection_source": [
+          "auditd execve",
+          "process telemetry"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1059",
+          "technique_name": "Command and Scripting Interpreter"
+        },
+        "status": "executed",
+        "details": {
+          "source_binary": "/usr/bin/true",
+          "target_binary": "/tmp/suspicious_bin"
+        },
+        "platform": "Linux"
+      },
+      {
+        "action_number": 4,
+        "description": "Attempted localhost-only reverse shell connection",
+        "timestamp": "2026-08-10T11:06:08Z",
+        "expected_detection_source": [
+          "auditd execve",
+          "network telemetry"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1059.004",
+          "technique_name": "Command and Scripting Interpreter: Unix Shell"
+        },
+        "status": "executed",
+        "details": {
+          "destination_ip": "127.0.0.1",
+          "destination_port": 4444,
+          "exit_code": 1,
+          "localhost_only": true
+        },
+        "platform": "Linux"
+      },
+      {
+        "action_number": 5,
+        "description": "Created controlled cron persistence artifact",
+        "timestamp": "2026-08-10T11:06:08Z",
+        "expected_detection_source": [
+          "auditd file modification",
+          "cron telemetry"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1053.003",
+          "technique_name": "Scheduled Task/Job: Cron"
+        },
+        "status": "executed",
+        "details": {
+          "cron_file": "/etc/cron.d/persistence_test",
+          "command": "/tmp/beacon.sh"
+        },
+        "platform": "Linux"
+      },
+      {
+        "action_number": 6,
+        "description": "Read sensitive file /etc/shadow",
+        "timestamp": "2026-08-10T11:06:08Z",
+        "expected_detection_source": [
+          "auditd file access",
+          "auditd syscall"
+        ],
+        "mitre_attack": {
+          "technique_id": "T1005",
+          "technique_name": "Data from Local System"
+        },
+        "status": "executed",
+        "details": {
+          "path": "/etc/shadow",
+          "operation": "read"
+        },
+        "platform": "Linux"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action_number": 1,
+      "description": "Created temporary support_update account",
+      "timestamp": "2026-08-10T10:29:58.9803923Z",
+      "expected_detection_source": [
+        "Security Event ID 4720",
+        "Sysmon Event ID 1"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1136",
+        "technique_name": "Create Account"
+      },
+      "status": "executed",
+      "details": {
+        "account": "support_update",
+        "account_type": "domain"
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 2,
+      "description": "Added support_update to Administrators group",
+      "timestamp": "2026-08-10T10:29:59.1681554Z",
+      "expected_detection_source": [
+        "Security Event ID 4732",
+        "Sysmon Event ID 1"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1098",
+        "technique_name": "Account Manipulation"
+      },
+      "status": "executed",
+      "details": {
+        "account": "support_update",
+        "group": "Administrators"
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 3,
+      "description": "Executed harmless encoded PowerShell payload",
+      "timestamp": "2026-08-10T10:30:00.4834655Z",
+      "expected_detection_source": [
+        "Sysmon Event ID 1",
+        "PowerShell Event ID 4104",
+        "Security Event ID 4688"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell"
+      },
+      "status": "executed",
+      "details": {
+        "encoded_command": "VwByAGkAdABlAC0ASABvAHMAdAAgACIAQwAyACAAYgBlAGEAYwBvAG4AIgA=",
+        "payload": "Write-Host \"C2 beacon\""
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 4,
+      "description": "Created controlled scheduled task persistence artifact",
+      "timestamp": "2026-08-10T10:30:00.7377083Z",
+      "expected_detection_source": [
+        "Security Event ID 4698",
+        "Sysmon Event ID 1"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1053.005",
+        "technique_name": "Scheduled Task/Job: Scheduled Task"
+      },
+      "status": "executed",
+      "details": {
+        "command": "cmd.exe /c exit 0",
+        "task_name": "MedDefense-Sim-Persistence"
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 5,
+      "description": "Initiated controlled outbound TCP connection",
+      "timestamp": "2026-08-10T10:31:12.5024432Z",
+      "expected_detection_source": [
+        "Sysmon Event ID 3"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1071",
+        "technique_name": "Application Layer Protocol"
+      },
+      "status": "executed",
+      "details": {
+        "tcp_test_succeeded": false,
+        "destination_ip": "1.1.1.1",
+        "destination_port": 443
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 6,
+      "description": "Dropped harmless file in Windows Startup directory",
+      "timestamp": "2026-08-10T10:31:12.7190111Z",
+      "expected_detection_source": [
+        "Sysmon Event ID 11"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1547.001",
+        "technique_name": "Registry Run Keys / Startup Folder"
+      },
+      "status": "executed",
+      "details": {
+        "target_file": "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\meddefense_simulation.txt"
+      },
+      "platform": "Windows"
+    },
+    {
+      "action_number": 1,
+      "description": "Created temporary local account testattacker",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd user/account management",
+        "auth log"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1136.001",
+        "technique_name": "Create Account: Local Account"
+      },
+      "status": "executed",
+      "details": {
+        "user": "testattacker"
+      },
+      "platform": "Linux"
+    },
+    {
+      "action_number": 2,
+      "description": "Created sudoers rule granting passwordless sudo",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd file modification",
+        "auditd syscall"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1548.003",
+        "technique_name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching"
+      },
+      "status": "executed",
+      "details": {
+        "path": "/etc/sudoers.d/backdoor",
+        "user": "testattacker"
+      },
+      "platform": "Linux"
+    },
+    {
+      "action_number": 3,
+      "description": "Executed copied binary from /tmp",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd execve",
+        "process telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1059",
+        "technique_name": "Command and Scripting Interpreter"
+      },
+      "status": "executed",
+      "details": {
+        "source_binary": "/usr/bin/true",
+        "target_binary": "/tmp/suspicious_bin"
+      },
+      "platform": "Linux"
+    },
+    {
+      "action_number": 4,
+      "description": "Attempted localhost-only reverse shell connection",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd execve",
+        "network telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1059.004",
+        "technique_name": "Command and Scripting Interpreter: Unix Shell"
+      },
+      "status": "executed",
+      "details": {
+        "destination_ip": "127.0.0.1",
+        "destination_port": 4444,
+        "exit_code": 1,
+        "localhost_only": true
+      },
+      "platform": "Linux"
+    },
+    {
+      "action_number": 5,
+      "description": "Created controlled cron persistence artifact",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd file modification",
+        "cron telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1053.003",
+        "technique_name": "Scheduled Task/Job: Cron"
+      },
+      "status": "executed",
+      "details": {
+        "cron_file": "/etc/cron.d/persistence_test",
+        "command": "/tmp/beacon.sh"
+      },
+      "platform": "Linux"
+    },
+    {
+      "action_number": 6,
+      "description": "Read sensitive file /etc/shadow",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd file access",
+        "auditd syscall"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1005",
+        "technique_name": "Data from Local System"
+      },
+      "status": "executed",
+      "details": {
+        "path": "/etc/shadow",
+        "operation": "read"
+      },
+      "platform": "Linux"
+    }
+  ]
+}

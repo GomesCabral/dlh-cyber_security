@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "report": "2x02 Eyes on Endpoint - Cross-Platform Coverage Assessment",
+    "generated_at_utc": "2026-08-10T13:45:00Z",
+    "inputs": [
+      "telemetry_handoff/windows_events.json",
+      "telemetry_handoff/linux_events.json",
+      "telemetry_handoff/attack_ground_truth.json",
+      "windows_detection_matrix.json",
+      "linux_detection_matrix.json",
+      "windows_telemetry_quality.json",
+      "linux_telemetry_quality.json",
+      "sysmon_coverage_matrix.json"
+    ]
+  },
+  "total_events": {
+    "total": 14334,
+    "by_platform": {
+      "Windows": 2544,
+      "Linux": 11790
+    },
+    "by_source_type": {
+      "Windows": [
+        {
+          "value": "PowerShell",
+          "count": 678,
+          "percentage_of_platform": 26.650943396226417
+        },
+        {
+          "value": "Security",
+          "count": 1217,
+          "percentage_of_platform": 47.838050314465406
+        },
+        {
+          "value": "Sysmon",
+          "count": 649,
+          "percentage_of_platform": 25.511006289308174
+        }
+      ],
+      "Linux": [
+        {
+          "value": "auth.log",
+          "count": 90,
+          "percentage_of_platform": 0.7633587786259541
+        },
+        {
+          "value": "syslog",
+          "count": 11700,
+          "percentage_of_platform": 99.23664122137404
+        }
+      ]
+    },
+    "by_event_category": {
+      "Windows": [
+        {
+          "value": "authentication_failure",
+          "count": 1,
+          "percentage_of_platform": 0.039308176100628936
+        },
+        {
+          "value": "authentication_success",
+          "count": 1055,
+          "percentage_of_platform": 41.47012578616352
+        },
+        {
+          "value": "dns_query",
+          "count": 252,
+          "percentage_of_platform": 9.90566037735849
+        },
+        {
+          "value": "file_creation",
+          "count": 78,
+          "percentage_of_platform": 3.0660377358490565
+        },
+        {
+          "value": "network_connection",
+          "count": 22,
+          "percentage_of_platform": 0.8647798742138365
+        },
+        {
+          "value": "powershell",
+          "count": 138,
+          "percentage_of_platform": 5.4245283018867925
+        },
+        {
+          "value": "powershell_module_logging",
+          "count": 208,
+          "percentage_of_platform": 8.176100628930817
+        },
+        {
+          "value": "powershell_script_block",
+          "count": 332,
+          "percentage_of_platform": 13.050314465408805
+        },
+        {
+          "value": "process_creation",
+          "count": 77,
+          "percentage_of_platform": 3.0267295597484276
+        },
+        {
+          "value": "registry_modification",
+          "count": 257,
+          "percentage_of_platform": 10.102201257861635
+        },
+        {
+          "value": "remote_thread_creation",
+          "count": 1,
+          "percentage_of_platform": 0.039308176100628936
+        },
+        {
+          "value": "sysmon",
+          "count": 28,
+          "percentage_of_platform": 1.10062893081761
+        },
+        {
+          "value": "windows_security",
+          "count": 95,
+          "percentage_of_platform": 3.734276729559748
+        }
+      ],
+      "Linux": [
+        {
+          "value": "error",
+          "count": 570,
+          "percentage_of_platform": 4.8346055979643765
+        },
+        {
+          "value": "other",
+          "count": 8787,
+          "percentage_of_platform": 74.529262086514
+        },
+        {
+          "value": "pam",
+          "count": 75,
+          "percentage_of_platform": 0.6361323155216284
+        },
+        {
+          "value": "service",
+          "count": 2343,
+          "percentage_of_platform": 19.872773536895675
+        },
+        {
+          "value": "sudo",
+          "count": 15,
+          "percentage_of_platform": 0.1272264631043257
+        }
+      ]
+    }
+  },
+  "detection_matrix_summary": {
+    "total_simulated_actions": 12,
+    "captured_actions": 9,
+    "missed_actions": 3,
+    "multi_source_detections": 1,
+    "by_platform": {
+      "Windows": {
+        "total": 6,
+        "captured": 3,
+        "multi_source": 1
+      },
+      "Linux": {
+        "total": 6,
+        "captured": 6,
+        "multi_source": 0
+      }
+    }
+  },
+  "attack_coverage": {
+    "covered_count": 9,
+    "partial_count": 0,
+    "blind_count": 3,
+    "covered_techniques": [
+      {
+        "technique_id": "T1005",
+        "technique_name": "Data from Local System",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1053.003",
+        "technique_name": "Scheduled Task/Job: Cron",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1053.005",
+        "technique_name": "Scheduled Task/Job: Scheduled Task",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [
+          "Sysmon"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1059",
+        "technique_name": "Command and Scripting Interpreter",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1059.001",
+        "technique_name": "PowerShell",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [
+          "PS ScriptBlock",
+          "Sysmon"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1059.004",
+        "technique_name": "Command and Scripting Interpreter: Unix Shell",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1136.001",
+        "technique_name": "Create Account: Local Account",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1547.001",
+        "technique_name": "Registry Run Keys / Startup Folder",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [
+          "Sysmon"
+        ],
+        "coverage": "covered"
+      },
+      {
+        "technique_id": "T1548.003",
+        "technique_name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
+        "platforms": [
+          "Linux"
+        ],
+        "action_count": 1,
+        "sources": [
+          "auditd"
+        ],
+        "coverage": "covered"
+      }
+    ],
+    "partially_covered_techniques": [],
+    "blind_techniques": [
+      {
+        "technique_id": "T1071",
+        "technique_name": "Application Layer Protocol",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [],
+        "coverage": "blind"
+      },
+      {
+        "technique_id": "T1098",
+        "technique_name": "Account Manipulation",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [],
+        "coverage": "blind"
+      },
+      {
+        "technique_id": "T1136",
+        "technique_name": "Create Account",
+        "platforms": [
+          "Windows"
+        ],
+        "action_count": 1,
+        "sources": [],
+        "coverage": "blind"
+      }
+    ]
+  },
+  "known_gaps": [
+    {
+      "description": "No adequate detection was found for simulated action: Added support_update to Administrators group",
+      "impacted_platform": "Windows",
+      "impacted_technique": "T1098",
+      "reason": "The detection matrix did not contain a captured event for this ground-truth action.",
+      "recommended_instrumentation_improvement": "Review Windows audit policy, Sysmon configuration, PowerShell logging, and required event fields for this technique."
+    },
+    {
+      "description": "No adequate detection was found for simulated action: Created temporary support_update account",
+      "impacted_platform": "Windows",
+      "impacted_technique": "T1136",
+      "reason": "The detection matrix did not contain a captured event for this ground-truth action.",
+      "recommended_instrumentation_improvement": "Review Windows audit policy, Sysmon configuration, PowerShell logging, and required event fields for this technique."
+    },
+    {
+      "description": "No adequate detection was found for simulated action: Initiated controlled outbound TCP connection",
+      "impacted_platform": "Windows",
+      "impacted_technique": "T1071",
+      "reason": "The detection matrix did not contain a captured event for this ground-truth action.",
+      "recommended_instrumentation_improvement": "Review Windows audit policy, Sysmon configuration, PowerShell logging, and required event fields for this technique."
+    }
+  ],
+  "quality_summary": {
+    "Windows": {
+      "score": 40.47,
+      "source_assessment": "poor"
+    },
+    "Linux": {
+      "score": 23.20,
+      "source_assessment": "poor"
+    },
+    "average_score": 31.835,
+    "final_handoff_confidence": "poor",
+    "confidence_logic": "poor if any blind ATT&CK technique exists or average quality <65; acceptable if any partial technique exists or average quality <90; otherwise good"
+  }
+}

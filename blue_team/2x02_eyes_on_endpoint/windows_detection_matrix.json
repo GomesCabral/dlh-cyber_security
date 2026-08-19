@@ -1,0 +1,161 @@
+﻿{
+    "metadata":  {
+                     "generated_at_utc":  "2026-08-10T10:31:41.7596306Z",
+                     "ground_truth_file":  "\\\\VBOXSVR\\dlh-cyber_security\\blue_team\\2x02_eyes_on_endpoint\\windows_attack_log.json",
+                     "window_seconds":  30,
+                     "total_actions":  6,
+                     "captured_actions":  3,
+                     "capture_rate_percent":  50,
+                     "multi_source_actions":  1
+                 },
+    "detections":  [
+                       {
+                           "action_number":  1,
+                           "action":  "Create user",
+                           "source":  "Security",
+                           "log_name":  "Security",
+                           "event_id":  4720,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  1,
+                           "action":  "Create user",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  1,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  2,
+                           "action":  "Add to Administrators",
+                           "source":  "Security",
+                           "log_name":  "Security",
+                           "event_id":  4732,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  2,
+                           "action":  "Add to Administrators",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  1,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  3,
+                           "action":  "Encoded PowerShell",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  1,
+                           "detail":  "Full",
+                           "status":  "[CAPTURED]",
+                           "key_fields":  {
+                                              "CommandLine":  "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -enc VwByAGkAdABlAC0ASABvAHMAdAAgACIAQwAyACAAYgBlAGEAYwBvAG4AIgA=",
+                                              "User":  "MEDDEFENSE\\analyst",
+                                              "Image":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+                                          },
+                           "matched_time_utc":  "2026-08-10T10:29:59.2760783Z"
+                       },
+                       {
+                           "action_number":  3,
+                           "action":  "Encoded PowerShell",
+                           "source":  "PS ScriptBlock",
+                           "log_name":  "Microsoft-Windows-PowerShell/Operational",
+                           "event_id":  4104,
+                           "detail":  "Full",
+                           "status":  "[CAPTURED]",
+                           "key_fields":  {
+                                              "ScriptBlockText":  "Write-Host \"C2 beacon\""
+                                          },
+                           "matched_time_utc":  "2026-08-10T10:30:00.0816580Z"
+                       },
+                       {
+                           "action_number":  3,
+                           "action":  "Encoded PowerShell",
+                           "source":  "Security",
+                           "log_name":  "Security",
+                           "event_id":  4688,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  4,
+                           "action":  "Scheduled task",
+                           "source":  "Security",
+                           "log_name":  "Security",
+                           "event_id":  4698,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  4,
+                           "action":  "Scheduled task",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  1,
+                           "detail":  "Full",
+                           "status":  "[CAPTURED]",
+                           "key_fields":  {
+                                              "CommandLine":  "\"C:\\Windows\\System32\\schtasks.exe\" /Create /TN MedDefense-Sim-Persistence /SC ONLOGON /TR \"cmd.exe /c exit 0\" /F",
+                                              "User":  "MEDDEFENSE\\analyst",
+                                              "Image":  "C:\\Windows\\System32\\schtasks.exe"
+                                          },
+                           "matched_time_utc":  "2026-08-10T10:30:00.5696702Z"
+                       },
+                       {
+                           "action_number":  5,
+                           "action":  "Outbound connection",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  3,
+                           "detail":  "None",
+                           "status":  "[MISSED]",
+                           "key_fields":  {
+
+                                          },
+                           "matched_time_utc":  null
+                       },
+                       {
+                           "action_number":  6,
+                           "action":  "Startup file drop",
+                           "source":  "Sysmon",
+                           "log_name":  "Microsoft-Windows-Sysmon/Operational",
+                           "event_id":  11,
+                           "detail":  "Full",
+                           "status":  "[CAPTURED]",
+                           "key_fields":  {
+                                              "Image":  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                                              "TargetFilename":  "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\meddefense_simulation.txt"
+                                          },
+                           "matched_time_utc":  "2026-08-10T10:31:12.7229014Z"
+                       }
+                   ]
+}

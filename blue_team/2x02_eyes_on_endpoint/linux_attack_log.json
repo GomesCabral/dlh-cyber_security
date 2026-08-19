@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "simulation": "MedDefense Linux Attacker Simulation",
+    "hostname": "gomescabral-VirtualBox",
+    "platform": "Linux",
+    "generated_at": "2026-08-10T11:06:08Z",
+    "action_count": 6,
+    "controlled_simulation": true
+  },
+  "actions": [
+    {
+      "action_number": 1,
+      "description": "Created temporary local account testattacker",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd user/account management",
+        "auth log"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1136.001",
+        "technique_name": "Create Account: Local Account"
+      },
+      "status": "executed",
+      "details": {
+        "user": "testattacker"
+      }
+    },
+    {
+      "action_number": 2,
+      "description": "Created sudoers rule granting passwordless sudo",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd file modification",
+        "auditd syscall"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1548.003",
+        "technique_name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching"
+      },
+      "status": "executed",
+      "details": {
+        "path": "/etc/sudoers.d/backdoor",
+        "user": "testattacker"
+      }
+    },
+    {
+      "action_number": 3,
+      "description": "Executed copied binary from /tmp",
+      "timestamp": "2026-08-10T11:06:06Z",
+      "expected_detection_source": [
+        "auditd execve",
+        "process telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1059",
+        "technique_name": "Command and Scripting Interpreter"
+      },
+      "status": "executed",
+      "details": {
+        "source_binary": "/usr/bin/true",
+        "target_binary": "/tmp/suspicious_bin"
+      }
+    },
+    {
+      "action_number": 4,
+      "description": "Attempted localhost-only reverse shell connection",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd execve",
+        "network telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1059.004",
+        "technique_name": "Command and Scripting Interpreter: Unix Shell"
+      },
+      "status": "executed",
+      "details": {
+        "destination_ip": "127.0.0.1",
+        "destination_port": 4444,
+        "exit_code": 1,
+        "localhost_only": true
+      }
+    },
+    {
+      "action_number": 5,
+      "description": "Created controlled cron persistence artifact",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd file modification",
+        "cron telemetry"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1053.003",
+        "technique_name": "Scheduled Task/Job: Cron"
+      },
+      "status": "executed",
+      "details": {
+        "cron_file": "/etc/cron.d/persistence_test",
+        "command": "/tmp/beacon.sh"
+      }
+    },
+    {
+      "action_number": 6,
+      "description": "Read sensitive file /etc/shadow",
+      "timestamp": "2026-08-10T11:06:08Z",
+      "expected_detection_source": [
+        "auditd file access",
+        "auditd syscall"
+      ],
+      "mitre_attack": {
+        "technique_id": "T1005",
+        "technique_name": "Data from Local System"
+      },
+      "status": "executed",
+      "details": {
+        "path": "/etc/shadow",
+        "operation": "read"
+      }
+    }
+  ]
+}

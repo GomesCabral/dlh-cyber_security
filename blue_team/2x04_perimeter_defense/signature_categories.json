@@ -1,0 +1,9 @@
+{
+  "by_signature": {
+    "ET SCAN Nmap Scripting Engine User-Agent Detected (Nmap Scripting Engine)": "reconnaissance",
+    "ET EXPLOIT PsExec Service Install": "lateral_movement",
+    "ET TROJAN Cobalt Strike Beacon": "malware_c2",
+    "ET DNS Exfiltration Long TXT Query": "exfiltration"
+  },
+  "by_id": {}
+}

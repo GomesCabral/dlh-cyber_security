@@ -1,0 +1,269 @@
+{
+  "metadata": {
+    "generated_at": "2026-08-10T13:44:34Z",
+    "source_file": "linux_events_export.json",
+    "window_start": "2026-08-08T09:53:33Z",
+    "window_end": "2026-08-09T09:53:33Z",
+    "gap_threshold_minutes": 30
+  },
+  "total_events": 11790,
+  "event_distribution": {
+    "by_event_category": [
+      {
+        "event_category": "error",
+        "count": 570,
+        "percentage_of_total": 4.8346055979643765
+      },
+      {
+        "event_category": "other",
+        "count": 8787,
+        "percentage_of_total": 74.529262086514
+      },
+      {
+        "event_category": "pam",
+        "count": 75,
+        "percentage_of_total": 0.6361323155216284
+      },
+      {
+        "event_category": "service",
+        "count": 2343,
+        "percentage_of_total": 19.872773536895675
+      },
+      {
+        "event_category": "sudo",
+        "count": 15,
+        "percentage_of_total": 0.1272264631043257
+      }
+    ],
+    "by_source_type": [
+      {
+        "source_type": "auth.log",
+        "count": 90,
+        "percentage_of_total": 0.7633587786259541
+      },
+      {
+        "source_type": "syslog",
+        "count": 11700,
+        "percentage_of_total": 99.23664122137404
+      }
+    ]
+  },
+  "time_coverage": {
+    "total_hours": 25,
+    "hours_with_events": 3,
+    "hours_without_events": 22,
+    "coverage_percentage": 12.00,
+    "events_per_hour": [
+      {
+        "hour_start": "2026-08-08T09:00:00Z",
+        "hour_end": "2026-08-08T10:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T10:00:00Z",
+        "hour_end": "2026-08-08T11:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T11:00:00Z",
+        "hour_end": "2026-08-08T12:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T12:00:00Z",
+        "hour_end": "2026-08-08T13:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T13:00:00Z",
+        "hour_end": "2026-08-08T14:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T14:00:00Z",
+        "hour_end": "2026-08-08T15:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T15:00:00Z",
+        "hour_end": "2026-08-08T16:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T16:00:00Z",
+        "hour_end": "2026-08-08T17:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T17:00:00Z",
+        "hour_end": "2026-08-08T18:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T18:00:00Z",
+        "hour_end": "2026-08-08T19:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T19:00:00Z",
+        "hour_end": "2026-08-08T20:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T20:00:00Z",
+        "hour_end": "2026-08-08T21:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T21:00:00Z",
+        "hour_end": "2026-08-08T22:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T22:00:00Z",
+        "hour_end": "2026-08-08T23:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-08T23:00:00Z",
+        "hour_end": "2026-08-09T00:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T00:00:00Z",
+        "hour_end": "2026-08-09T01:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T01:00:00Z",
+        "hour_end": "2026-08-09T02:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T02:00:00Z",
+        "hour_end": "2026-08-09T03:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T03:00:00Z",
+        "hour_end": "2026-08-09T04:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T04:00:00Z",
+        "hour_end": "2026-08-09T05:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T05:00:00Z",
+        "hour_end": "2026-08-09T06:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T06:00:00Z",
+        "hour_end": "2026-08-09T07:00:00Z",
+        "event_count": 0,
+        "has_events": false
+      },
+      {
+        "hour_start": "2026-08-09T07:00:00Z",
+        "hour_end": "2026-08-09T08:00:00Z",
+        "event_count": 4959,
+        "has_events": true
+      },
+      {
+        "hour_start": "2026-08-09T08:00:00Z",
+        "hour_end": "2026-08-09T09:00:00Z",
+        "event_count": 6654,
+        "has_events": true
+      },
+      {
+        "hour_start": "2026-08-09T09:00:00Z",
+        "hour_end": "2026-08-09T10:00:00Z",
+        "event_count": 177,
+        "has_events": true
+      }
+    ]
+  },
+  "gap_detection": {
+    "threshold_minutes": 30,
+    "gap_count": 1,
+    "largest_gap_minutes": 1275,
+    "gaps": [
+      {
+        "start": "2026-08-08T09:53:33Z",
+        "end": "2026-08-09T07:09:02Z",
+        "duration_minutes": 1275
+      }
+    ]
+  },
+  "field_completeness": {
+    "common_fields": {
+      "required_fields": [
+        "timestamp",
+        "hostname",
+        "source_type",
+        "event_category"
+      ],
+      "completeness_percentage": 100.00
+    },
+    "execve": {
+      "required_field": "command_line",
+      "total_events": 0,
+      "populated": 0,
+      "completeness_percentage": 0
+    },
+    "ssh": {
+      "required_fields": [
+        "source_ip",
+        "user"
+      ],
+      "total_events": 0,
+      "source_ip": {
+        "populated": 0,
+        "completeness_percentage": 0
+      },
+      "user": {
+        "populated": 0,
+        "completeness_percentage": 0
+      }
+    },
+    "auditd_file_events": {
+      "required_fields": [
+        "path",
+        "operation",
+        "key"
+      ],
+      "total_events": 0,
+      "path_completeness_percentage": 0,
+      "operation_completeness_percentage": 0,
+      "key_completeness_percentage": 0,
+      "overall_completeness_percentage": 0
+    }
+  },
+  "quality_score": {
+    "score": 23.20,
+    "assessment": "poor"
+  }
+}
