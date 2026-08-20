@@ -43,7 +43,13 @@ done
 CAPSTONE_DIR="${CAPSTONE_DIR:-$SCRIPT_DIR/capstone}"
 OUTPUT_JSON="$CAPSTONE_DIR/target_state.json"
 
-die() { printf '[target_state] ERROR: %s\n' "$*" >&2; exit "${2:-2}"; }
+die() {
+  printf '[target_state] ERROR: %s\n' "$1" >&2
+  case "${2:-2}" in
+    1) exit 1 ;;
+    *) exit 2 ;;
+  esac
+}
 
 command -v jq >/dev/null 2>&1 || die "jq is required to assemble target_state.json" 2
 
