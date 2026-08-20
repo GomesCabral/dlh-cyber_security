@@ -131,7 +131,7 @@ read -r -d '' CONTROLS_JSON << 'EOF'
     "family": "hardening",
     "description": "AppArmor must have at least one profile in enforce mode.",
     "check_type": "command_exit_zero",
-    "check_target": "test \"$(aa-status --enforced 2>/dev/null | wc -l)\" -gt 0",
+    "check_target": "systemctl is-active --quiet apparmor && test \"$(aa-status --enforced 2>/dev/null | wc -l)\" -gt 0",
     "expected_value": 0,
     "source_project": "2x00",
     "severity": "high"
