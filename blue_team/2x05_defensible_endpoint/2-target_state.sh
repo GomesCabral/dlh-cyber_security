@@ -48,7 +48,8 @@ die() { printf '[target_state] ERROR: %s\n' "$*" >&2; exit "${2:-2}"; }
 command -v jq >/dev/null 2>&1 || die "jq is required to assemble target_state.json" 2
 
 if [[ -f "$OUTPUT_JSON" && "$FORCE" -ne 1 ]]; then
-  die "$OUTPUT_JSON already exists; pass --force to overwrite the target-state contract" 1
+  printf '[target_state] ERROR: %s already exists; pass --force to overwrite the target-state contract\n' "$OUTPUT_JSON" >&2
+  exit 1
 fi
 
 mkdir -p "$CAPSTONE_DIR" || die "failed to create $CAPSTONE_DIR" 2

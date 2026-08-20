@@ -1,354 +1,197 @@
-﻿{
-    "schema_version":  "1.0",
-    "captured_at":  "2026-08-19T11:57:21Z",
-    "host":  {
-                 "hostname":  "DC01",
-                 "os_caption":  "Microsoft Windows Server 2022 Standard Evaluation",
-                 "os_build":  "20348",
-                 "os_version":  "10.0.20348",
-                 "install_date":  "2026-04-16T22:46:04Z"
-             },
-    "patches":  {
-                    "recent_hotfix_ids":  [
-                                              "KB5010523",
-                                              "KB5011497",
-                                              "KB5008882"
-                                          ]
-                },
-    "features":  {
-                     "installed_count":  28,
-                     "source":  "Get-WindowsFeature"
-                 },
-    "services":  {
-                     "running_services":  [
-                                              "ADWS",
-                                              "Appinfo",
-                                              "BFE",
-                                              "BrokerInfrastructure",
-                                              "Browser",
-                                              "camsvc",
-                                              "cbdhsvc_6e287",
-                                              "CDPSvc",
-                                              "CDPUserSvc_6e287",
-                                              "CertPropSvc",
-                                              "CoreMessagingRegistrar",
-                                              "CryptSvc",
-                                              "DcomLaunch",
-                                              "Dfs",
-                                              "DFSR",
-                                              "Dhcp",
-                                              "DiagTrack",
-                                              "DispBrokerDesktopSvc",
-                                              "DNS",
-                                              "Dnscache",
-                                              "DoSvc",
-                                              "DPS",
-                                              "DsmSvc",
-                                              "EventLog",
-                                              "EventSystem",
-                                              "FontCache",
-                                              "gpsvc",
-                                              "IKEEXT",
-                                              "iphlpsvc",
-                                              "IsmServ",
-                                              "Kdc",
-                                              "KeyIso",
-                                              "LanmanServer",
-                                              "LanmanWorkstation",
-                                              "LicenseManager",
-                                              "lmhosts",
-                                              "LSM",
-                                              "mpssvc",
-                                              "MSDTC",
-                                              "NcbService",
-                                              "Netlogon",
-                                              "netprofm",
-                                              "NetSetupSvc",
-                                              "NlaSvc",
-                                              "nsi",
-                                              "NTDS",
-                                              "PcaSvc",
-                                              "PlugPlay",
-                                              "PolicyAgent",
-                                              "Power",
-                                              "ProfSvc",
-                                              "RpcEptMapper",
-                                              "RpcSs",
-                                              "SamSs",
-                                              "Schedule",
-                                              "SENS",
-                                              "SessionEnv",
-                                              "ShellHWDetection",
-                                              "Spooler",
-                                              "sppsvc",
-                                              "StateRepository",
-                                              "StorSvc",
-                                              "SysMain",
-                                              "Sysmon64",
-                                              "SystemEventsBroker",
-                                              "TabletInputService",
-                                              "TermService",
-                                              "Themes",
-                                              "TimeBrokerSvc",
-                                              "TokenBroker",
-                                              "TrustedInstaller",
-                                              "UALSVC",
-                                              "UmRdpService",
-                                              "UserManager",
-                                              "UsoSvc",
-                                              "VBoxService",
-                                              "vds",
-                                              "W32Time",
-                                              "Wcmsvc",
-                                              "WdNisSvc",
-                                              "WinDefend",
-                                              "WinHttpAutoProxySvc",
-                                              "Winmgmt",
-                                              "WinRM",
-                                              "wlidsvc",
-                                              "WLMS",
-                                              "WpnService",
-                                              "WpnUserService_6e287",
-                                              "wuauserv"
-                                          ]
-                 },
-    "local_users":  [
-                        {
-                            "name":  "Administrator",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "Guest",
-                            "enabled":  false,
-                            "password_required":  false,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "krbtgt",
-                            "enabled":  false,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:23:24Z"
-                        },
-                        {
-                            "name":  "analyst",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-09-19T11:41:30Z"
-                        },
-                        {
-                            "name":  "dpatel",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "rkim",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "jchen",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "spark",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "pmorales",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "mtorres",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "ebrown",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "lgarcia",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "hchen",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  "2026-05-28T14:45:23Z"
-                        },
-                        {
-                            "name":  "svc_backup",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "svc_ehr",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "svc_sql",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "DC01$",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "BILLING-SRV-01$",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "WEB-SRV-01$",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "LOG-SRV-01$",
-                            "enabled":  true,
-                            "password_required":  true,
-                            "password_expires":  null
-                        },
-                        {
-                            "name":  "RAD-WS-OLD$",
-                            "enabled":  false,
-                            "password_required":  true,
-                            "password_expires":  null
-                        }
-                    ],
-    "firewall":  {
-                     "profiles":  [
-                                      {
-                                          "profile":  "Domain",
-                                          "enabled":  true
-                                      },
-                                      {
-                                          "profile":  "Private",
-                                          "enabled":  false
-                                      },
-                                      {
-                                          "profile":  "Public",
-                                          "enabled":  false
-                                      }
-                                  ]
-                 },
-    "audit_policy":  {
-                         "summary_lines":  [
-                                               "System audit policy",
-                                               "Category/Subcategory                      Setting",
-                                               "System",
-                                               "Security System Extension               No Auditing",
-                                               "System Integrity                        No Auditing",
-                                               "IPsec Driver                            No Auditing",
-                                               "Other System Events                     No Auditing",
-                                               "Security State Change                   No Auditing",
-                                               "Logon/Logoff",
-                                               "Logon                                   Success and Failure",
-                                               "Logoff                                  No Auditing",
-                                               "Account Lockout                         No Auditing",
-                                               "IPsec Main Mode                         No Auditing",
-                                               "IPsec Quick Mode                        No Auditing",
-                                               "IPsec Extended Mode                     No Auditing",
-                                               "Special Logon                           No Auditing",
-                                               "Other Logon/Logoff Events               No Auditing",
-                                               "Network Policy Server                   No Auditing",
-                                               "User / Device Claims                    No Auditing",
-                                               "Group Membership                        No Auditing",
-                                               "Object Access",
-                                               "File System                             No Auditing",
-                                               "Registry                                No Auditing",
-                                               "Kernel Object                           No Auditing",
-                                               "SAM                                     No Auditing",
-                                               "Certification Services                  No Auditing",
-                                               "Application Generated                   No Auditing",
-                                               "Handle Manipulation                     No Auditing",
-                                               "File Share                              No Auditing",
-                                               "Filtering Platform Packet Drop          No Auditing",
-                                               "Filtering Platform Connection           No Auditing",
-                                               "Other Object Access Events              Success and Failure",
-                                               "Detailed File Share                     No Auditing",
-                                               "Removable Storage                       No Auditing",
-                                               "Central Policy Staging                  No Auditing",
-                                               "Privilege Use",
-                                               "Non Sensitive Privilege Use             No Auditing",
-                                               "Other Privilege Use Events              No Auditing",
-                                               "Sensitive Privilege Use                 No Auditing",
-                                               "Detailed Tracking",
-                                               "Process Creation                        Success",
-                                               "Process Termination                     No Auditing",
-                                               "DPAPI Activity                          No Auditing",
-                                               "RPC Events                              No Auditing",
-                                               "Plug and Play Events                    No Auditing",
-                                               "Token Right Adjusted Events             No Auditing",
-                                               "Policy Change",
-                                               "Audit Policy Change                     No Auditing",
-                                               "Authentication Policy Change            No Auditing",
-                                               "Authorization Policy Change             No Auditing",
-                                               "MPSSVC Rule-Level Policy Change         No Auditing",
-                                               "Filtering Platform Policy Change        No Auditing",
-                                               "Other Policy Change Events              No Auditing",
-                                               "Account Management",
-                                               "Computer Account Management             No Auditing",
-                                               "Security Group Management               Success and Failure",
-                                               "Distribution Group Management           No Auditing",
-                                               "Application Group Management            No Auditing",
-                                               "Other Account Management Events         No Auditing",
-                                               "User Account Management                 Success and Failure",
-                                               "DS Access",
-                                               "Directory Service Access                No Auditing",
-                                               "Directory Service Changes               No Auditing",
-                                               "Directory Service Replication           No Auditing",
-                                               "Detailed Directory Service Replication  No Auditing",
-                                               "Account Logon",
-                                               "Kerberos Service Ticket Operations      No Auditing",
-                                               "Other Account Logon Events              No Auditing",
-                                               "Kerberos Authentication Service         No Auditing",
-                                               "Credential Validation                   No Auditing"
-                                           ]
-                     },
-    "telemetry":  {
-                      "sysmon_present":  true,
-                      "sysmon_version":  "15.21",
-                      "sysmon_channel_size_bytes":  67108864,
-                      "script_block_logging_enabled":  true
-                  },
-    "account_policy":  {
-                           "net_accounts_summary":  [
-                                                        "Force user logoff how long after time expires?:       Never",
-                                                        "Minimum password age (days):                          0",
-                                                        "Maximum password age (days):                          42",
-                                                        "Minimum password length:                              7",
-                                                        "Length of password history maintained:                None",
-                                                        "Lockout threshold:                                    Never",
-                                                        "Lockout duration (minutes):                           30",
-                                                        "Lockout observation window (minutes):                 30",
-                                                        "Computer role:                                        PRIMARY",
-                                                        "The command completed successfully."
-                                                    ]
-                       },
-    "capture_warning_count":  1
+{
+  "schema_version": "1.0",
+  "captured_at": "2026-08-20T10:11:08Z",
+  "host": {
+    "hostname": "gomescabral-VirtualBox",
+    "kernel_release": "7.0.0-29-generic",
+    "os_name": "Ubuntu",
+    "os_version": "26.04 LTS (Resolute Raccoon)",
+    "os_version_id": "26.04"
+  },
+  "packages": {
+    "installed_count": 1644
+  },
+  "network": {
+    "listening_sockets": [
+      {
+        "proto": "udp",
+        "address": "0.0.0.0",
+        "port": "5353",
+        "process": ""
+      },
+      {
+        "proto": "udp",
+        "address": "0.0.0.0",
+        "port": "59471",
+        "process": "users:((\"python3\",pid=3885,fd=14))"
+      },
+      {
+        "proto": "udp",
+        "address": "0.0.0.0",
+        "port": "52419",
+        "process": "users:((\"python3\",pid=3885,fd=9))"
+      },
+      {
+        "proto": "udp",
+        "address": "10.0.2.15",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=15))"
+      },
+      {
+        "proto": "udp",
+        "address": "239.255.255.250",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=13))"
+      },
+      {
+        "proto": "udp",
+        "address": "10.10.10.20",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=10))"
+      },
+      {
+        "proto": "udp",
+        "address": "239.255.255.250",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=8))"
+      },
+      {
+        "proto": "udp",
+        "address": "127.0.0.54",
+        "port": "53",
+        "process": ""
+      },
+      {
+        "proto": "udp",
+        "address": "127.0.0.53%lo",
+        "port": "53",
+        "process": ""
+      },
+      {
+        "proto": "udp",
+        "address": "127.0.0.1",
+        "port": "323",
+        "process": ""
+      },
+      {
+        "proto": "udp",
+        "address": "[::]",
+        "port": "5353",
+        "process": ""
+      },
+      {
+        "proto": "udp",
+        "address": "*",
+        "port": "60892",
+        "process": "users:((\"python3\",pid=3885,fd=17))"
+      },
+      {
+        "proto": "udp",
+        "address": "[fe80::7715:b509:be1e:9a6]%enp0s8",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=18))"
+      },
+      {
+        "proto": "udp",
+        "address": "[ff02::c]%enp0s8",
+        "port": "3702",
+        "process": "users:((\"python3\",pid=3885,fd=16))"
+      },
+      {
+        "proto": "udp",
+        "address": "[::1]",
+        "port": "323",
+        "process": ""
+      },
+      {
+        "proto": "tcp",
+        "address": "127.0.0.54",
+        "port": "53",
+        "process": ""
+      },
+      {
+        "proto": "tcp",
+        "address": "127.0.0.1",
+        "port": "631",
+        "process": ""
+      },
+      {
+        "proto": "tcp",
+        "address": "127.0.0.53%lo",
+        "port": "53",
+        "process": ""
+      },
+      {
+        "proto": "tcp",
+        "address": "[::1]",
+        "port": "631",
+        "process": ""
+      }
+    ],
+    "firewall_ruleset_lines": 0
+  },
+  "services": {
+    "active_systemd_services": [
+      "accounts-daemon.service",
+      "auditd.service",
+      "avahi-daemon.service",
+      "chrony.service",
+      "colord.service",
+      "cron.service",
+      "cups-browsed.service",
+      "cups.service",
+      "dbus.service",
+      "fwupd.service",
+      "gdm.service",
+      "lynis.service",
+      "ModemManager.service",
+      "networkd-dispatcher.service",
+      "NetworkManager.service",
+      "polkit.service",
+      "power-profiles-daemon.service",
+      "rsyslog.service",
+      "rtkit-daemon.service",
+      "snapd.service",
+      "switcheroo-control.service",
+      "systemd-journald.service",
+      "systemd-logind.service",
+      "systemd-oomd.service",
+      "systemd-resolved.service",
+      "systemd-udevd.service",
+      "udisks2.service",
+      "unattended-upgrades.service",
+      "upower.service",
+      "user@1000.service",
+      "user@60580.service",
+      "user@60582.service",
+      "uuidd.service",
+      "virtualbox-guest-utils.service",
+      "wpa_supplicant.service"
+    ]
+  },
+  "ssh": {
+    "sshd_config": {}
+  },
+  "sysctl": {
+    "net.ipv4.ip_forward": "0",
+    "net.ipv4.conf.all.rp_filter": "2",
+    "net.ipv4.conf.all.accept_redirects": "1",
+    "net.ipv4.conf.all.send_redirects": "1",
+    "net.ipv4.tcp_syncookies": "1",
+    "net.ipv4.icmp_echo_ignore_broadcasts": "1",
+    "kernel.randomize_va_space": "2",
+    "kernel.dmesg_restrict": "1",
+    "fs.suid_dumpable": "2"
+  },
+  "filesystem": {
+    "suid_sgid_count": 59,
+    "world_writable_count": 0
+  },
+  "telemetry": {
+    "auditd_active": true,
+    "rsyslog_active": true,
+    "sysmon_present": false,
+    "sysmon_version": ""
+  },
+  "capture_warning_count": 1
 }
