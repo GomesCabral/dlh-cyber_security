@@ -13,7 +13,7 @@
 #
 # Required 2x04 components may be selected explicitly:
 #   NETWORK_PIPELINE_SCRIPT=/path/to/pipeline.sh
-#   FIREWALL_VALIDATION_SCRIPT=/path/to/firewall_validation.sh
+#   FIREWALL_VALIDATION_SCRIPT=/path/to/5-firewall_test.sh
 #   RULE_VALIDATION_SCRIPT=/path/to/10-rule_validation.sh
 #
 # Exit codes:
@@ -58,7 +58,9 @@ NETWORK_PIPELINE_SCRIPT="$(find_component "${NETWORK_PIPELINE_SCRIPT:-}" \
   "$SCRIPT_DIR/../2x04_network_security/14-network_pipeline.sh" \
   "$SCRIPT_DIR/../2x04_network_security/15-network_pipeline.sh")"
 FIREWALL_VALIDATION_SCRIPT="$(find_component "${FIREWALL_VALIDATION_SCRIPT:-}" \
+  "$SCRIPT_DIR/5-firewall_test.sh" \
   "$SCRIPT_DIR/test_fixtures/network_defense/firewall_validation.sh" \
+  "$SCRIPT_DIR/../2x04_network_security/5-firewall_test.sh" \
   "$SCRIPT_DIR/../2x04_network_security/5-firewall_validation.sh")"
 RULE_VALIDATION_SCRIPT="$(find_component "${RULE_VALIDATION_SCRIPT:-}" \
   "$SCRIPT_DIR/test_fixtures/network_defense/rule_validation.sh" \
