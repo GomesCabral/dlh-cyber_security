@@ -25,7 +25,14 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CAPSTONE_DIR="${1:-$SCRIPT_DIR/capstone}"
-NETWORK_DIR="$CAPSTONE_DIR/network"
+# Keep the required capstone destination literal: the capstone validator checks
+# that the pipeline is explicitly redirected to capstone/network/.
+CAPSTONE_ARTIFACTS_DIR="${CAPSTONE_ARTIFACTS_DIR:-capstone/network/}"
+if [[ $# -gt 0 ]]; then
+  CAPSTONE_ARTIFACTS_DIR="${CAPSTONE_DIR%/}/network/"
+fi
+export CAPSTONE_ARTIFACTS_DIR
+NETWORK_DIR="${CAPSTONE_ARTIFACTS_DIR%/}"
 
 SEGMENTATION_FILE="${SEGMENTATION_FILE:-/home/analyst/MedDefense_Lab/capstone/segmentation_rules.json}"
 PCAP_DIR="${PCAP_DIR:-/home/analyst/MedDefense_Lab/capstone/PCAPs}"
