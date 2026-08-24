@@ -208,9 +208,10 @@ jq empty "$RULE_VALIDATION_JSON" 2>/dev/null || die "invalid rule validation JSO
 jq -e '(.failed // 0) == 0' "$RULE_VALIDATION_JSON" >/dev/null \
   || die "rule validation report contains failures" 1
 
-# 5. Convert the supplied domain list into dnsmasq address rules. Blank lines
-# and comments are ignored; malformed domains fail closed.
-log "Configuring dnsmasq filter from $DNS_BLOCKLIST"
+# 5. Configure dnsmasq as the local DNS filter using the capstone blocklist.
+# Convert the supplied domain list into dnsmasq address rules. Blank lines and
+# comments are ignored; malformed domains fail closed.
+log "Configuring dnsmasq as the local DNS filter from $DNS_BLOCKLIST"
 mkdir -p "$(dirname -- "$DNSMASQ_CONF")" || die "failed to create dnsmasq configuration directory"
 DNS_TMP="$(mktemp)"
 {
