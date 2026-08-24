@@ -84,10 +84,12 @@ RUN_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } >> "$LOG_FILE"
 
 # ---------------------------------------------------------------------------
-# Per-step target-state control mapping (documented, static). Steps with no
-# currently-declared control in target_state.json map to an empty list --
-# that is expected for permission_sweep/service_minimization/pam_configuration
-# today, not a bug; extend target_state.json's controls if that changes.
+# Per-step target-state control mapping (documented, static). Each entry
+# lists the target-state control IDs that sub-step is responsible for.
+# Steps with no currently-declared control in target_state.json map to an
+# empty list -- that is expected for permission_sweep/service_minimization/
+# pam_configuration today, not a bug; extend target_state.json's controls
+# if that changes.
 # ---------------------------------------------------------------------------
 declare -A CONTROLS_MAP=(
   [ssh_hardening]="LNX-SSH-01 LNX-SSH-02"
