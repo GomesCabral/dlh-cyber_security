@@ -157,7 +157,9 @@ run_step() {
 }
 
 # ---------------------------------------------------------------------------
-# Run the composition in deterministic order.
+# Run the composition in deterministic order: SSH hardening, sysctl
+# hardening, permission sweep, service minimization, PAM configuration,
+# AppArmor enforcement, auditd deployment.
 # ---------------------------------------------------------------------------
 run_step "ssh_hardening"        "$SSH_SCRIPT"
 run_step "sysctl_hardening"     "$SYSCTL_SCRIPT"
