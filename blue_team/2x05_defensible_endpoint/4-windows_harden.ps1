@@ -251,10 +251,10 @@ function Invoke-HardeningStep {
 }
 
 # -----------------------------------------------------------------------
-# Run the composition in deterministic order: account policy, audit
-# policy, Windows Firewall baseline, Sysmon installation with the
-# MedDefense config, PowerShell Script Block Logging enable, AppLocker
-# or Defender Application Control baseline, service minimization.
+# Run the composition in deterministic order: account policy, audit policy,
+# Windows Firewall baseline, Sysmon installation with the MedDefense config,
+# PowerShell Script Block Logging enable, AppLocker or Defender Application
+# Control baseline, service minimization.
 # -----------------------------------------------------------------------
 Invoke-HardeningStep -Name 'account_policy'       -ScriptPath $AccountPolicyScript
 Invoke-HardeningStep -Name 'audit_policy'         -ScriptPath $AuditPolicyScript
