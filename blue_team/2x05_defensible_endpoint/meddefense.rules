@@ -1,0 +1,21 @@
+# TEST FIXTURE ONLY -- stand-in for the real project-provided
+# /etc/audit/rules.d/meddefense.rules shipped with MedDefense_Lab.
+#
+# Keys map directly to the controlled test sequence in
+# 5-telemetry_deploy.sh:
+#   meddefense-user-mgmt   -> user creation / removal (useradd, userdel)
+#   meddefense-service-mgmt -> service management actions (systemctl)
+#   meddefense-cron        -> cron job scheduling / removal
+#   meddefense-recon-find  -> authorized `find` execution as root
+
+-w /usr/sbin/useradd -p x -k meddefense-user-mgmt
+-w /usr/sbin/userdel -p x -k meddefense-user-mgmt
+-w /etc/passwd -p wa -k meddefense-user-mgmt
+-w /etc/shadow -p wa -k meddefense-user-mgmt
+
+-w /usr/bin/systemctl -p x -k meddefense-service-mgmt
+
+-w /etc/cron.d -p wa -k meddefense-cron
+-w /var/spool/cron -p wa -k meddefense-cron
+
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/find -k meddefense-recon-find
