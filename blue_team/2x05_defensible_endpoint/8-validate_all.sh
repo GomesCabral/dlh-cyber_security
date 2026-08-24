@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 # Evaluate every control in capstone/target_state.json and emit one
 # machine-readable end-to-end validation report.
 #
