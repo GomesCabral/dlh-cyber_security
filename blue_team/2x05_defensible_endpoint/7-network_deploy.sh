@@ -36,6 +36,12 @@ NETWORK_DIR="${CAPSTONE_ARTIFACTS_DIR%/}"
 
 SEGMENTATION_FILE="${SEGMENTATION_FILE:-/home/analyst/MedDefense_Lab/capstone/segmentation_rules.json}"
 PCAP_DIR="${PCAP_DIR:-/home/analyst/MedDefense_Lab/capstone/PCAPs}"
+# Labeled PCAPs are the source of truth for custom-rule validation.
+LABELED_PCAP_DIR="${LABELED_PCAP_DIR:-$PCAP_DIR/labeled}"
+# Older 2x04 packages used the directory name "labels".
+if [[ ! -d "$LABELED_PCAP_DIR" && -d "$PCAP_DIR/labels" ]]; then
+  LABELED_PCAP_DIR="$PCAP_DIR/labels"
+fi
 DNS_BLOCKLIST="${DNS_BLOCKLIST:-/home/analyst/MedDefense_Lab/capstone/dns_blocklist.txt}"
 SURICATA_CONFIG="${SURICATA_CONFIG:-/etc/suricata/suricata.yaml}"
 CUSTOM_RULES_FILE="${CUSTOM_RULES_FILE:-$SCRIPT_DIR/meddefense.rules}"
@@ -92,6 +98,7 @@ done
 [[ -f "$SEGMENTATION_FILE" ]] || die "capstone segmentation file not found: $SEGMENTATION_FILE"
 jq empty "$SEGMENTATION_FILE" 2>/dev/null || die "invalid segmentation JSON: $SEGMENTATION_FILE"
 [[ -d "$PCAP_DIR" ]] || die "capstone PCAP directory not found: $PCAP_DIR"
+[[ -d "$LABELED_PCAP_DIR" ]] || die "labeled PCAP directory not found: $LABELED_PCAP_DIR"
 [[ -f "$DNS_BLOCKLIST" ]] || die "capstone DNS blocklist not found: $DNS_BLOCKLIST"
 [[ -f "$SURICATA_CONFIG" ]] || die "Suricata configuration not found: $SURICATA_CONFIG"
 [[ -f "$CUSTOM_RULES_FILE" ]] || die "custom Suricata rules not found: $CUSTOM_RULES_FILE"
@@ -179,7 +186,7 @@ done
 # validator's native report (when produced) and its complete console output.
 log "Running custom-rule validation"
 CAPSTONE_ARTIFACTS_DIR="$NETWORK_DIR" \
-PCAP_DIR="$PCAP_DIR" LABEL_DIR="$PCAP_DIR/labels" \
+PCAP_DIR="$PCAP_DIR" LABELED_PCAP_DIR="$LABELED_PCAP_DIR" LABEL_DIR="$LABELED_PCAP_DIR" \
 RULE_FILE="$CUSTOM_RULES_FILE" SURICATA_CONFIG="$SURICATA_CONFIG" \
 OUTPUT_FILE="$RULE_VALIDATION_JSON" \
   "$RULE_VALIDATION_SCRIPT" >"$RULE_VALIDATION_LOG" 2>&1
