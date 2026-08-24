@@ -30,6 +30,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CAPSTONE_DIR="${1:-$SCRIPT_DIR/capstone}"
 EXEC_DIR="$CAPSTONE_DIR/exec"
+# Writes: capstone/exec/linux_harden.log (structured execution evidence)
 LOG_FILE="$EXEC_DIR/linux_harden.log"
 OUTPUT_JSON="$EXEC_DIR/linux_harden.json"
 TARGET_STATE_JSON="$CAPSTONE_DIR/target_state.json"

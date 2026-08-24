@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-08-24T07:18:43Z",
+  "hostname": "gomescabral-VirtualBox",
+  "steps": [
+    {
+      "name": "ssh_hardening",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/ssh_harden.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.025,
+      "changed": false,
+      "controls_touched": [
+        "LNX-SSH-01",
+        "LNX-SSH-02"
+      ]
+    },
+    {
+      "name": "sysctl_hardening",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/sysctl_harden.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.060,
+      "changed": false,
+      "controls_touched": [
+        "LNX-SYSCTL-01",
+        "LNX-SYSCTL-02"
+      ]
+    },
+    {
+      "name": "permission_sweep",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/permission_sweep.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.039,
+      "changed": false,
+      "controls_touched": []
+    },
+    {
+      "name": "service_minimization",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/service_minimization.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.038,
+      "changed": false,
+      "controls_touched": []
+    },
+    {
+      "name": "pam_configuration",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/pam_configuration.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.030,
+      "changed": false,
+      "controls_touched": []
+    },
+    {
+      "name": "apparmor_enforcement",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/apparmor_enforce.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.018,
+      "changed": false,
+      "controls_touched": [
+        "LNX-APPARMOR-01"
+      ]
+    },
+    {
+      "name": "auditd_deployment",
+      "script_path": "/media/sf_dlh-cyber_security/blue_team/2x05_defensible_endpoint/test_fixtures/hardening/auditd_deploy.sh",
+      "exit_code": 127,
+      "duration_seconds": 0.018,
+      "changed": false,
+      "controls_touched": [
+        "LNX-AUDITD-01",
+        "LNX-AUDITD-02",
+        "LNX-AUDITD-03"
+      ]
+    }
+  ],
+  "lynis_before": 60,
+  "lynis_after": 60,
+  "index_delta": 0,
+  "controls_touched": [
+    "LNX-APPARMOR-01",
+    "LNX-AUDITD-01",
+    "LNX-AUDITD-02",
+    "LNX-AUDITD-03",
+    "LNX-SSH-01",
+    "LNX-SSH-02",
+    "LNX-SYSCTL-01",
+    "LNX-SYSCTL-02"
+  ]
+}
