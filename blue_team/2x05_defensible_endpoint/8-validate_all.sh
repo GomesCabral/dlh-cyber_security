@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # 8-validate_all.sh
 #
@@ -299,7 +299,7 @@ jq -n \
 
 # ---------------------------------------------------------------------------
 # Print a clean family-grouped table to stdout. This is the only stdout
-# output -- no narrative, matching the task's own framing
+# output -- no narrative, matching the task's own framing.
 # ---------------------------------------------------------------------------
 printf '%-14s %7s %7s %7s %7s\n' "FAMILY" "TOTAL" "PASS" "FAIL" "ERROR"
 printf '%-14s %7s %7s %7s %7s\n' "--------------" "-------" "-------" "-------" "-------"
