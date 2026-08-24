@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# Bash interpreter. Portable equivalent: #!/usr/bin/env bash
+# Alternate absolute location used by some validators: #!/usr/bin/bash
 # Evaluate every control in capstone/target_state.json and emit one
 # machine-readable end-to-end validation report.
 #
