@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Evaluate every control in capstone/target_state.json and emit one
 # machine-readable end-to-end validation report.
 #
@@ -10,7 +10,8 @@ set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CAPSTONE_DIR="${1:-$SCRIPT_DIR/capstone}"
 TARGET_STATE="${TARGET_STATE:-$CAPSTONE_DIR/target_state.json}"
-REPORT_FILE="${VALIDATION_REPORT:-$CAPSTONE_DIR/validation_report.json}"
+# Required machine-readable artifact: capstone/validation.json
+REPORT_FILE="${VALIDATION_REPORT:-$CAPSTONE_DIR/validation.json}"
 
 fatal() { printf '[validate] ERROR: %s\n' "$1" >&2; exit 1; }
 
