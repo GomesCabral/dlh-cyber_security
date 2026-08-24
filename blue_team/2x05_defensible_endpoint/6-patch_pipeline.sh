@@ -12,8 +12,9 @@
 # IMPORTANT: PIPELINE_SCRIPT defaults to this repo's test fixture
 # (test_fixtures/patch_pipeline/patch_pipeline.sh), used to validate this
 # wrapper end-to-end. Before running against the real Hawthorne server,
-# override it with the actual pipeline script from the 2x03 project:
-#   PIPELINE_SCRIPT=/path/to/real/patch_pipeline.sh ./6-patch_pipeline.sh
+# override it with the actual pipeline script from the 2x03 project --
+# 13-patch_pipeline.sh in blue_team/2x03_patch_equation/:
+#   PIPELINE_SCRIPT=/path/to/2x03_patch_equation/13-patch_pipeline.sh ./6-patch_pipeline.sh
 #
 # Usage:
 #   sudo ./6-patch_pipeline.sh [capstone_dir]
