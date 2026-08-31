@@ -682,18 +682,17 @@ wc -l \
   quarantine.json
 ```
 
-Confirm that every normalized record has all 40 schema keys:
+Confirm that every normalized record has all 40 schema keys without loading the
+entire dataset into memory:
 
 ```bash
-jq -s 'map(keys | length) | unique' normalized_events.json
+jq -r 'keys | length' normalized_events.json | sort -nu
 ```
 
 Expected result:
 
-```json
-[
-  40
-]
+```text
+40
 ```
 
 Review quarantine reasons:
@@ -865,3 +864,178 @@ Both pairs of hashes must remain identical.
 
 A normalized network dataset lets an analyst pivot from a suspicious endpoint process to its firewall decision, corresponding PCAP flow, and Suricata signature using the same fields and query language. Preserving both normalized concepts and source-native values prevents loss of enforcement context during detection and triage.
 
+## Task 8 — Dirty Data Handling
+
+### Objective
+
+Detect and correct known data-quality defects in `normalized_events.json`, write
+the usable records to `cleaned_events.json`, and preserve an audit trail of every
+change in `cleaning_log.json`.
+
+### Deliverables
+
+- `8-data_quality.sh`: streaming detection, repair, deduplication, and logging.
+- `cleaned_events.json`: corrected NDJSON dataset.
+- `cleaning_log.json`: JSON document containing corrections and unrepairable records.
+
+### Defect handling
+
+| Defect | Action |
+| --- | --- |
+| Malformed timestamp | Try supported fallback formats, convert successful repairs to ISO 8601 UTC, and drop only unrepairable records |
+| Duplicate event | Keep the first event with the same timestamp, hostname, source type, and raw message |
+| Hostname case | Convert the hostname to lowercase for consistent correlation |
+| Encoding error | Reverse common Latin-1 or Windows-1252 mojibake when the repair is unambiguous |
+| Suspected wrong timezone | Preserve the timestamp and add the `suspected_wrong_tz` tag when it falls more than 12 hours outside the expected evidence window |
+
+Every cleaning entry contains `defect_type`, `original_value`,
+`corrected_value`, `record_id`, and `reason`. Unrepairable records are retained
+inside the `unrepairable` section of the log rather than silently discarded.
+
+### Usage
+
+```bash
+chmod +x 8-data_quality.sh
+./8-data_quality.sh
+```
+
+An explicit evidence window can be supplied when it is known:
+
+```bash
+EXPECTED_START="2026-03-18T00:00:00Z" \
+EXPECTED_END="2026-03-25T23:59:59Z" \
+./8-data_quality.sh
+```
+
+Without those variables, the script infers the dominant date window from the
+input. Processing is streaming and output replacement is atomic, which avoids
+the excessive memory use caused by loading hundreds of megabytes with `jq -s`.
+
+### Validation
+
+```bash
+shellcheck 8-data_quality.sh
+bash -n 8-data_quality.sh
+jq empty cleaned_events.json
+jq empty cleaning_log.json
+```
+
+Review the cleaning totals:
+
+```bash
+jq '{
+  corrections: (.corrections | length),
+  unrepairable: (.unrepairable | length),
+  expected_range
+}' cleaning_log.json
+```
+
+### Relevance to a SOC analyst
+
+Dirty timestamps can break an incident timeline, inconsistent hostnames can
+split one asset into several apparent systems, and duplicate network events can
+inflate alert counts. Cleaning these defects while retaining an audit trail
+makes the evidence reliable without hiding what the pipeline changed.
+
+## Task 9 — Context Enrichment
+
+### Objective
+
+Attach asset inventory and network-zone context to every cleaned event so
+analysts can assess business impact and network direction without performing a
+separate inventory join during each investigation.
+
+### Deliverables
+
+- `9-enrich.sh`: streaming asset and CIDR enrichment stage.
+- `enriched_events.json`: enriched NDJSON dataset.
+
+### Enrichment behavior
+
+For a matching hostname, the script adds an `asset` object containing:
+
+- `role`
+- `criticality`
+- `os`
+- `owner`
+- `zone`
+
+Hostname matching is case-insensitive and supports both short names and fully
+qualified domain names. Events without an inventory match receive
+`"asset": null`.
+
+When an event contains `src_ip` or `dst_ip`, the script searches the declared
+CIDR ranges and adds `src_zone` or `dst_zone`. Overlapping networks are checked
+from the longest prefix to the shortest, so the most specific network wins. An
+address outside every declared range receives `"unknown"`; a missing address
+receives `null`.
+
+### Usage
+
+```bash
+chmod +x 9-enrich.sh
+./9-enrich.sh
+```
+
+Explicit working and evidence-pack directories can also be supplied:
+
+```bash
+./9-enrich.sh /path/to/working_directory /path/to/evidence_pack_primary
+```
+
+### Primary-pack result
+
+The Task 9 run against the primary evidence pack produced:
+
+```text
+events processed    : 339893
+asset context added : 211528 (62.23%)
+src_zone resolved   : 141061 (100.00% of 141061 events with src_ip)
+dst_zone resolved   : 103868 (100.00% of 103868 events with dst_ip)
+unknown hosts       : 128365
+enriched_events.json written
+```
+
+All 339,893 cleaned records were preserved. Every event containing a source or
+destination IP was successfully mapped to a declared network zone. The 128,365
+unknown-host events are not processing failures: they include network records
+that do not identify an endpoint hostname and hostnames absent from the asset
+inventory.
+
+The observed runtime was 2 minutes 44.387 seconds on the lab sandbox.
+
+### Validation
+
+```bash
+shellcheck 9-enrich.sh
+bash -n 9-enrich.sh
+jq empty enriched_events.json
+wc -l cleaned_events.json enriched_events.json
+```
+
+Both NDJSON files should contain 339,893 records.
+
+Review critical assets:
+
+```bash
+jq -c '
+  select(.asset.criticality == "critical") |
+  {timestamp, hostname, event_category, asset, src_ip, src_zone, dst_ip, dst_zone}
+' enriched_events.json | head
+```
+
+Review inventory gaps:
+
+```bash
+jq -r '
+  select(.hostname != null and .asset == null) |
+  .hostname
+' enriched_events.json | sort -u | head -30
+```
+
+### Relevance to a SOC analyst
+
+A failed login against a critical patient database should be prioritized above
+the same event on a test system. Zone context also exposes risky traffic paths,
+such as a connection from `GUEST` to `CLINICAL`, directly in the event used for
+detection and triage.
