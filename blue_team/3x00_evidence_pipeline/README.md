@@ -295,12 +295,3 @@ Both hashes must be identical when the input files have not changed.
 Windows Security, Sysmon, and PowerShell logs provide complementary visibility. A successful logon in Security Event ID `4624` can be correlated with Sysmon process creation Event ID `1` and PowerShell script-block Event ID `4104`. Combining these channels into one validated intermediate dataset prepares the pipeline to reconstruct activity across authentication, process execution, network connections, and script execution.
 
 Task 2 does not decide whether an event is malicious. It creates a consistent and traceable Windows input for normalization, detection, hunting, and timeline analysis.
-
-## Project status
-
-| Task | Status |
-| --- | --- |
-| Task 0 — Evidence Pack Inventory | Implemented |
-| Task 2 — Windows Event Parsing | Implemented |
-| Remaining tasks | Pending |
-
