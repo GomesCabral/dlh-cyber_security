@@ -295,3 +295,276 @@ Both hashes must be identical when the input files have not changed.
 Windows Security, Sysmon, and PowerShell logs provide complementary visibility. A successful logon in Security Event ID `4624` can be correlated with Sysmon process creation Event ID `1` and PowerShell script-block Event ID `4104`. Combining these channels into one validated intermediate dataset prepares the pipeline to reconstruct activity across authentication, process execution, network connections, and script execution.
 
 Task 2 does not decide whether an event is malicious. It creates a consistent and traceable Windows input for normalization, detection, hunting, and timeline analysis.
+
+## Task 3 — Linux Log Parsing
+
+### Objective
+
+Parse the plain-text Linux sources `auth.log`, `audit.log`, and `syslog` into structured NDJSON, then append the Module 2 Linux student telemetry. The resulting `linux_events.json` gives the normalization stage one consistent Linux intermediate dataset.
+
+### Deliverables
+
+- `3-linux_parse.sh`: parses, validates, maps, and combines the Linux sources.
+- `linux_events.json`: structured newline-delimited JSON output.
+
+### Input order
+
+The output preserves a deterministic source order:
+
+1. `linux/auth.log`
+2. `linux/audit.log`
+3. `linux/syslog`
+4. `student_telemetry/linux_events.json`
+
+Chronological sorting is intentionally deferred to the timeline stage.
+
+### Input grammars
+
+| Source | Grammar | Main information extracted |
+| --- | --- | --- |
+| `auth.log` | Traditional syslog | timestamp, hostname, program, PID, user, message, and key-value fields |
+| `audit.log` | Linux auditd | audit timestamp and group ID, audit type, PID, user identifiers, hostname, and audit key-value fields |
+| `syslog` | Traditional syslog with defensive fallback | timestamp, hostname, program, PID, message, and key-value fields |
+| Student telemetry | NDJSON | mapped timestamp, host, source type, event category, user, command, and message |
+
+The parser also recognizes malformed or prefixed syslog records where an ISO timestamp appears before the traditional syslog content. Lines that still cannot be parsed are preserved with `parse_status: "unparsed"` instead of being silently discarded.
+
+### Required intermediate fields
+
+Every output record contains:
+
+- `timestamp_raw`
+- `hostname`
+- `program`
+- `audit_type`
+- `pid`
+- `user`
+- `raw_message`
+- `parsed_fields`
+- `source_origin`
+
+Fields that do not apply to a particular source are explicitly set to `null`. For example, auditd records normally have `program: null`, while traditional syslog records have `audit_type: null`.
+
+### Auditd record strategy
+
+The project permits either grouping related auditd lines or emitting one record per line with a shared group identifier. In the supplied primary pack:
+
+```text
+audit.log lines:         67368
+unique audit group IDs:  67368
+```
+
+Because every audit line has a unique ID, grouping would not reduce the number of records. The parser therefore emits one event per line and stores the identifier in:
+
+```json
+{
+  "parsed_fields": {
+    "audit_group_id": "1774385465.371:85"
+  }
+}
+```
+
+This preserves every original audit record and still allows later correlation by group ID.
+
+### Student telemetry mapping
+
+The student telemetry contains `timestamp`, `hostname`, `source_type`, `event_category`, `user`, `command`, and `raw_message`. It is mapped as follows:
+
+| Student telemetry | Intermediate record |
+| --- | --- |
+| `timestamp` | `timestamp_raw` |
+| `hostname` | `hostname` |
+| `source_type: auditd` | `audit_type` derived from `event_category`; `program: null` |
+| Other `source_type` values | `program`; `audit_type: null` |
+| `user` | `user` |
+| `event_category`, `command`, and original source | `parsed_fields` |
+| `raw_message` | `raw_message` |
+| generated tag | `source_origin: student_telemetry` |
+
+### Parse-status handling
+
+Each record records how it was handled:
+
+| Status | Meaning |
+| --- | --- |
+| `parsed` | The baseline record matched the expected grammar |
+| `partial` | An audit record was retained but lacked one of the main audit markers |
+| `unparsed` | A text line did not match the supported syslog patterns and was preserved for later quality review |
+| `mapped` | A student telemetry record was converted to the intermediate shape |
+
+This approach separates parsing from later data-quality and quarantine decisions.
+
+### Usage
+
+Run with the default paths:
+
+```bash
+chmod +x 3-linux_parse.sh
+./3-linux_parse.sh
+```
+
+Run with explicit paths:
+
+```bash
+./3-linux_parse.sh /path/to/evidence_pack /path/to/linux_events.json
+```
+
+Run with environment variables:
+
+```bash
+EVIDENCE_ROOT=/path/to/evidence_pack \
+OUTPUT_FILE=/path/to/linux_events.json \
+./3-linux_parse.sh
+```
+
+Expected counts for the supplied primary evidence pack:
+
+```text
+parsing auth.log      ... 24880 lines -> 24880 records
+parsing audit.log     ... 67368 lines -> 67368 records
+parsing syslog        ... 41736 lines -> 41736 records
+appending student telemetry ... 1879 records
+linux_events.json: 135863 records written
+```
+
+### Validation
+
+```bash
+shellcheck 3-linux_parse.sh
+bash -n 3-linux_parse.sh
+jq empty linux_events.json
+wc -l linux_events.json
+```
+
+Check source-origin counts:
+
+```bash
+jq -r '.source_origin' linux_events.json | sort | uniq -c
+```
+
+Expected result:
+
+```text
+133984 evidence_pack
+1879 student_telemetry
+```
+
+Find records that could not be fully parsed:
+
+```bash
+jq -c '
+    select(
+        .parsed_fields.parse_status == "unparsed"
+        or .parsed_fields.parse_status == "partial"
+    )
+' linux_events.json
+```
+
+Check that every record contains the intermediate fields:
+
+```bash
+jq -c '
+    select(
+        ([
+            "timestamp_raw",
+            "hostname",
+            "program",
+            "audit_type",
+            "pid",
+            "user",
+            "raw_message",
+            "parsed_fields",
+            "source_origin"
+        ] - keys) | length > 0
+    )
+' linux_events.json
+```
+
+The final command must produce no output.
+
+### Idempotency test
+
+```bash
+./3-linux_parse.sh >/dev/null
+sha256sum linux_events.json
+./3-linux_parse.sh >/dev/null
+sha256sum linux_events.json
+```
+
+Both hashes must be identical when the inputs have not changed.
+
+### Relevance to a SOC analyst
+
+Linux authentication, system, and audit logs describe different parts of an incident. An SSH authentication in `auth.log` can be correlated with an auditd `EXECVE` or `SYSCALL` record and subsequent service or firewall messages in `syslog`. Structuring these grammars makes it possible to search consistently for users, processes, hosts, commands, and audit activity.
+
+The parser deliberately preserves malformed lines in `raw_message`. Missing or irregular telemetry can itself be relevant evidence—for example, log corruption, a broken collector, or attacker tampering—and should not disappear merely because it failed a regular expression.
+
+## Task 4 — Unified Event Schema Design
+
+### Objective
+
+Define the versioned contract that every Windows, Linux, firewall, Suricata, and PCAP record will follow after normalization.
+
+### Deliverable
+
+- `event_schema.json`: schema version `1.0.0`, authored by Pedro Cabral.
+
+### Design principles
+
+- Required fields form the minimum reliable contract for correlation and detection.
+- Optional fields preserve source-specific context without quarantining unrelated event types.
+- Every field documents mappings for `windows_json`, `linux_text`, `network_csv`, and `network_json`.
+- `raw_message` and `details` prevent semantic loss during normalization.
+- Process, identity, network, rule, audit, asset, and zone fields support later detection, triage, and enrichment stages.
+
+The schema contains 38 uniquely named fields. Core required fields are `timestamp`, `source_type`, `source_origin`, `event_category`, `severity`, `raw_message`, and `details`; fields such as `hostname`, `user`, process data, and network addresses remain optional because they are not present in every event family.
+
+### Severity vocabulary
+
+Normalized severity uses:
+
+```text
+informational, low, medium, high, critical
+```
+
+Source-specific values such as Suricata numeric severity are translated through mappings during normalization.
+
+### Validation
+
+```bash
+jq empty event_schema.json
+jq -r '.version, .author, (.fields | length)' event_schema.json
+```
+
+Check for duplicate field names:
+
+```bash
+jq -r '.fields[].name' event_schema.json | sort | uniq -d
+```
+
+The duplicate check must produce no output.
+
+Check that every field contains mappings for all source families:
+
+```bash
+jq -e '
+  all(
+    .fields[];
+    (.source_mapping | has("windows_json")) and
+    (.source_mapping | has("linux_text")) and
+    (.source_mapping | has("network_csv")) and
+    (.source_mapping | has("network_json"))
+  )
+' event_schema.json
+```
+
+Expected result:
+
+```text
+true
+```
+
+### Relevance to a SOC analyst
+
+A unified schema lets one detection query correlate a Windows logon, Linux audit execution, firewall connection, and Suricata alert without knowing every vendor's original field names. It also prevents normalization from merging distinct concepts, such as process ID and parent process ID or source and destination network zones, that analysts need during triage.
+

@@ -1,0 +1,500 @@
+{
+  "version": "1.0.0",
+  "author": "Pedro Cabral",
+  "fields": [
+    {
+      "name": "timestamp",
+      "type": "timestamp",
+      "required": true,
+      "description": "UTC time at which the event occurred in ISO 8601 format.",
+      "justification": "Required to correlate activity across sources and reconstruct an accurate incident timeline.",
+      "source_mapping": {
+        "windows_json": "timestamp_raw",
+        "linux_text": "timestamp_raw",
+        "network_csv": "timestamp",
+        "network_json": "timestamp or start_time"
+      }
+    },
+    {
+      "name": "hostname",
+      "type": "string",
+      "required": false,
+      "description": "Name of the host that generated or is associated with the event.",
+      "justification": "Allows analysts to identify the affected system and correlate activity by endpoint.",
+      "source_mapping": {
+        "windows_json": "hostname",
+        "linux_text": "hostname",
+        "network_csv": null,
+        "network_json": "host when present"
+      }
+    },
+    {
+      "name": "source_type",
+      "type": "string",
+      "required": true,
+      "description": "Normalized source family such as windows, linux, firewall, suricata, or pcap.",
+      "justification": "Allows downstream logic to select source-specific detections and assess telemetry coverage.",
+      "source_mapping": {
+        "windows_json": "constant: windows",
+        "linux_text": "constant: linux",
+        "network_csv": "constant: firewall",
+        "network_json": "event_type or constant based on input file"
+      }
+    },
+    {
+      "name": "source_origin",
+      "type": "string",
+      "required": true,
+      "description": "Origin of the record such as evidence_pack or student_telemetry.",
+      "justification": "Preserves provenance so analysts can distinguish baseline evidence from simulated telemetry.",
+      "source_mapping": {
+        "windows_json": "source_origin",
+        "linux_text": "source_origin",
+        "network_csv": "constant: evidence_pack",
+        "network_json": "source_origin or constant: evidence_pack"
+      }
+    },
+    {
+      "name": "event_category",
+      "type": "string",
+      "required": true,
+      "description": "High-level event category such as authentication, process, network, file, audit, or alert.",
+      "justification": "Needed by detection rules and triage filters to group events independently of source vendor.",
+      "source_mapping": {
+        "windows_json": "channel and event_id mapping table",
+        "linux_text": "program or audit_type mapping table",
+        "network_csv": "constant: network",
+        "network_json": "event_type or constant: network"
+      }
+    },
+    {
+      "name": "severity",
+      "type": "string",
+      "required": true,
+      "description": "Normalized event severity using informational, low, medium, high, or critical.",
+      "justification": "Provides a consistent basis for alert prioritization and triage queues across sources.",
+      "source_mapping": {
+        "windows_json": "event_id and provider severity mapping table",
+        "linux_text": "program, audit_type, and message severity mapping table",
+        "network_csv": "action and rule_id severity mapping table",
+        "network_json": "alert.severity mapping table or default: informational"
+      }
+    },
+    {
+      "name": "event_id",
+      "type": "integer",
+      "required": false,
+      "description": "Numeric identifier assigned to an event or detection by its source.",
+      "justification": "Supports precise detections for Windows event IDs and numeric network alert signatures.",
+      "source_mapping": {
+        "windows_json": "event_id",
+        "linux_text": null,
+        "network_csv": null,
+        "network_json": "alert.signature_id when present"
+      }
+    },
+    {
+      "name": "event_action",
+      "type": "string",
+      "required": false,
+      "description": "Action represented or taken by the event such as logon, execute, allow, deny, create, or delete.",
+      "justification": "Helps analysts distinguish what occurred from the broader event category.",
+      "source_mapping": {
+        "windows_json": "event_id and event_data mapping",
+        "linux_text": "program, audit_type, and parsed_fields mapping",
+        "network_csv": "action",
+        "network_json": "alert.action or event_type mapping"
+      }
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "required": false,
+      "description": "Result of the activity such as success, failure, allowed, blocked, or unknown.",
+      "justification": "Allows detections and triage to separate attempted activity from successful activity.",
+      "source_mapping": {
+        "windows_json": "event_id, event_data.Status, or event_data.FailureReason",
+        "linux_text": "parsed_fields.res, success, or raw_message",
+        "network_csv": "action",
+        "network_json": "alert.action or flow state"
+      }
+    },
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "User account associated with the event.",
+      "justification": "Enables account-based correlation, behavior analysis, and investigation of compromised identities.",
+      "source_mapping": {
+        "windows_json": "event_data.TargetUserName, event_data.SubjectUserName, or user",
+        "linux_text": "user",
+        "network_csv": null,
+        "network_json": "user when present"
+      }
+    },
+    {
+      "name": "process_name",
+      "type": "string",
+      "required": false,
+      "description": "Name or executable path of the process associated with the event.",
+      "justification": "Supports process execution detections and investigation of suspicious binaries.",
+      "source_mapping": {
+        "windows_json": "event_data.Image, event_data.NewProcessName, or provider",
+        "linux_text": "parsed_fields.exe, parsed_fields.comm, or program",
+        "network_csv": null,
+        "network_json": "process_name when present"
+      }
+    },
+    {
+      "name": "process_id",
+      "type": "integer",
+      "required": false,
+      "description": "Operating-system process identifier associated with the event.",
+      "justification": "Allows analysts to join related process, network, and audit activity on the same host.",
+      "source_mapping": {
+        "windows_json": "event_data.ProcessId or event_data.NewProcessId",
+        "linux_text": "pid",
+        "network_csv": null,
+        "network_json": "process_id when present"
+      }
+    },
+    {
+      "name": "parent_process_id",
+      "type": "integer",
+      "required": false,
+      "description": "Process identifier of the parent that created the observed process.",
+      "justification": "Supports process-tree reconstruction and detection of suspicious parent-child relationships.",
+      "source_mapping": {
+        "windows_json": "event_data.ParentProcessId",
+        "linux_text": "parsed_fields.ppid",
+        "network_csv": null,
+        "network_json": "parent_process_id when present"
+      }
+    },
+    {
+      "name": "command_line",
+      "type": "string",
+      "required": false,
+      "description": "Full command line or script content associated with process execution.",
+      "justification": "Enables detection of malicious arguments, scripts, and living-off-the-land activity.",
+      "source_mapping": {
+        "windows_json": "event_data.CommandLine, event_data.ScriptBlockText, or command_line",
+        "linux_text": "parsed_fields.command, parsed_fields.COMMAND, parsed_fields.proctitle, or raw_message",
+        "network_csv": null,
+        "network_json": "command_line when present"
+      }
+    },
+    {
+      "name": "src_ip",
+      "type": "string",
+      "required": false,
+      "description": "Source IP address associated with network activity.",
+      "justification": "Supports identification of initiating systems and correlation with threat indicators.",
+      "source_mapping": {
+        "windows_json": "event_data.IpAddress or event_data.SourceIp",
+        "linux_text": "parsed_fields.addr, parsed_fields.SRC, or raw_message extraction",
+        "network_csv": "src_ip",
+        "network_json": "src_ip"
+      }
+    },
+    {
+      "name": "src_port",
+      "type": "integer",
+      "required": false,
+      "description": "Source transport-layer port associated with network activity.",
+      "justification": "Helps identify client sessions and correlate connections across network sources.",
+      "source_mapping": {
+        "windows_json": "event_data.IpPort or event_data.SourcePort",
+        "linux_text": "parsed_fields.SPT or raw_message extraction",
+        "network_csv": "src_port",
+        "network_json": "src_port"
+      }
+    },
+    {
+      "name": "dst_ip",
+      "type": "string",
+      "required": false,
+      "description": "Destination IP address associated with network activity.",
+      "justification": "Supports identification of targeted systems and investigation of lateral or outbound connections.",
+      "source_mapping": {
+        "windows_json": "event_data.DestinationIp",
+        "linux_text": "parsed_fields.DST or raw_message extraction",
+        "network_csv": "dst_ip",
+        "network_json": "dest_ip or dst_ip"
+      }
+    },
+    {
+      "name": "dst_port",
+      "type": "integer",
+      "required": false,
+      "description": "Destination transport-layer port associated with network activity.",
+      "justification": "Allows detections to identify services, prohibited protocols, and unusual destination ports.",
+      "source_mapping": {
+        "windows_json": "event_data.DestinationPort",
+        "linux_text": "parsed_fields.DPT or raw_message extraction",
+        "network_csv": "dst_port",
+        "network_json": "dest_port or dst_port"
+      }
+    },
+    {
+      "name": "network_protocol",
+      "type": "string",
+      "required": false,
+      "description": "Transport or application protocol associated with the event.",
+      "justification": "Supports protocol-specific detections and identification of insecure or unexpected services.",
+      "source_mapping": {
+        "windows_json": "event_data.Protocol or event_data.ApplicationProtocol",
+        "linux_text": "parsed_fields.PROTO or program mapping",
+        "network_csv": "protocol",
+        "network_json": "proto or app_proto"
+      }
+    },
+    {
+      "name": "network_direction",
+      "type": "string",
+      "required": false,
+      "description": "Normalized direction of network traffic such as inbound, outbound, lateral, or unknown.",
+      "justification": "Allows analysts to distinguish ingress, egress, and internal movement during triage.",
+      "source_mapping": {
+        "windows_json": "derived from host and source or destination addresses",
+        "linux_text": "parsed_fields.IN, parsed_fields.OUT, and network-zone lookup",
+        "network_csv": "interface and network-zone lookup",
+        "network_json": "in_iface and network-zone lookup"
+      }
+    },
+    {
+      "name": "bytes_in",
+      "type": "integer",
+      "required": false,
+      "description": "Number of bytes received during the network event or flow.",
+      "justification": "Supports detection of unusual inbound transfers and traffic-volume analysis.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": null,
+        "network_csv": "bytes_in",
+        "network_json": "flow.bytes_toclient or equivalent flow field"
+      }
+    },
+    {
+      "name": "bytes_out",
+      "type": "integer",
+      "required": false,
+      "description": "Number of bytes sent during the network event or flow.",
+      "justification": "Supports detection of exfiltration and unusual outbound transfer volumes.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": null,
+        "network_csv": "bytes_out",
+        "network_json": "flow.bytes_toserver or equivalent flow field"
+      }
+    },
+    {
+      "name": "rule_id",
+      "type": "string",
+      "required": false,
+      "description": "Identifier of the firewall, IDS, or detection rule that produced the event.",
+      "justification": "Allows analysts to trace an alert to its detection logic and measure rule performance.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": "parsed_fields.key when used as an audit rule key",
+        "network_csv": "rule_id",
+        "network_json": "alert.signature_id converted to string"
+      }
+    },
+    {
+      "name": "rule_name",
+      "type": "string",
+      "required": false,
+      "description": "Human-readable name or signature associated with a detection rule.",
+      "justification": "Gives analysts immediate context about why network or endpoint activity was flagged.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": "parsed_fields.key when descriptive",
+        "network_csv": null,
+        "network_json": "alert.signature"
+      }
+    },
+    {
+      "name": "audit_type",
+      "type": "string",
+      "required": false,
+      "description": "Linux auditd record type such as SYSCALL, EXECVE, USER_AUTH, or AVC.",
+      "justification": "Allows audit-specific detections and filtering without parsing the raw audit message again.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": "audit_type",
+        "network_csv": null,
+        "network_json": null
+      }
+    },
+    {
+      "name": "audit_group_id",
+      "type": "string",
+      "required": false,
+      "description": "Identifier linking Linux auditd records generated by the same audited operation.",
+      "justification": "Supports reconstruction of multi-record audit activity without collapsing or losing individual records.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": "parsed_fields.audit_group_id",
+        "network_csv": null,
+        "network_json": null
+      }
+    },
+    {
+      "name": "channel",
+      "type": "string",
+      "required": false,
+      "description": "Original Windows event channel or equivalent logical log stream.",
+      "justification": "Preserves channel context needed to interpret reused event identifiers and source-specific behavior.",
+      "source_mapping": {
+        "windows_json": "channel",
+        "linux_text": "parsed_fields.source_file",
+        "network_csv": "constant: firewall",
+        "network_json": "event_type"
+      }
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "Vendor, subsystem, or application that produced the event.",
+      "justification": "Allows analysts to interpret source semantics and identify the responsible logging component.",
+      "source_mapping": {
+        "windows_json": "provider",
+        "linux_text": "program or constant: auditd",
+        "network_csv": "constant: firewall",
+        "network_json": "constant: suricata or pcap_summary based on input file"
+      }
+    },
+    {
+      "name": "file_path",
+      "type": "string",
+      "required": false,
+      "description": "Filesystem path referenced by the event.",
+      "justification": "Supports investigation of file creation, modification, execution, and access to sensitive locations.",
+      "source_mapping": {
+        "windows_json": "event_data.TargetFilename, event_data.Path, or event_data.Image",
+        "linux_text": "parsed_fields.name, parsed_fields.exe, or parsed_fields.path",
+        "network_csv": null,
+        "network_json": "fileinfo.filename when present"
+      }
+    },
+    {
+      "name": "file_hash",
+      "type": "string",
+      "required": false,
+      "description": "Cryptographic hash associated with a file referenced by the event.",
+      "justification": "Enables indicator matching and correlation of the same file across hosts and data sources.",
+      "source_mapping": {
+        "windows_json": "event_data.Hashes or event_data.Hash",
+        "linux_text": "parsed_fields.hash when present",
+        "network_csv": null,
+        "network_json": "fileinfo.md5, fileinfo.sha1, or fileinfo.sha256"
+      }
+    },
+    {
+      "name": "asset_id",
+      "type": "string",
+      "required": false,
+      "description": "Stable asset identifier assigned by the MedDefense asset inventory.",
+      "justification": "Allows events to join reliably with asset context even when hostnames or addresses change.",
+      "source_mapping": {
+        "windows_json": "derived by hostname lookup in asset inventory",
+        "linux_text": "derived by hostname or IP lookup in asset inventory",
+        "network_csv": "derived by source or destination IP lookup in asset inventory",
+        "network_json": "derived by host, source IP, or destination IP lookup in asset inventory"
+      }
+    },
+    {
+      "name": "asset_role",
+      "type": "string",
+      "required": false,
+      "description": "Business or technical role of the associated asset.",
+      "justification": "Helps analysts understand whether activity affects a domain controller, clinical server, workstation, or test system.",
+      "source_mapping": {
+        "windows_json": "derived from asset inventory",
+        "linux_text": "derived from asset inventory",
+        "network_csv": "derived from asset inventory",
+        "network_json": "derived from asset inventory"
+      }
+    },
+    {
+      "name": "asset_criticality",
+      "type": "string",
+      "required": false,
+      "description": "Business criticality of the associated asset such as low, medium, high, or critical.",
+      "justification": "Allows triage severity to account for the importance and impact of the affected system.",
+      "source_mapping": {
+        "windows_json": "derived from asset inventory",
+        "linux_text": "derived from asset inventory",
+        "network_csv": "derived from asset inventory",
+        "network_json": "derived from asset inventory"
+      }
+    },
+    {
+      "name": "src_zone",
+      "type": "string",
+      "required": false,
+      "description": "Network zone containing the source IP address.",
+      "justification": "Supports segmentation detections and distinguishes external, clinical, server, management, and guest traffic.",
+      "source_mapping": {
+        "windows_json": "derived from src_ip and network zone inventory",
+        "linux_text": "derived from src_ip and network zone inventory",
+        "network_csv": "derived from src_ip and network zone inventory",
+        "network_json": "derived from src_ip and network zone inventory"
+      }
+    },
+    {
+      "name": "dst_zone",
+      "type": "string",
+      "required": false,
+      "description": "Network zone containing the destination IP address.",
+      "justification": "Supports detection and triage of prohibited cross-zone and lateral network activity.",
+      "source_mapping": {
+        "windows_json": "derived from dst_ip and network zone inventory",
+        "linux_text": "derived from dst_ip and network zone inventory",
+        "network_csv": "derived from dst_ip and network zone inventory",
+        "network_json": "derived from dst_ip and network zone inventory"
+      }
+    },
+    {
+      "name": "tags",
+      "type": "array",
+      "required": false,
+      "description": "List of normalized labels attached to the event for detection, hunting, or workflow purposes.",
+      "justification": "Allows downstream stages to add reusable context without changing the core schema.",
+      "source_mapping": {
+        "windows_json": "derived from event mappings",
+        "linux_text": "derived from program, audit type, and parsed fields",
+        "network_csv": "derived from action and rule mapping",
+        "network_json": "derived from event type, alert category, and signature"
+      }
+    },
+    {
+      "name": "raw_message",
+      "type": "string",
+      "required": true,
+      "description": "Original human-readable event message or serialized source record retained without semantic loss.",
+      "justification": "Allows analysts to verify normalized fields and recover source details that were not explicitly mapped.",
+      "source_mapping": {
+        "windows_json": "raw_message",
+        "linux_text": "raw_message",
+        "network_csv": "serialized original CSV record",
+        "network_json": "serialized original JSON record or alert.signature when a message is available"
+      }
+    },
+    {
+      "name": "details",
+      "type": "object",
+      "required": true,
+      "description": "Source-specific structured fields preserved after common fields have been normalized.",
+      "justification": "Prevents normalization from discarding evidence needed by future detections or investigations.",
+      "source_mapping": {
+        "windows_json": "event_data plus unmapped intermediate fields",
+        "linux_text": "parsed_fields plus unmapped intermediate fields",
+        "network_csv": "complete source record",
+        "network_json": "complete source record"
+      }
+    }
+  ]
+}
