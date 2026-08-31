@@ -136,9 +136,171 @@ An analyst should never assume that an evidence delivery matches the description
 
 For example, if `windows/security.json` keeps the same filename but has a different SHA-256 value during a later run, its contents have changed. The difference could represent a legitimate new export, corruption, or evidence modification and should be explained before the investigation continues.
 
+## Task 2 — Windows Event Parsing
+
+### Objective
+
+Merge the three Windows NDJSON sources and the Windows student telemetry into one validated intermediate file named `windows_events.json`. Downstream normalization stages can therefore process a single Windows dataset instead of reading four independent files.
+
+### Deliverables
+
+- `2-windows_parse.sh`: validates, maps, and merges the Windows sources.
+- `windows_events.json`: combined newline-delimited JSON dataset.
+
+### Input order
+
+The output preserves a deterministic source order:
+
+1. `windows/security.json`
+2. `windows/sysmon.json`
+3. `windows/powershell.json`
+4. `student_telemetry/windows_events.json`
+
+This task does not sort records chronologically. Timeline ordering is performed by a later pipeline stage.
+
+### Required intermediate fields
+
+Every output record contains at least:
+
+- `timestamp_raw`
+- `hostname`
+- `event_id`
+- `channel`
+- `provider`
+- `raw_message`
+- `event_data`
+- `source_origin`
+
+The script stops with a non-zero exit status if a record cannot satisfy this minimum contract. Output is built in a temporary directory and moved into place only after all sources pass validation, preventing a failed run from replacing a valid result with a partial file.
+
+### Source-origin handling
+
+Records from the three baseline Windows files must already contain:
+
+```json
+"source_origin": "evidence_pack"
+```
+
+The script verifies this value and preserves the records. Student telemetry receives:
+
+```json
+"source_origin": "student_telemetry"
+```
+
+when the field is not already present.
+
+### Student telemetry mapping
+
+The Module 2 student telemetry uses a smaller schema than the baseline Windows exports. The parser maps it to the required intermediate structure:
+
+| Student telemetry | Intermediate record |
+| --- | --- |
+| `timestamp` | `timestamp_raw` |
+| `hostname` | `hostname` |
+| `event_id` | `event_id` |
+| `source_type` and event context | `channel` |
+| calculated channel | `provider` |
+| `raw_message` | `raw_message` |
+| `event_category`, `user`, `command_line`, `source_type` | `event_data` |
+| generated tag | `source_origin` |
+
+Event ID `4104` and PowerShell event categories are mapped to the PowerShell Operational channel even when an original telemetry record contains an inconsistent `source_type`. The original value is retained as `event_data.original_source_type`, preserving evidence provenance.
+
+### Usage
+
+Run with the default evidence pack and output paths:
+
+```bash
+chmod +x 2-windows_parse.sh
+./2-windows_parse.sh
+```
+
+Run with explicit path arguments:
+
+```bash
+./2-windows_parse.sh /path/to/evidence_pack /path/to/windows_events.json
+```
+
+Run with environment variables:
+
+```bash
+EVIDENCE_ROOT=/path/to/evidence_pack \
+OUTPUT_FILE=/path/to/windows_events.json \
+./2-windows_parse.sh
+```
+
+The script prints a record count for every source and a combined total:
+
+```text
+reading security.json      ...  38498 records
+reading sysmon.json        ...  72810 records
+reading powershell.json    ...   9408 records
+appending student telemetry ...  1859 records
+windows_events.json: 122575 records
+```
+
+Counts depend on the evidence pack supplied to the script.
+
+### Validation
+
+Validate the script and the generated NDJSON:
+
+```bash
+shellcheck 2-windows_parse.sh
+bash -n 2-windows_parse.sh
+jq empty windows_events.json
+wc -l windows_events.json
+```
+
+Check source-origin counts:
+
+```bash
+jq -r '.source_origin' windows_events.json | sort | uniq -c
+```
+
+Find records missing required fields:
+
+```bash
+jq -c '
+    select(
+        ([
+            "timestamp_raw",
+            "hostname",
+            "event_id",
+            "channel",
+            "provider",
+            "raw_message",
+            "event_data",
+            "source_origin"
+        ] - keys) | length > 0
+    )
+' windows_events.json
+```
+
+The final command must produce no output.
+
+### Idempotency test
+
+```bash
+./2-windows_parse.sh >/dev/null
+sha256sum windows_events.json
+./2-windows_parse.sh >/dev/null
+sha256sum windows_events.json
+```
+
+Both hashes must be identical when the input files have not changed.
+
+### Relevance to a SOC analyst
+
+Windows Security, Sysmon, and PowerShell logs provide complementary visibility. A successful logon in Security Event ID `4624` can be correlated with Sysmon process creation Event ID `1` and PowerShell script-block Event ID `4104`. Combining these channels into one validated intermediate dataset prepares the pipeline to reconstruct activity across authentication, process execution, network connections, and script execution.
+
+Task 2 does not decide whether an event is malicious. It creates a consistent and traceable Windows input for normalization, detection, hunting, and timeline analysis.
+
 ## Project status
 
 | Task | Status |
 | --- | --- |
 | Task 0 — Evidence Pack Inventory | Implemented |
+| Task 2 — Windows Event Parsing | Implemented |
 | Remaining tasks | Pending |
+
