@@ -507,7 +507,7 @@ Define the versioned contract that every Windows, Linux, firewall, Suricata, and
 
 ### Deliverable
 
-- `event_schema.json`: schema version `1.0.0`, authored by Pedro Cabral.
+- `event_schema.json`: schema version `1.1.0`, authored by Pedro Cabral.
 
 ### Design principles
 
@@ -517,7 +517,9 @@ Define the versioned contract that every Windows, Linux, firewall, Suricata, and
 - `raw_message` and `details` prevent semantic loss during normalization.
 - Process, identity, network, rule, audit, asset, and zone fields support later detection, triage, and enrichment stages.
 
-The schema contains 38 uniquely named fields. Core required fields are `timestamp`, `source_type`, `source_origin`, `event_category`, `severity`, `raw_message`, and `details`; fields such as `hostname`, `user`, process data, and network addresses remain optional because they are not present in every event family.
+The schema contains 40 uniquely named fields. Core required fields are `timestamp`, `source_type`, `source_origin`, `event_category`, `severity`, `raw_message`, and `details`; fields such as `hostname`, `user`, process data, network addresses, `action`, and `signature` remain optional because they are not present in every event family.
+
+Schema version 1.1.0 adds `action` to preserve source-native enforcement decisions and `signature` to preserve Suricata signature text for network alert investigation.
 
 ### Severity vocabulary
 
@@ -680,7 +682,7 @@ wc -l \
   quarantine.json
 ```
 
-Confirm that every normalized record has all 38 schema keys:
+Confirm that every normalized record has all 40 schema keys:
 
 ```bash
 jq -s 'map(keys | length) | unique' normalized_events.json
@@ -690,7 +692,7 @@ Expected result:
 
 ```json
 [
-  38
+  40
 ]
 ```
 
@@ -714,4 +716,152 @@ Both pairs of hashes must remain identical when the inputs and schema have not c
 ### Relevance to a SOC analyst
 
 Normalization lets one detection query use fields such as `user`, `src_ip`, `process_name`, and `event_category` regardless of whether the event originated in Windows Security, Sysmon, PowerShell, Linux syslog, or auditd. Quarantine prevents malformed timestamps or incomplete records from corrupting chronological searches while retaining the original evidence for remediation and investigation.
+
+## Task 6 — Network Artifact Normalization
+
+### Objective
+
+Parse the firewall CSV, Suricata EVE NDJSON, and PCAP summary NDJSON into schema-compliant network records, write them to `network_events.json`, and append them idempotently to the combined `normalized_events.json` dataset.
+
+### Deliverables
+
+- `6-network_normalize.sh`: network parser, normalizer, validator, and safe append stage.
+- `network_events.json`: standalone NDJSON containing only normalized network records.
+- Updated `normalized_events.json`: endpoint events followed by the normalized network records.
+
+### Schema evolution
+
+Task 6 requires two source-native fields that were added in schema version 1.1.0:
+
+| Field | Purpose |
+| --- | --- |
+| `action` | Preserves firewall values such as `ALLOW` and `BLOCK` and Suricata actions such as `allowed` |
+| `signature` | Preserves the exact Suricata alert signature text |
+
+Because every optional field must be present explicitly, Task 5 must be rerun with schema 1.1.0 before Task 6. Endpoint records then contain these fields as `null`, while applicable network events populate them.
+
+### Source mappings
+
+#### Firewall CSV
+
+- Unix epoch `timestamp` is converted to ISO 8601 UTC.
+- `source_type` is `firewall`.
+- `event_category` is `network`.
+- Source `action` is preserved in uppercase.
+- `BLOCK`, `DENY`, and `DROP` receive low severity; other actions default to informational.
+- Addresses, ports, protocol, interface, rule ID, and byte counts are mapped to common fields.
+
+#### Suricata EVE
+
+- The timezone-aware ISO timestamp and microseconds are preserved in UTC.
+- `source_type` is `suricata`.
+- `event_category` is `network_alert`.
+- `alert.signature` populates both `signature` and `rule_name`.
+- `alert.signature_id` populates `event_id` and `rule_id`.
+- Suricata severity 1 maps to high, 2 to medium, 3 to low, and other values to informational.
+- Flow byte counts, addresses, ports, protocol, category, and action are preserved.
+
+#### PCAP summary
+
+- `start_time` is parsed from `MM/DD/YYYY HH:MM:SS AM/PM` and converted to ISO 8601 UTC.
+- `source_type` is `pcap`.
+- `event_category` is `network_flow`.
+- Session ID, endpoints, ports, protocol, end time, duration, packet count, byte total, and TCP flags are retained.
+
+### Idempotent append behavior
+
+Before appending freshly generated network records, the script streams through `normalized_events.json` and removes records whose `source_type` is `firewall`, `suricata`, or `pcap`. This prevents duplicate network events when the task is executed more than once while preserving all endpoint records.
+
+Both the standalone and combined outputs are written to temporary files and moved into place only after all records pass schema validation.
+
+### Usage
+
+Run with the default primary evidence pack and current project directory:
+
+```bash
+chmod +x 6-network_normalize.sh
+./6-network_normalize.sh
+```
+
+Run with explicit evidence and working directories:
+
+```bash
+./6-network_normalize.sh /path/to/evidence_pack /path/to/working_directory
+```
+
+Paths can also be supplied using `EVIDENCE_ROOT`, `WORK_DIR`, `SCHEMA_FILE`, `NORMALIZED_FILE`, and `NETWORK_OUTPUT`.
+
+### Output summary
+
+```text
+firewall.csv        : <count> records normalized
+suricata_eve.json  : <count> records normalized
+pcap_summary.json   : <count> records normalized
+appended to normalized_events.json after <count> endpoint records
+network_events.json written
+```
+
+The exact counts depend on the supplied evidence pack.
+
+### Validation
+
+```bash
+shellcheck 6-network_normalize.sh
+bash -n 6-network_normalize.sh
+jq empty network_events.json
+jq empty normalized_events.json
+```
+
+Check network counts by source:
+
+```bash
+jq -r '.source_type' network_events.json | sort | uniq -c
+```
+
+Check the schema field count without using memory-intensive `jq -s`:
+
+```bash
+jq -r 'keys | length' network_events.json | sort -nu
+```
+
+Expected result:
+
+```text
+40
+```
+
+Check firewall actions:
+
+```bash
+jq -r '
+  select(.source_type == "firewall") |
+  .action
+' network_events.json | sort | uniq -c
+```
+
+Check that Suricata alerts contain signatures:
+
+```bash
+jq -c '
+  select(
+    .source_type == "suricata"
+    and .signature != null
+  )
+' network_events.json | head
+```
+
+### Idempotency test
+
+```bash
+./6-network_normalize.sh >/dev/null
+sha256sum normalized_events.json network_events.json
+./6-network_normalize.sh >/dev/null
+sha256sum normalized_events.json network_events.json
+```
+
+Both pairs of hashes must remain identical.
+
+### Relevance to a SOC analyst
+
+A normalized network dataset lets an analyst pivot from a suspicious endpoint process to its firewall decision, corresponding PCAP flow, and Suricata signature using the same fields and query language. Preserving both normalized concepts and source-native values prevents loss of enforcement context during detection and triage.
 

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Pedro Cabral",
   "fields": [
     {
@@ -104,6 +104,19 @@
         "linux_text": "program, audit_type, and parsed_fields mapping",
         "network_csv": "action",
         "network_json": "alert.action or event_type mapping"
+      }
+    },
+    {
+      "name": "action",
+      "type": "string",
+      "required": false,
+      "description": "Original action value reported by the source such as ALLOW, BLOCK, allowed, or blocked.",
+      "justification": "Preserves the source-native enforcement decision required for firewall and IDS investigation.",
+      "source_mapping": {
+        "windows_json": "event_data.Action when present",
+        "linux_text": "parsed_fields.action or firewall message action when present",
+        "network_csv": "action",
+        "network_json": "alert.action when present"
       }
     },
     {
@@ -310,6 +323,19 @@
       "source_mapping": {
         "windows_json": null,
         "linux_text": "parsed_fields.key when descriptive",
+        "network_csv": null,
+        "network_json": "alert.signature"
+      }
+    },
+    {
+      "name": "signature",
+      "type": "string",
+      "required": false,
+      "description": "Source-native IDS or IPS signature text associated with a network alert.",
+      "justification": "Allows analysts to identify why Suricata generated an alert without reopening the raw EVE record.",
+      "source_mapping": {
+        "windows_json": null,
+        "linux_text": null,
         "network_csv": null,
         "network_json": "alert.signature"
       }
