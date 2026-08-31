@@ -568,3 +568,150 @@ true
 
 A unified schema lets one detection query correlate a Windows logon, Linux audit execution, firewall connection, and Suricata alert without knowing every vendor's original field names. It also prevents normalization from merging distinct concepts, such as process ID and parent process ID or source and destination network zones, that analysts need during triage.
 
+## Task 5 — Normalization
+
+### Objective
+
+Transform the Windows and Linux intermediate NDJSON files into one dataset that conforms to `event_schema.json`, while preserving records that cannot be normalized in a separate quarantine file.
+
+### Deliverables
+
+- `5-normalize.sh`: schema-driven Windows and Linux normalizer.
+- `normalized_events.json`: valid normalized records in NDJSON format.
+- `quarantine.json`: rejected records with source location and an explicit `quarantine_reason`.
+
+### Processing behavior
+
+The normalizer loads all field definitions from `event_schema.json` and initializes every output record with the complete field set. Optional values that are unavailable are therefore written explicitly as `null` instead of being omitted.
+
+The script then:
+
+1. Reads `windows_events.json` and `linux_events.json` in deterministic order.
+2. Converts source timestamps to ISO 8601 UTC.
+3. Applies Windows event-ID and Linux program or audit-type mappings.
+4. Maps identity, process, network, file, audit, channel, and provider data.
+5. Preserves source-specific structured data in `details`.
+6. Validates required fields and schema data types.
+7. Writes valid records to `normalized_events.json`.
+8. Writes invalid records to `quarantine.json` without silently dropping them.
+
+Both output files are built temporarily and moved into place only after processing completes, preventing a failed run from leaving partial production outputs.
+
+### Timestamp handling
+
+The normalizer supports:
+
+- ISO 8601 timestamps, including `Z` and numeric UTC offsets;
+- traditional Linux syslog timestamps, using the evidence year inferred from Windows telemetry;
+- Linux audit timestamps such as `audit(1774385465.371:85)`.
+
+An absent or unparseable timestamp results in quarantine because `timestamp` is required for reliable correlation and timeline analysis.
+
+### Category and severity mapping
+
+Windows categories and actions are derived from event ID and channel, while Linux categories are derived from `audit_type`, program, parsed fields, and message context. Severity is normalized to `informational`, `low`, `medium`, `high`, or `critical` rather than retaining incompatible vendor-specific scales.
+
+### Quarantine format
+
+A quarantined record preserves the original intermediate event and adds:
+
+```json
+{
+  "quarantine_source_type": "linux_text",
+  "quarantine_source_line": 123,
+  "quarantine_reason": "unparseable timestamp; missing required field: timestamp"
+}
+```
+
+This makes data-quality failures reviewable and recoverable.
+
+### Usage
+
+Run against files in the project directory:
+
+```bash
+chmod +x 5-normalize.sh
+./5-normalize.sh
+```
+
+Run against another working directory:
+
+```bash
+./5-normalize.sh /path/to/working_directory
+```
+
+Paths can also be supplied with `WORK_DIR`, `SCHEMA_FILE`, `WINDOWS_FILE`, `LINUX_FILE`, `NORMALIZED_FILE`, and `QUARANTINE_FILE` environment variables.
+
+### Primary-pack result
+
+```text
+windows_json     : normalized  122575       0 quarantined
+linux_text       : normalized  135832      31 quarantined
+total            : normalized  258407      31 quarantined
+normalized_events.json written
+quarantine.json written
+```
+
+The accounting reconciles exactly:
+
+```text
+122575 Windows inputs + 135863 Linux inputs = 258438 inputs
+258407 normalized events + 31 quarantined events = 258438 outputs
+```
+
+No records were lost.
+
+### Validation
+
+```bash
+shellcheck 5-normalize.sh
+bash -n 5-normalize.sh
+jq empty normalized_events.json
+jq empty quarantine.json
+```
+
+Confirm that normalized and quarantined counts reconcile with the inputs:
+
+```bash
+wc -l \
+  windows_events.json \
+  linux_events.json \
+  normalized_events.json \
+  quarantine.json
+```
+
+Confirm that every normalized record has all 38 schema keys:
+
+```bash
+jq -s 'map(keys | length) | unique' normalized_events.json
+```
+
+Expected result:
+
+```json
+[
+  38
+]
+```
+
+Review quarantine reasons:
+
+```bash
+jq -r '.quarantine_reason' quarantine.json | sort | uniq -c | sort -nr
+```
+
+### Idempotency test
+
+```bash
+./5-normalize.sh >/dev/null
+sha256sum normalized_events.json quarantine.json
+./5-normalize.sh >/dev/null
+sha256sum normalized_events.json quarantine.json
+```
+
+Both pairs of hashes must remain identical when the inputs and schema have not changed.
+
+### Relevance to a SOC analyst
+
+Normalization lets one detection query use fields such as `user`, `src_ip`, `process_name`, and `event_category` regardless of whether the event originated in Windows Security, Sysmon, PowerShell, Linux syslog, or auditd. Quarantine prevents malformed timestamps or incomplete records from corrupting chronological searches while retaining the original evidence for remediation and investigation.
+
