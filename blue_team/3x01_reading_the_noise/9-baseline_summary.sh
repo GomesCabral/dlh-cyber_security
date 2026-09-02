@@ -167,6 +167,7 @@ failure_rate_multiplier = 3
 unknown_port_penalty = 4
 unknown_process_penalty = unknown_port_penalty + 1
 failure_burst_threshold = max(1, math.ceil(normal_failure_burst * failure_rate_multiplier))
+privilege_surge_threshold = 1
 
 thresholds = {
     "failure_rate_multiplier": {
@@ -188,6 +189,10 @@ thresholds = {
     "unknown_process_penalty": {
         "value": unknown_process_penalty,
         "comment": "One point above unknown_port_penalty because first-seen executable behavior has higher investigation value.",
+    },
+    "privilege_escalation_surge_threshold": {
+        "value": privilege_surge_threshold,
+        "comment": "On a host with zero baseline privilege events, more than one evaluation event constitutes a surge.",
     },
 }
 
@@ -235,5 +240,4 @@ PY
 mv -f -- "$output_tmp" "$OUTPUT_FILE"
 chmod 0644 "$OUTPUT_FILE"
 printf 'baseline_summary.json written\n'
-
 

@@ -107,7 +107,12 @@ if window_end > maximum_time:
 empty_counts = {label: 0 for label in AUTH_LABELS}
 per_host = collections.defaultdict(lambda: dict(empty_counts))
 per_user = collections.defaultdict(
-    lambda: {"login_success": 0, "login_failure": 0}
+    lambda: {
+        "login_success": 0,
+        "login_failure": 0,
+        "business_hours_success": 0,
+        "offhours_success": 0,
+    }
 )
 known_accounts = set()
 business_counts = {"login_success": 0, "login_failure": 0}
@@ -136,6 +141,11 @@ for line_number, event in iter_events(input_path):
         known_accounts.add(user_key)
         if label in ("login_success", "login_failure"):
             per_user[user_key][label] += 1
+        if label == "login_success":
+            if 6 <= event_time.hour <= 17:
+                per_user[user_key]["business_hours_success"] += 1
+            else:
+                per_user[user_key]["offhours_success"] += 1
 
     if label in ("login_success", "login_failure"):
         period = business_counts if 6 <= event_time.hour <= 17 else offhours_counts
@@ -178,6 +188,8 @@ result = {
             "user": username,
             "login_success": per_user[username]["login_success"],
             "login_failure": per_user[username]["login_failure"],
+            "business_hours_success": per_user[username]["business_hours_success"],
+            "offhours_success": per_user[username]["offhours_success"],
         }
         for username in sorted(known_accounts)
     ],

@@ -1,0 +1,392 @@
+[
+  {
+    "timestamp": "2026-03-25T01:16:07Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144517"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:17:39Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144522"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:18:07Z",
+    "host": "db-patient-01",
+    "user": "ubuntu",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "ubuntu",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144524"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:18:10Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144525"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:18:23Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144526"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:20:26Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144534"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:21:18Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144538"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:21:30Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144539"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:24:28Z",
+    "host": "db-patient-01",
+    "user": "ubuntu",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "ubuntu",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144543"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:25:59Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144548"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:26:18Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144549"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:26:48Z",
+    "host": "db-patient-01",
+    "user": "ubuntu",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "ubuntu",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144552"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:27:15Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144554"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:27:55Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144557"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:29:02Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144561"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:29:38Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144564"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:31:19Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144570"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:33:24Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144576"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:33:31Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144577"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:34:46Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144579"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:35:00Z",
+    "host": "db-patient-01",
+    "user": "ubuntu",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "ubuntu",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144581"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:35:27Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144586"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:36:40Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144590"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:37:15Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144592"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:37:45Z",
+    "host": "db-patient-01",
+    "user": "ubuntu",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "ubuntu",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144596"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:38:25Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144601"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:40:12Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144606"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:40:47Z",
+    "host": "db-patient-01",
+    "user": "backup",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "backup",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144609"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:44:34Z",
+    "host": "db-patient-01",
+    "user": "postgres",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "postgres",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144624"
+    ]
+  },
+  {
+    "timestamp": "2026-03-25T01:47:00Z",
+    "host": "db-patient-01",
+    "user": "root",
+    "src_ip": "unknown",
+    "anomaly_type": "unknown_account",
+    "baseline_value": "account absent from known_accounts",
+    "observed_value": "root",
+    "severity": "high",
+    "event_refs": [
+      "linux:None:line:144630"
+    ]
+  }
+]

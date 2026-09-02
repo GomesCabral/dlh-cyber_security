@@ -60,6 +60,8 @@ directory.
 | 3 — Event Type Taxonomy | `3-event_taxonomy.sh`, `event_taxonomy.json`, `labeled_events.json` | Complete |
 | 4 — Authentication Baseline | `4-baseline_auth.sh`, `baseline_auth.json` | Complete |
 | 5 — Process Execution Baseline | `5-baseline_process.sh`, `baseline_process.json` | Complete |
+| 9 — Cross-Source Baseline Summary | `9-baseline_summary.sh`, `baseline_summary.json` | Complete |
+| 10 — Authentication Anomalies | `10-anomalies_auth.sh`, `anomalies_auth.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -296,3 +298,109 @@ tasks can compare day 8 to this baseline to identify first-seen processes,
 unusual execution frequency, unexpected users, or new parent-child chains such
 as a web server spawning a shell. Rare baseline processes remain visible for
 review instead of being incorrectly treated as common activity.
+
+## Task 9 — Cross-Source Baseline Summary
+
+`9-baseline_summary.sh` combines `baseline_auth.json`,
+`baseline_process.json`, `baseline_network.json`, `baseline_file.json`, and
+`temporal_profile.json` into the single `baseline_summary.json` contract used by
+the anomaly detection block.
+
+Tasks 4–8 must have completed successfully before running Task 9. The script
+validates that all five documents contain the same baseline window and stops
+with a non-zero exit status if any input is missing, invalid, or inconsistent.
+
+Run and validate it:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+chmod +x 9-baseline_summary.sh
+shellcheck 9-baseline_summary.sh
+bash -n 9-baseline_summary.sh
+./9-baseline_summary.sh
+jq empty baseline_summary.json
+```
+
+Inspect the contract without printing all nested baselines:
+
+```bash
+jq '{
+  version,
+  generated_at,
+  baseline_window,
+  evaluation_window,
+  hosts: (.host_inventory | length),
+  sections: (keys),
+  thresholds
+}' baseline_summary.json
+```
+
+`host_inventory` is the sorted union of hosts present in the five baseline
+documents. The evaluation window begins exactly where the baseline ends and is
+24 hours long. `generated_at` is set deterministically to the evaluation-window
+end so repeated execution against unchanged inputs produces byte-identical
+output.
+
+Each threshold has a numeric `value` and a short `comment`. The one-hour failure
+threshold is calculated from the maximum observed baseline burst; process and
+port penalties are centralized scoring weights. Downstream scripts must read
+these values from `baseline_summary.json` rather than embedding their own
+copies.
+
+### SOC use
+
+This file is the Tier 1 analyst's single reference contract. An anomaly detector
+can load one document to decide whether an account, process, destination, file
+access pattern, or time profile is expected. Window validation prevents a
+dangerous comparison in which baselines built from different date ranges are
+silently combined.
+
+## Task 10 — Authentication Anomalies
+
+`10-anomalies_auth.sh` scans only the evaluation window defined in
+`baseline_summary.json`. It detects unknown accounts, rolling one-hour failure
+bursts, off-hours logins by business-hours-only users, and privilege escalation
+surges on hosts whose baseline count was zero.
+
+Task 10 requires the updated Task 4 per-user time counters and the updated Task
+9 privilege surge threshold. Regenerate the dependency chain before running it:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+unset BASELINE_DAYS
+./4-baseline_auth.sh
+./9-baseline_summary.sh
+chmod +x 10-anomalies_auth.sh
+shellcheck 10-anomalies_auth.sh
+bash -n 10-anomalies_auth.sh
+./10-anomalies_auth.sh
+jq empty anomalies_auth.json
+```
+
+Inspect the counts and highest-severity results:
+
+```bash
+jq 'group_by(.anomaly_type) | map({
+  anomaly_type: .[0].anomaly_type,
+  count: length
+})' anomalies_auth.json
+
+jq '[.[] | select(.severity == "high")]' anomalies_auth.json
+```
+
+Failure detection uses the baseline maximum multiplied by
+`thresholds.failure_rate_multiplier` and a rolling interval, not a fixed clock
+bucket. A privilege surge is emitted once per affected host, and a failure
+burst once per source IP at its largest observed window. Event references use a
+source ID when available and a stable source/event/line reference otherwise.
+
+### SOC use
+
+These findings are investigation leads rather than automatic proof of
+compromise. Tier 1 should first review high-severity unknown accounts, failure
+bursts, and privilege surges, then confirm whether off-hours access has an
+approved operational explanation. Every finding records the observed value and
+the baseline value that caused it, making the alert explainable and repeatable.
+
