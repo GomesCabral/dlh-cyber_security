@@ -59,6 +59,7 @@ directory.
 | 2 — Reusable Query Toolkit | `2-query_toolkit.sh` | Complete |
 | 3 — Event Type Taxonomy | `3-event_taxonomy.sh`, `event_taxonomy.json`, `labeled_events.json` | Complete |
 | 4 — Authentication Baseline | `4-baseline_auth.sh`, `baseline_auth.json` | Complete |
+| 5 — Process Execution Baseline | `5-baseline_process.sh`, `baseline_process.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -250,3 +251,48 @@ than relying on an arbitrary number embedded in a detection script.
   `jq -s` against the 416 MB dataset.
 - Every project file ends with a newline.
 
+## Task 5 — Process Execution Baseline
+
+`5-baseline_process.sh` creates the authoritative list of processes observed on
+each host during the clean baseline window. It uses the same runtime-derived
+`[start, end)` window as Task 4 and supports the `BASELINE_DAYS` override.
+
+Run and validate it:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+chmod +x 5-baseline_process.sh
+shellcheck 5-baseline_process.sh
+bash -n 5-baseline_process.sh
+./5-baseline_process.sh
+jq empty baseline_process.json
+```
+
+Inspect the main results:
+
+```bash
+jq '{
+  window,
+  hosts: (.per_host | length),
+  global_top: .global_top[:10],
+  rare_processes: (.rare_processes | length),
+  parent_child_pairs: ([.parent_child_pairs[] | length] | add // 0)
+}' baseline_process.json
+```
+
+For each host, the output records the process name, execution count, first and
+last timestamps, and distinct users. `global_top` contains at most 50 entries.
+A process is rare when it appears on only one host or has fewer than five total
+executions in the baseline. Parent-child relationships use process names when
+available and a `pid:<number>` fallback when the source only recorded the
+parent PID.
+
+### SOC use
+
+The per-host scope is essential: a process such as `python3` can be expected on
+an analyst workstation but suspicious on a clinical server. Later anomaly
+tasks can compare day 8 to this baseline to identify first-seen processes,
+unusual execution frequency, unexpected users, or new parent-child chains such
+as a web server spawning a shell. Rare baseline processes remain visible for
+review instead of being incorrectly treated as common activity.
