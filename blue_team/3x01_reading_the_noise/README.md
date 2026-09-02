@@ -68,6 +68,7 @@ directory.
 | 11 — Process Anomalies | `11-anomalies_process.sh`, `anomalies_process.json` | Complete |
 | 12 — Network Anomalies | `anomalies_network.json` | Task not provided; explicit empty placeholder |
 | 13 — Cross-Source Correlation | `13-correlate_anomalies.sh`, `correlated_anomalies.json` | Complete |
+| 15 — Baseline Validation | `15-baseline_validation.sh`, `baseline_validation.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -624,4 +625,65 @@ Correlation increases confidence without destroying the original evidence. An
 unknown process followed by an authentication or network deviation on the same
 host is ranked above either isolated event. Tier 1 can use `member_refs` to
 return to the source findings and verify the full chain before escalation.
+
+## Task 15 — Baseline Validation
+
+`15-baseline_validation.sh` backtests the authentication, process, and network
+detectors against the baseline window, then reruns them against the normal day-8
+evaluation window. It writes separate `self_check_*.json` and
+`live_check_*.json` evidence files plus `baseline_validation.json`.
+
+Before executing T10 and T11, the script streams `labeled_events.json` into
+compact temporary auth and process datasets. This prevents exit code 137 from
+the Linux out-of-memory killer when the original enriched records occupy
+hundreds of megabytes. Original event references are preserved for triage.
+
+Run it after Tasks 9–13 are current:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+chmod +x 15-baseline_validation.sh
+shellcheck 15-baseline_validation.sh
+bash -n 15-baseline_validation.sh
+./15-baseline_validation.sh
+```
+
+The script returns exit code 0 for `pass` and 1 for `fail`. When testing a
+possible failure without interrupting the shell workflow, capture the code:
+
+```bash
+./15-baseline_validation.sh
+status=$?
+printf 'validation exit code: %s\n' "$status"
+```
+
+Inspect the report:
+
+```bash
+jq . baseline_validation.json
+jq -r '.verdict' baseline_validation.json
+```
+
+The self-check total must be below the default threshold of 5, and the minimum
+signal-to-noise ratio is 3.0. Override them without editing the script:
+
+```bash
+SELF_CHECK_THRESHOLD=3 \
+MIN_SIGNAL_TO_NOISE_RATIO=4.0 \
+./15-baseline_validation.sh
+```
+
+Because Task 12 was not supplied, the network self/live files are empty arrays
+and `detector_status.network` is
+`placeholder_task_12_not_provided`. If `12-anomalies_network.sh` is added later,
+Task 15 detects and executes it automatically.
+
+### SOC use
+
+The self-check estimates false-positive noise using the same clean data that
+created the baseline. The live check measures signal on day 8. A high ratio
+shows that evaluation findings stand out from normal activity; a failing result
+means the baseline or thresholds need tuning before Tier 1 analysts rely on the
+toolkit. The separate check files preserve the evidence behind the verdict.
 
