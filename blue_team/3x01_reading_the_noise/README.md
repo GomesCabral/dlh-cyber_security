@@ -60,8 +60,12 @@ directory.
 | 3 — Event Type Taxonomy | `3-event_taxonomy.sh`, `event_taxonomy.json`, `labeled_events.json` | Complete |
 | 4 — Authentication Baseline | `4-baseline_auth.sh`, `baseline_auth.json` | Complete |
 | 5 — Process Execution Baseline | `5-baseline_process.sh`, `baseline_process.json` | Complete |
-| 9 — Cross-Source Baseline Summary | `9-baseline_summary.sh`, `baseline_summary.json` | Complete |
+| 6 — Network Baseline | `baseline_network.json` | Task not provided; explicit placeholder |
+| 7 — File Baseline | `baseline_file.json` | Task not provided; explicit placeholder |
+| 8 — Temporal Profile | `temporal_profile.json` | Task not provided; explicit placeholder |
+| 9 — Cross-Source Baseline Summary | `9-baseline_summary.sh`, `baseline_summary.json` | Complete with declared placeholders |
 | 10 — Authentication Anomalies | `10-anomalies_auth.sh`, `anomalies_auth.json` | Complete |
+| 11 — Process Anomalies | `11-anomalies_process.sh`, `anomalies_process.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -224,6 +228,15 @@ Test an override without editing the script:
 BASELINE_DAYS=2 ./4-baseline_auth.sh
 ```
 
+This command replaces `baseline_auth.json` with a two-day test baseline. Before
+continuing to Task 9, always restore the default seven-day output:
+
+```bash
+unset BASELINE_DAYS
+./4-baseline_auth.sh
+jq '.window' baseline_auth.json
+```
+
 The output contains the half-open baseline window `[start, end)`, five
 authentication-related counts per host, per-user success/failure totals, known
 accounts, business-hours and off-hours hourly averages, and the largest rolling
@@ -306,9 +319,103 @@ review instead of being incorrectly treated as common activity.
 `temporal_profile.json` into the single `baseline_summary.json` contract used by
 the anomaly detection block.
 
-Tasks 4–8 must have completed successfully before running Task 9. The script
-validates that all five documents contain the same baseline window and stops
-with a non-zero exit status if any input is missing, invalid, or inconsistent.
+The supplied task list contains no Tasks 6–8, and the lab contains no network,
+file, or temporal baseline artifacts. For this project state, those three
+sections are explicit placeholders rather than invented observations. The
+placeholders keep the Task 9 contract structurally complete while making the
+data limitation visible to downstream analysts.
+
+First restore and read the authoritative seven-day window:
+
+```bash
+unset BASELINE_DAYS
+./4-baseline_auth.sh
+
+WINDOW_START=$(jq -r '.window.start' baseline_auth.json)
+WINDOW_END=$(jq -r '.window.end' baseline_auth.json)
+DAYS=$(jq -r '.window.baseline_days' baseline_auth.json)
+
+printf 'START=%s\nEND=%s\nDAYS=%s\n' \
+  "$WINDOW_START" "$WINDOW_END" "$DAYS"
+```
+
+Create the three declared placeholders:
+
+```bash
+jq -n \
+  --arg window_start "$WINDOW_START" \
+  --arg window_end "$WINDOW_END" \
+  --argjson days "$DAYS" \
+  '{
+    "window": {
+      "start": $window_start,
+      "end": $window_end,
+      "end_exclusive": true,
+      "baseline_days": $days
+    },
+    "per_host": {},
+    "known_destinations": [],
+    "known_ports": [],
+    "status": "placeholder",
+    "comment": "No network baseline task was provided."
+  }' > baseline_network.json
+
+jq -n \
+  --arg window_start "$WINDOW_START" \
+  --arg window_end "$WINDOW_END" \
+  --argjson days "$DAYS" \
+  '{
+    "window": {
+      "start": $window_start,
+      "end": $window_end,
+      "end_exclusive": true,
+      "baseline_days": $days
+    },
+    "per_host": {},
+    "sensitive_paths": [],
+    "status": "placeholder",
+    "comment": "No file baseline task was provided."
+  }' > baseline_file.json
+
+jq -n \
+  --arg window_start "$WINDOW_START" \
+  --arg window_end "$WINDOW_END" \
+  --argjson days "$DAYS" \
+  '{
+    "window": {
+      "start": $window_start,
+      "end": $window_end,
+      "end_exclusive": true,
+      "baseline_days": $days
+    },
+    "per_host": {},
+    "hourly_profile": [],
+    "daily_profile": [],
+    "status": "placeholder",
+    "comment": "No temporal profile task was provided."
+  }' > temporal_profile.json
+```
+
+Validate that all five inputs are valid and share the same window:
+
+```bash
+jq empty \
+  baseline_auth.json \
+  baseline_process.json \
+  baseline_network.json \
+  baseline_file.json \
+  temporal_profile.json
+
+jq -r '[input_filename, .window.start, .window.end] | @tsv' \
+  baseline_auth.json \
+  baseline_process.json \
+  baseline_network.json \
+  baseline_file.json \
+  temporal_profile.json
+```
+
+`9-baseline_summary.sh` independently validates these windows and exits non-zero
+if an input is missing, invalid, or inconsistent.
 
 Run and validate it:
 
@@ -337,10 +444,12 @@ jq '{
 ```
 
 `host_inventory` is the sorted union of hosts present in the five baseline
-documents. The evaluation window begins exactly where the baseline ends and is
-24 hours long. `generated_at` is set deterministically to the evaluation-window
-end so repeated execution against unchanged inputs produces byte-identical
-output.
+documents. In the current provisional state, the actual hosts come from the
+authentication and process baselines because the other three `per_host`
+sections are empty. The evaluation window begins exactly where the baseline
+ends and is 24 hours long. `generated_at` is set deterministically to the
+evaluation-window end so repeated execution against unchanged inputs produces
+byte-identical output.
 
 Each threshold has a numeric `value` and a short `comment`. The one-hour failure
 threshold is calculated from the maximum observed baseline burst; process and
@@ -354,7 +463,8 @@ This file is the Tier 1 analyst's single reference contract. An anomaly detector
 can load one document to decide whether an account, process, destination, file
 access pattern, or time profile is expected. Window validation prevents a
 dangerous comparison in which baselines built from different date ranges are
-silently combined.
+silently combined. The `status: placeholder` markers warn the analyst that
+network, file, and temporal absence must not be interpreted as normal behavior.
 
 ## Task 10 — Authentication Anomalies
 
@@ -371,6 +481,8 @@ cd ~/bt/3x01
 source ~/m3_env.sh
 unset BASELINE_DAYS
 ./4-baseline_auth.sh
+
+# Recreate the three placeholders above if the window changed.
 ./9-baseline_summary.sh
 chmod +x 10-anomalies_auth.sh
 shellcheck 10-anomalies_auth.sh
@@ -403,4 +515,53 @@ compromise. Tier 1 should first review high-severity unknown accounts, failure
 bursts, and privilege surges, then confirm whether off-hours access has an
 approved operational explanation. Every finding records the observed value and
 the baseline value that caused it, making the alert explainable and repeatable.
+
+## Task 11 — Process Anomalies
+
+`11-anomalies_process.sh` compares evaluation-window executions with the
+per-host process baseline. It emits one aggregate finding per distinct
+anomalous process or parent-child relationship instead of duplicating an alert
+for every execution.
+
+Run and validate it:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+chmod +x 11-anomalies_process.sh
+shellcheck 11-anomalies_process.sh
+bash -n 11-anomalies_process.sh
+./11-anomalies_process.sh
+jq empty anomalies_process.json
+```
+
+Inspect the results:
+
+```bash
+jq 'group_by(.anomaly_type) | map({
+  anomaly_type: .[0].anomaly_type,
+  count: length
+})' anomalies_process.json
+
+jq '[.[] | select(.severity == "high")]' anomalies_process.json
+```
+
+The severity rubric is declared at the beginning of the script: an unknown
+process is low; an unknown parent-child relationship and first-seen high-risk
+tool are medium; and a rare process spike is high. The required high-risk
+watchlist is matched case-insensitively.
+
+Only named parent processes participate in `unknown_parent_child` detection.
+PID-only relationships are ignored because process IDs change between
+executions and would turn the 4,427 observed baseline pairs into unstable false
+positives.
+
+### SOC use
+
+A first-seen process is a lead whose urgency depends on context. A first-seen
+`powershell.exe`, `bash`, `nc`, or `nmap` receives an additional high-risk-tool
+finding. A process with fewer than five total baseline executions that runs
+more than ten times on one evaluation host becomes a high-severity spike.
+Parent-child detection highlights suspicious execution chains such as a web
+server or Office application starting a shell.
 
