@@ -66,6 +66,8 @@ directory.
 | 9 — Cross-Source Baseline Summary | `9-baseline_summary.sh`, `baseline_summary.json` | Complete with declared placeholders |
 | 10 — Authentication Anomalies | `10-anomalies_auth.sh`, `anomalies_auth.json` | Complete |
 | 11 — Process Anomalies | `11-anomalies_process.sh`, `anomalies_process.json` | Complete |
+| 12 — Network Anomalies | `anomalies_network.json` | Task not provided; explicit empty placeholder |
+| 13 — Cross-Source Correlation | `13-correlate_anomalies.sh`, `correlated_anomalies.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -564,4 +566,62 @@ finding. A process with fewer than five total baseline executions that runs
 more than ten times on one evaluation host becomes a high-severity spike.
 Parent-child detection highlights suspicious execution chains such as a web
 server or Office application starting a shell.
+
+## Task 13 — Cross-Source Correlation
+
+`13-correlate_anomalies.sh` groups anomalies from at least two different source
+categories when they share a host and fall within a maximum time span. The
+default window is 300 seconds and can be overridden with
+`CORRELATION_WINDOW_SECONDS`.
+
+The supplied task list contains no Task 12. Until a real network anomaly task is
+available, create an explicit empty JSON array rather than fabricated findings:
+
+```bash
+printf '[]\n' > anomalies_network.json
+```
+
+Regenerate Tasks 10 and 11 with their updated scripts so findings carry
+`asset_criticality`, then run Task 13:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+./10-anomalies_auth.sh
+./11-anomalies_process.sh
+chmod +x 13-correlate_anomalies.sh
+shellcheck 13-correlate_anomalies.sh
+bash -n 13-correlate_anomalies.sh
+./13-correlate_anomalies.sh
+jq empty correlated_anomalies.json
+```
+
+Test another window without editing the script:
+
+```bash
+CORRELATION_WINDOW_SECONDS=600 ./13-correlate_anomalies.sh
+```
+
+The score is deterministic and additive:
+
+```text
+score = distinct source count
+      + distinct anomaly type count
+      + asset criticality multiplier
+```
+
+Criticality multipliers are `UNKNOWN/LOW=1`, `MEDIUM=2`, `HIGH=3`, and
+`CRITICAL=4`. The highest criticality among the member anomalies is used.
+`member_refs` values such as `auth:000001` and `process:000003` point back to
+the one-based positions in the source anomaly arrays.
+
+Because the task requires every group to share one host, `multi-host findings`
+is expected to be zero. It is printed to match the required output contract.
+
+### SOC use
+
+Correlation increases confidence without destroying the original evidence. An
+unknown process followed by an authentication or network deviation on the same
+host is ranked above either isolated event. Tier 1 can use `member_refs` to
+return to the source findings and verify the full chain before escalation.
 
