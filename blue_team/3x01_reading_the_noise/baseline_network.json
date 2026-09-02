@@ -1,0 +1,13 @@
+{
+  "window": {
+    "start": "2026-03-17T18:02:45Z",
+    "end": "2026-03-24T18:02:45Z",
+    "end_exclusive": true,
+    "baseline_days": 7
+  },
+  "per_host": {},
+  "known_destinations": [],
+  "known_ports": [],
+  "status": "placeholder",
+  "comment": "No network baseline task was provided."
+}
