@@ -58,6 +58,7 @@ directory.
 | --- | --- | --- |
 | 2 — Reusable Query Toolkit | `2-query_toolkit.sh` | Complete |
 | 3 — Event Type Taxonomy | `3-event_taxonomy.sh`, `event_taxonomy.json`, `labeled_events.json` | Complete |
+| 4 — Authentication Baseline | `4-baseline_auth.sh`, `baseline_auth.json` | Complete |
 
 ## Task 2 — Reusable Query Toolkit
 
@@ -196,6 +197,49 @@ these source-specific representations into shared labels such as
 can therefore correlate behavior across sources while `event_taxonomy.json`
 provides an auditable explanation of every classification.
 
+## Task 4 — Authentication Baseline
+
+`4-baseline_auth.sh` reads `labeled_events.json`, derives the dataset start at
+runtime, and analyzes the first seven days as the clean baseline. Set
+`BASELINE_DAYS` to a positive integer to use a shorter test window.
+
+Run and validate it:
+
+```bash
+cd ~/bt/3x01
+source ~/m3_env.sh
+chmod +x 4-baseline_auth.sh
+shellcheck 4-baseline_auth.sh
+bash -n 4-baseline_auth.sh
+./4-baseline_auth.sh
+jq empty baseline_auth.json
+```
+
+Test an override without editing the script:
+
+```bash
+BASELINE_DAYS=2 ./4-baseline_auth.sh
+```
+
+The output contains the half-open baseline window `[start, end)`, five
+authentication-related counts per host, per-user success/failure totals, known
+accounts, business-hours and off-hours hourly averages, and the largest rolling
+60-minute failure burst associated with one source IP.
+
+Business hours are 06:00–17:59 UTC and off-hours are 18:00–05:59 UTC. Each
+average divides the applicable event count by 12 hours per baseline day. The
+failure burst uses a rolling interval, so a burst crossing a clock-hour boundary
+is still counted correctly.
+
+### SOC use
+
+This baseline records who normally authenticates to each host, which accounts
+are known, when authentication normally occurs, and the largest normal failure
+burst. Task 10 can compare day 8 with these values to detect new accounts,
+unusual hosts, off-hours access, abnormal failure rates, password spraying, or
+brute-force activity. The baseline provides evidence for a threshold rather
+than relying on an arbitrary number embedded in a detection script.
+
 ## Reproducibility and resource use
 
 - Input evidence is read-only.
@@ -205,5 +249,4 @@ provides an auditable explanation of every classification.
 - Aggregations stream through `jq`, `sort`, `uniq`, and `awk`; they do not use
   `jq -s` against the 416 MB dataset.
 - Every project file ends with a newline.
-
 
