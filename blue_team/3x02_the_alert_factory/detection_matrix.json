@@ -1,0 +1,229 @@
+[
+  {
+    "source_type": "firewall",
+    "record_count": 67420,
+    "stable_fields": [
+      "action",
+      "bytes_in",
+      "bytes_out",
+      "channel",
+      "details",
+      "dst_ip",
+      "dst_port",
+      "dst_zone",
+      "event_action",
+      "event_category",
+      "network_protocol",
+      "outcome",
+      "provider",
+      "raw_message",
+      "rule_id",
+      "severity",
+      "source_origin",
+      "source_type",
+      "src_ip",
+      "src_port",
+      "src_zone",
+      "tags",
+      "timestamp"
+    ],
+    "high_cardinality_fields": [
+      "details",
+      "raw_message",
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "anomaly",
+      "correlation"
+    ],
+    "rationale": {
+      "anomaly": "baseline_supports_comparison_with_normal_frequency_or_values",
+      "correlation": "shared_time_and_entity_fields_support_cross_event_linking"
+    },
+    "recommended_attack_tactics": [
+      "TA0008",
+      "TA0010",
+      "TA0011"
+    ]
+  },
+  {
+    "source_type": "linux",
+    "record_count": 135831,
+    "stable_fields": [
+      "channel",
+      "details",
+      "event_category",
+      "process_id",
+      "provider",
+      "raw_message",
+      "severity",
+      "source_origin",
+      "source_type",
+      "tags",
+      "timestamp"
+    ],
+    "high_cardinality_fields": [
+      "details",
+      "raw_message",
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "signature",
+      "anomaly",
+      "behavioral",
+      "correlation"
+    ],
+    "rationale": {
+      "signature": "stable_fields_support_exact_indicator_or_pattern_matching",
+      "anomaly": "baseline_supports_comparison_with_normal_frequency_or_values",
+      "behavioral": "event_fields_support_suspicious_activity_pattern_detection",
+      "correlation": "shared_time_and_entity_fields_support_cross_event_linking"
+    },
+    "recommended_attack_tactics": [
+      "TA0002",
+      "TA0003",
+      "TA0004",
+      "TA0005",
+      "TA0006"
+    ]
+  },
+  {
+    "source_type": "pcap",
+    "record_count": 4096,
+    "stable_fields": [
+      "channel",
+      "details",
+      "dst_ip",
+      "dst_port",
+      "dst_zone",
+      "event_action",
+      "event_category",
+      "event_id",
+      "network_protocol",
+      "provider",
+      "raw_message",
+      "severity",
+      "source_origin",
+      "source_type",
+      "src_ip",
+      "src_port",
+      "src_zone",
+      "tags",
+      "timestamp"
+    ],
+    "high_cardinality_fields": [
+      "details",
+      "event_id",
+      "raw_message",
+      "src_port",
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "anomaly",
+      "behavioral"
+    ],
+    "rationale": {
+      "anomaly": "baseline_supports_comparison_with_normal_frequency_or_values",
+      "behavioral": "event_fields_support_suspicious_activity_pattern_detection"
+    },
+    "recommended_attack_tactics": [
+      "TA0043",
+      "TA0008",
+      "TA0010",
+      "TA0011"
+    ]
+  },
+  {
+    "source_type": "suricata",
+    "record_count": 9977,
+    "stable_fields": [
+      "action",
+      "bytes_in",
+      "bytes_out",
+      "channel",
+      "details",
+      "dst_ip",
+      "dst_port",
+      "dst_zone",
+      "event_action",
+      "event_category",
+      "event_id",
+      "network_protocol",
+      "outcome",
+      "provider",
+      "raw_message",
+      "rule_id",
+      "rule_name",
+      "severity",
+      "signature",
+      "source_origin",
+      "source_type",
+      "src_ip",
+      "src_port",
+      "src_zone",
+      "tags",
+      "timestamp"
+    ],
+    "high_cardinality_fields": [
+      "bytes_in",
+      "bytes_out",
+      "details",
+      "src_port",
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "signature",
+      "correlation"
+    ],
+    "rationale": {
+      "signature": "stable_fields_support_exact_indicator_or_pattern_matching",
+      "correlation": "shared_time_and_entity_fields_support_cross_event_linking"
+    },
+    "recommended_attack_tactics": [
+      "TA0010",
+      "TA0011"
+    ]
+  },
+  {
+    "source_type": "windows",
+    "record_count": 122569,
+    "stable_fields": [
+      "asset",
+      "channel",
+      "details",
+      "event_category",
+      "event_id",
+      "hostname",
+      "provider",
+      "raw_message",
+      "severity",
+      "source_origin",
+      "source_type",
+      "tags",
+      "timestamp"
+    ],
+    "high_cardinality_fields": [
+      "details",
+      "timestamp"
+    ],
+    "supported_detection_types": [
+      "signature",
+      "anomaly",
+      "behavioral",
+      "correlation"
+    ],
+    "rationale": {
+      "signature": "stable_fields_support_exact_indicator_or_pattern_matching",
+      "anomaly": "baseline_supports_comparison_with_normal_frequency_or_values",
+      "behavioral": "event_fields_support_suspicious_activity_pattern_detection",
+      "correlation": "shared_time_and_entity_fields_support_cross_event_linking"
+    },
+    "recommended_attack_tactics": [
+      "TA0002",
+      "TA0003",
+      "TA0004",
+      "TA0005",
+      "TA0006"
+    ]
+  }
+]
