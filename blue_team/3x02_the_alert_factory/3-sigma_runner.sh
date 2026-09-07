@@ -1,300 +1,125 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-HANDOFF_DIR="${HANDOFF_DIR:-$HOME/3x00_handoff/evidence_handoff}"
-DEFAULT_EVIDENCE="$HANDOFF_DIR/data/normalized_events.json"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BASELINE_PKG="${BASELINE_PKG:-$HOME/3x01_package/baseline_package}"
+RULES_DIR="${RULES_DIR:-$SCRIPT_DIR/rules/sigma}"
+RUNNER="${SIGMA_RUNNER:-$SCRIPT_DIR/3-sigma_runner.sh}"
+BASELINE_SUMMARY="$BASELINE_PKG/baselines/baseline_summary.json"
+OUTPUT="${OUTPUT_FILE:-$SCRIPT_DIR/fp_baseline.json}"
 
-python3 -W error /dev/fd/3 "$DEFAULT_EVIDENCE" "$@" 3<<'PY'
-import argparse
-import collections
-import datetime as dt
+for path in "$BASELINE_SUMMARY" "$RUNNER"; do
+    [[ -r "$path" ]] || { printf 'ERROR: unreadable dependency: %s\n' "$path" >&2; exit 1; }
+done
+[[ -x "$RUNNER" ]] || { printf 'ERROR: runner is not executable: %s\n' "$RUNNER" >&2; exit 1; }
+[[ -d "$RULES_DIR" ]] || { printf 'ERROR: rules directory missing: %s\n' "$RULES_DIR" >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || { printf 'ERROR: jq is required\n' >&2; exit 1; }
+
+readarray -t bounds < <(python3 -W error /dev/fd/3 "$BASELINE_SUMMARY" 3<<'PY'
 import json
-import re
 import sys
-import time
 
-import yaml
+with open(sys.argv[1], "r", encoding="utf-8") as stream:
+    document = json.load(stream)
 
-
-def arguments():
-    parser = argparse.ArgumentParser(description="Run Sigma logic against JSON evidence")
-    parser.add_argument("default_evidence", help=argparse.SUPPRESS)
-    parser.add_argument("rule_file")
-    parser.add_argument("evidence_file", nargs="?")
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--count-only", action="store_true")
-    parser.add_argument("--window", metavar="START_ISO,END_ISO")
-    return parser.parse_args()
-
-
-def timestamp(value):
-    if not isinstance(value, str):
-        return None
-    try:
-        result = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    if result.tzinfo is None:
-        result = result.replace(tzinfo=dt.timezone.utc)
-    return result.astimezone(dt.timezone.utc)
-
-
-def window(value):
-    if value is None:
-        return None
-    parts = value.split(",", 1)
-    if len(parts) != 2:
-        raise ValueError("--window must be START_ISO,END_ISO")
-    start, end = timestamp(parts[0]), timestamp(parts[1])
-    if start is None or end is None or start > end:
-        raise ValueError("invalid or reversed --window timestamps")
-    return start, end
-
-
-def events(path):
-    with open(path, "r", encoding="utf-8") as stream:
-        first = ""
-        while True:
-            character = stream.read(1)
-            if not character:
-                return
-            if not character.isspace():
-                first = character
-                break
-        stream.seek(0)
-        if first == "[":
-            document = json.load(stream)
-            if not isinstance(document, list):
-                raise ValueError("JSON evidence must be an array")
-            for number, event in enumerate(document, start=1):
-                if isinstance(event, dict):
-                    yield number, event
-            return
-        for number, line in enumerate(stream, start=1):
-            text = line.strip()
-            if not text:
-                continue
-            try:
-                event = json.loads(text)
-            except json.JSONDecodeError as error:
-                raise ValueError(f"invalid NDJSON line {number}: {error}") from error
-            if isinstance(event, dict):
-                yield number, event
-
-
-def field(event, requested):
-    if requested == "hour_of_day":
-        parsed = timestamp(event.get("timestamp"))
-        return parsed.hour if parsed else None
-    aliases = {
-        "event_id": {"event_id", "eventid"},
-        "logontype": {"logontype", "logon_type"},
-        "src_ip": {"src_ip", "source_ip", "srcip"},
-    }
-    names = aliases.get(requested.lower(), {requested.lower()})
-    for name, value in event.items():
-        if name.lower() in names:
-            return value
-    return None
-
-
-def equal(actual, expected):
-    if isinstance(actual, list):
-        return any(equal(item, expected) for item in actual)
-    return actual is not None and str(actual).casefold() == str(expected).casefold()
-
-
-def value_matches(actual, expected, modifier):
-    expected = expected if isinstance(expected, list) else [expected]
-    if modifier in {"lt", "lte", "gt", "gte"}:
-        try:
-            left = float(actual)
-            operations = {
-                "lt": lambda right: left < float(right),
-                "lte": lambda right: left <= float(right),
-                "gt": lambda right: left > float(right),
-                "gte": lambda right: left >= float(right),
-            }
-            return any(operations[modifier](item) for item in expected)
-        except (TypeError, ValueError):
-            return False
-    if modifier in {"contains", "startswith", "endswith"}:
-        if actual is None:
-            return False
-        actual = str(actual).casefold()
-        operations = {
-            "contains": lambda item: str(item).casefold() in actual,
-            "startswith": lambda item: actual.startswith(str(item).casefold()),
-            "endswith": lambda item: actual.endswith(str(item).casefold()),
-        }
-        return any(operations[modifier](item) for item in expected)
-    return any(equal(actual, item) for item in expected)
-
-
-def selection_matches(event, selection):
-    if not isinstance(selection, dict):
-        return False
-    for expression, expected in selection.items():
-        parts = expression.split("|", 1)
-        name = parts[0]
-        modifier = parts[1] if len(parts) == 2 else "equals"
-        if not value_matches(field(event, name), expected, modifier):
-            return False
-    return True
-
-
-def boolean_condition(condition, answers):
-    expression = condition
-    for name in sorted(answers, key=len, reverse=True):
-        expression = re.sub(
-            rf"\b{re.escape(name)}\b", str(bool(answers[name])), expression
-        )
-    if not re.fullmatch(r"[TrueFalsandornot()\s]+", expression):
-        raise ValueError(f"unsupported condition: {condition}")
-    return bool(eval(expression, {"__builtins__": {}}, {}))
-
-
-def logsource_matches(event, logsource):
-    product = str(logsource.get("product", "")).casefold()
-    event_product = str(event.get("product", "")).casefold()
-    source_type = str(event.get("source_type", "")).casefold()
-    return not product or product in {event_product, source_type} or product in source_type
-
-
-def seconds(value):
-    match = re.fullmatch(r"(\d+)(s|m|h)", str(value))
-    if not match:
-        raise ValueError(f"unsupported timeframe: {value}")
-    return int(match.group(1)) * {"s": 1, "m": 60, "h": 3600}[match.group(2)]
-
-
-def reference(event, path, number):
-    return {
-        "event_ref": str(
-            event.get("event_ref") or event.get("event_uuid") or f"{path}:{number}"
-        ),
-        "timestamp": event.get("timestamp"),
-        "hostname": event.get("hostname") or event.get("host"),
-    }
-
-
-def validate(rule):
-    required = {
-        "title", "id", "status", "description", "logsource", "detection",
-        "falsepositives", "level", "tags",
-    }
-    if not isinstance(rule, dict):
-        raise ValueError("rule is not a YAML mapping")
-    missing = sorted(required - set(rule))
-    if missing:
-        raise ValueError(f'missing fields: {", ".join(missing)}')
-    if not isinstance(rule["detection"], dict) or "condition" not in rule["detection"]:
-        raise ValueError("detection.condition is required")
-
-
-args = arguments()
-try:
-    with open(args.rule_file, "r", encoding="utf-8") as stream:
-        rule = yaml.safe_load(stream)
-    validate(rule)
-except (OSError, ValueError, yaml.YAMLError) as error:
-    print(f"INVALID: {error}", file=sys.stderr)
-    sys.exit(1)
-
-if args.dry_run:
-    print("VALID")
-    sys.exit(0)
-
-evidence_path = args.evidence_file or args.default_evidence
-try:
-    chosen_window = window(args.window)
-except ValueError as error:
-    print(f"ERROR: {error}", file=sys.stderr)
-    sys.exit(1)
-
-started = time.perf_counter()
-detection = rule["detection"]
-condition = str(detection["condition"])
-selections = {
-    name: item
-    for name, item in detection.items()
-    if name not in {"condition", "timeframe"}
-}
-aggregation = re.fullmatch(
-    r"\s*(\w+)\s*\|\s*count\(\)\s+by\s+(\w+)\s*"
-    r"(>=|>|==|<=|<)\s*(\d+)(?:\s+within\s+(\d+[smh]))?\s*",
-    condition,
-    flags=re.IGNORECASE,
+start_paths = (
+    ("baseline_window_start",), ("baseline_window", "start"),
+    ("baseline", "window_start"), ("baseline", "start"),
+    ("window_start",), ("window", "start"),
 )
-matches = []
-groups = collections.defaultdict(list)
+end_paths = (
+    ("baseline_window_end",), ("baseline_window", "end"),
+    ("baseline", "window_end"), ("baseline", "end"),
+    ("window_end",), ("window", "end"),
+)
 
-try:
-    for number, event in events(evidence_path):
-        event_time = timestamp(event.get("timestamp"))
-        if chosen_window and (
-            event_time is None
-            or not chosen_window[0] <= event_time <= chosen_window[1]
-        ):
-            continue
-        if not logsource_matches(event, rule.get("logsource", {})):
-            continue
-        if aggregation:
-            selection_name, group_name = aggregation.group(1), aggregation.group(2)
-            if selection_name not in selections:
-                raise ValueError(f"unknown selection: {selection_name}")
-            group_value = field(event, group_name)
-            if selection_matches(event, selections[selection_name]) and event_time and group_value:
-                groups[str(group_value)].append((event_time, number, event))
+def find(paths):
+    for path in paths:
+        value = document
+        for key in path:
+            if not isinstance(value, dict) or key not in value:
+                break
+            value = value[key]
         else:
-            answers = {
-                name: selection_matches(event, item)
-                for name, item in selections.items()
-            }
-            if boolean_condition(condition, answers):
-                matches.append((number, event))
-except (OSError, ValueError) as error:
-    print(f"ERROR: {error}", file=sys.stderr)
-    sys.exit(1)
+            if isinstance(value, str) and value:
+                return value
+    raise ValueError("baseline window boundary not found")
 
-if aggregation:
-    operator, threshold = aggregation.group(3), int(aggregation.group(4))
-    timeframe = aggregation.group(5) or detection.get("timeframe")
-    if timeframe is None:
-        print("ERROR: aggregation requires timeframe", file=sys.stderr)
-        sys.exit(1)
-    interval = seconds(timeframe)
-    compare = {
-        ">": lambda count: count > threshold,
-        ">=": lambda count: count >= threshold,
-        "==": lambda count: count == threshold,
-        "<=": lambda count: count <= threshold,
-        "<": lambda count: count < threshold,
-    }[operator]
-    qualified = {}
-    for group in groups.values():
-        group.sort(key=lambda item: item[0])
-        left = 0
-        for right, current in enumerate(group):
-            while (current[0] - group[left][0]).total_seconds() > interval:
-                left += 1
-            if compare(right - left + 1):
-                for item in group[left:right + 1]:
-                    qualified[item[1]] = item[2]
-    matches = sorted(qualified.items())
-
-references = [reference(event, evidence_path, number) for number, event in matches]
-elapsed = round((time.perf_counter() - started) * 1000, 3)
-
-if args.count_only:
-    print(len(references))
-else:
-    print(json.dumps({
-        "rule_id": str(rule["id"]),
-        "rule_title": rule["title"],
-        "level": rule["level"],
-        "match_count": len(references),
-        "matches": references,
-        "execution_time_ms": elapsed,
-    }, indent=2, ensure_ascii=False))
+print(find(start_paths))
+print(find(end_paths))
 PY
+)
+
+if (( ${#bounds[@]} != 2 )); then
+    printf 'ERROR: could not derive baseline window from %s\n' "$BASELINE_SUMMARY" >&2
+    exit 1
+fi
+window_start="${bounds[0]}"
+window_end="${bounds[1]}"
+
+window_days="$(python3 -W error - "$window_start" "$window_end" <<'PY'
+import datetime as dt
+import sys
+
+def parse(value):
+    return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+duration = (parse(sys.argv[2]) - parse(sys.argv[1])).total_seconds() / 86400
+if duration <= 0:
+    raise ValueError("baseline window is empty or reversed")
+print(f"{duration:.10f}")
+PY
+)"
+
+mapfile -t rules < <(find "$RULES_DIR" -maxdepth 1 -type f \
+    \( -name '*.yml' -o -name '*.yaml' \) -print | sort)
+(( ${#rules[@]} > 0 )) || { printf 'ERROR: no Sigma rules found\n' >&2; exit 1; }
+
+printf 'evaluating %d rules against baseline window %s -> %s\n' \
+    "${#rules[@]}" "${window_start%%T*}" "${window_end%%T*}"
+
+entries=()
+rows=()
+for rule in "${rules[@]}"; do
+    if ! result="$("$RUNNER" "$rule" --window "$window_start,$window_end")"; then
+        printf 'ERROR: runner failed for %s\n' "$rule" >&2
+        exit 1
+    fi
+    jq -e 'has("rule_id") and has("rule_title") and has("level") and
+        (.match_count | type == "number")' >/dev/null <<<"$result" || {
+        printf 'ERROR: invalid runner JSON for %s\n' "$rule" >&2
+        exit 1
+    }
+
+    rule_id="$(jq -r '.rule_id' <<<"$result")"
+    rule_title="$(jq -r '.rule_title' <<<"$result")"
+    level="$(jq -r '.level' <<<"$result")"
+    fp_count="$(jq -r '.match_count' <<<"$result")"
+
+    entries+=("$(jq -cn --arg id "$rule_id" --arg title "$rule_title" \
+        --arg level "$level" \
+        --arg start_value "$window_start" \
+        --arg end_value "$window_end" \
+        --argjson fp "$fp_count" --argjson days "$window_days" \
+        '{rule_id:$id,rule_title:$title,level:$level,fp_count:$fp,
+          baseline_window_start:$start_value,
+          baseline_window_end:$end_value,
+          fp_rate_per_day:(($fp/$days*10000)|round/10000)}')")
+
+    name="$(basename -- "$rule")"
+    number="${name:0:3}"
+    name="${name%.*}"
+    name="${name#*_}"
+    marker=""
+    (( fp_count > 10 )) && marker="[TUNE]"
+    rows+=("${fp_count}"$'\t'"${number}"$'\t'"${name}"$'\t'"${marker}")
+done
+
+printf '%s\n' "${entries[@]}" | jq -s 'sort_by(.rule_id)' > "$OUTPUT"
+printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1nr -k2,2 |
+while IFS=$'\t' read -r fp number name marker; do
+    printf '  %s %-32s fp=%3d' "$number" "$name" "$fp"
+    [[ -z "$marker" ]] || printf '   %s' "$marker"
+    printf '\n'
+done
+printf '%s written\n' "$(basename -- "$OUTPUT")"
