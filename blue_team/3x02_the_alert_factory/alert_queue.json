@@ -1,0 +1,76 @@
+[
+  {
+    "alert_id": "b665b10f-f273-57d3-89a0-85e6dc4013db",
+    "generated_at": "2026-03-25T18:02:45Z",
+    "rule_id": "c58f20d9-60fc-45d0-89aa-80a74bd8dcc9",
+    "rule_title": "Windows Interpreter Execution from Unusual Parent",
+    "rule_level": "high",
+    "priority_score": 1.0,
+    "event_ref": "/home/student/3x00_handoff/evidence_handoff/data/normalized_events.json:102945",
+    "event_summary": {
+      "timestamp": "2026-03-25T02:20:00Z",
+      "hostname": "clin-ws-07",
+      "user": "MEDDEFENSE\\p.morales",
+      "src_ip": null,
+      "dst_ip": null,
+      "process_name": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "canonical_label": null,
+      "event_category": "process"
+    },
+    "asset_context": {
+      "hostname": "clin-ws-07",
+      "asset": {
+        "role": "Clinical Workstation",
+        "criticality": "MEDIUM",
+        "os": "Windows 11 Enterprise",
+        "owner": "sarah.park",
+        "zone": "CLINICAL"
+      },
+      "src_zone": "Clinical Workstation Zone",
+      "dst_zone": "External / Untrusted"
+    },
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "status": "new",
+    "evidence_hash": "a1b6516b69b17c534808f5c544cf0b616e1307a6b352ac148b225bf10004c74b"
+  },
+  {
+    "alert_id": "e266f1ef-53ca-5d51-b8f0-688e9d100b2a",
+    "generated_at": "2026-03-25T18:02:45Z",
+    "rule_id": "c58f20d9-60fc-45d0-89aa-80a74bd8dcc9",
+    "rule_title": "Windows Interpreter Execution from Unusual Parent",
+    "rule_level": "high",
+    "priority_score": 1.0,
+    "event_ref": "/home/student/3x00_handoff/evidence_handoff/data/normalized_events.json:107605",
+    "event_summary": {
+      "timestamp": "2026-03-25T14:24:11Z",
+      "hostname": "clin-ws-12",
+      "user": "MEDDEFENSE\\j.martinez",
+      "src_ip": "10.1.10.12",
+      "dst_ip": "10.1.1.10",
+      "process_name": "C:\\Windows\\System32\\cmd.exe",
+      "canonical_label": null,
+      "event_category": "network"
+    },
+    "asset_context": {
+      "hostname": "clin-ws-12",
+      "asset": {
+        "role": "Clinical Workstation",
+        "criticality": "MEDIUM",
+        "os": "Windows 11 Enterprise",
+        "owner": "sarah.park",
+        "zone": "CLINICAL"
+      },
+      "src_zone": "Clinical Workstation Zone",
+      "dst_zone": "Core Server Zone"
+    },
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "status": "new",
+    "evidence_hash": "1f4e3d0f921b4179d94fa400841a969bcfb44262ba288c25b2d5bb4ff6ea6559"
+  }
+]
