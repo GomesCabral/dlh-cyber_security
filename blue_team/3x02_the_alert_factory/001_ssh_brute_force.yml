@@ -1,0 +1,24 @@
+title: SSH Repeated Authentication Failures from Single Source
+id: 7d5d4b22-60c2-4ba7-8cce-1a5bc92cc5ef
+status: experimental
+description: >-
+  Detects an SSH brute-force threat in normalized Linux authentication logs
+  when one source IP produces more than five failed logins within 120 seconds;
+  the SOC should validate the source, affected accounts and target hosts, then
+  contain or block unauthorized activity according to the incident playbook.
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    canonical_label: login_failure
+    event_category: authentication
+  timeframe: 120s
+  condition: selection | count() by src_ip > 5
+falsepositives:
+  - MedDefense vulnerability scanner testing SSH credentials against Linux hosts
+  - Automated backup or maintenance service repeatedly using an expired SSH credential
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1110.001
