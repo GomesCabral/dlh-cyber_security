@@ -122,3 +122,4 @@ produce identical output.
 - PCAP flow metadata is appropriate for traffic anomalies and behavioral
   patterns. Without payload or IDS enrichment, it should not be treated as a
   reliable signature source.
+

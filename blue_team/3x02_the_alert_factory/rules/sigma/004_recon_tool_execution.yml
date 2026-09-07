@@ -1,0 +1,35 @@
+title: Reconnaissance Tool Not Seen During Baseline
+id: eb3f3cb7-d73d-4f1f-9a62-594af870708f
+status: experimental
+description: >-
+  Detects Windows or Linux reconnaissance tools that were absent from the
+  per-host process baseline. The candidate tooling and baseline comparison are
+  derived from the 3x01 anomaly report and baseline_process.json; baseline_seen
+  is a MedDefense runner extension computed at execution time. The SOC should
+  validate the user, command line, host role, and any approved support activity.
+logsource:
+  category: process_creation
+detection:
+  selection_windows:
+    product: windows
+    process_name|endswith:
+      - whoami.exe
+      - net.exe
+      - systeminfo.exe
+      - tasklist.exe
+      - netstat.exe
+  selection_linux:
+    product: linux
+    process_name|endswith:
+      - nmap
+  baseline_not_seen:
+    baseline_seen: false
+  condition: (selection_windows or selection_linux) and baseline_not_seen
+falsepositives:
+  - Authorized MedDefense help-desk or incident-response troubleshooting
+  - Approved vulnerability assessment or network inventory activity
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1087
+  - attack.t1082

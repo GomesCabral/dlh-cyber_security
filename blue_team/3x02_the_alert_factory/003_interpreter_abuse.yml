@@ -1,0 +1,35 @@
+title: Windows Interpreter Execution from Unusual Parent
+id: c58f20d9-60fc-45d0-89aa-80a74bd8dcc9
+status: experimental
+description: >-
+  Detects Windows command and script interpreters launched by a process other
+  than an approved interactive shell. This can indicate malicious execution,
+  document-based payloads, or living-off-the-land activity and should be
+  reviewed with the command line, user, parent process, and target host.
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_interpreter:
+    process_name|endswith:
+      - powershell.exe
+      - cmd.exe
+      - wscript.exe
+      - cscript.exe
+      - mshta.exe
+  filter_standard_parent:
+    parent_process_name|endswith:
+      - explorer.exe
+      - cmd.exe
+      - powershell.exe
+      - pwsh.exe
+      - WindowsTerminal.exe
+  condition: selection_interpreter and not filter_standard_parent
+falsepositives:
+  - Approved MedDefense scripted maintenance launched by endpoint-management agents
+  - Clinical application deployment or troubleshooting scripts executed by authorized administrators
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
