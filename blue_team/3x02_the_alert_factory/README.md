@@ -122,3 +122,11 @@ produce identical output.
 - PCAP flow metadata is appropriate for traffic anomalies and behavioral
   patterns. Without payload or IDS enrichment, it should not be treated as a
   reliable signature source.
+
+## Progress
+
+| Task | Artifact | Status |
+|---|---|---|
+| 0 | `0-detection_matrix.sh`, `detection_matrix.json` | Script ready; output pending lab execution |
+| 1–14 | Pending | Not started |
+
