@@ -1,0 +1,58 @@
+[
+  {
+    "ticket_id": "4bb18de9-0e73-54d5-8a32-253ab60c3e09",
+    "alert_id": "b665b10f-f273-57d3-89a0-85e6dc4013db",
+    "classification": "true_positive",
+    "justification": "No decisive malicious, suspicious-high-risk, or clean-baseline condition matched; process_name='C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe', parent_process=None, command_line=None, dst_ip=[], dst_host=[], dst_port=[], asset.criticality='unknown', IOC reputations=[].",
+    "evidence_refs": [
+      "/home/student/3x00_handoff/evidence_handoff/data/normalized_events.json:102945"
+    ],
+    "ioc_hits": [],
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "recommended_action": "monitor",
+    "analyst_time_seconds": 240,
+    "created_at": "2026-03-25T18:02:45Z",
+    "process_context": {
+      "process_name": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "parent_process": null,
+      "command_line": null
+    },
+    "network_context": {
+      "dst_ip": [],
+      "dst_host": [],
+      "dst_port": []
+    }
+  },
+  {
+    "ticket_id": "e9a2f4b3-4696-5b3c-9201-9308f073ffe0",
+    "alert_id": "e266f1ef-53ca-5d51-b8f0-688e9d100b2a",
+    "classification": "true_positive",
+    "justification": "No decisive malicious, suspicious-high-risk, or clean-baseline condition matched; process_name='C:\\\\Windows\\\\System32\\\\RuntimeBroker.exe', parent_process=None, command_line='C:\\\\Windows\\\\System32\\\\RuntimeBroker.exe', dst_ip=['10.1.1.10'], dst_host=[], dst_port=[], asset.criticality='unknown', IOC reputations=[].",
+    "evidence_refs": [
+      "/home/student/3x00_handoff/evidence_handoff/data/normalized_events.json:107605"
+    ],
+    "ioc_hits": [],
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "recommended_action": "monitor",
+    "analyst_time_seconds": 240,
+    "created_at": "2026-03-25T18:02:45Z",
+    "process_context": {
+      "process_name": "C:\\Windows\\System32\\RuntimeBroker.exe",
+      "parent_process": null,
+      "command_line": "C:\\Windows\\System32\\RuntimeBroker.exe"
+    },
+    "network_context": {
+      "dst_ip": [
+        "10.1.1.10"
+      ],
+      "dst_host": [],
+      "dst_port": []
+    }
+  }
+]
