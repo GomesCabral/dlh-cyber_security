@@ -1,0 +1,81 @@
+[
+  {
+    "incident_id": "INC-20260325-554105B5",
+    "source_ticket_id": "4bb18de9-0e73-54d5-8a32-253ab60c3e09",
+    "source_ticket_file": "batch5_proc_net.json",
+    "summary": "Windows Interpreter Execution from Unusual Parent detected on clin-ws-07.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-25T02:21:13Z",
+        "hostname": "pharm-app-01",
+        "event_category": "endpoint",
+        "description": "endpoint."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "clin-ws-07",
+        "criticality": "unknown",
+        "data_classification": "unknown",
+        "network_zone": "unknown"
+      },
+      {
+        "hostname": "pharm-app-01",
+        "criticality": "unknown",
+        "data_classification": "unknown",
+        "network_zone": "unknown"
+      }
+    ],
+    "iocs": [],
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "recommended_containment": "isolate_host",
+    "related_incidents": []
+  },
+  {
+    "incident_id": "INC-20260325-B2CEE342",
+    "source_ticket_id": "e9a2f4b3-4696-5b3c-9201-9308f073ffe0",
+    "source_ticket_file": "batch5_proc_net.json",
+    "summary": "Windows Interpreter Execution from Unusual Parent detected on admin-ws-02.",
+    "timeline": [
+      {
+        "timestamp": "2026-03-25T14:25:35Z",
+        "hostname": "admin-ws-02",
+        "event_category": "process",
+        "description": "process_start; process_name=C:\\Windows\\System32\\RuntimeBroker.exe; user=MEDDEFENSE\\l.nguyen."
+      }
+    ],
+    "affected_assets": [
+      {
+        "hostname": "admin-ws-02",
+        "criticality": "unknown",
+        "data_classification": "unknown",
+        "network_zone": "unknown"
+      },
+      {
+        "hostname": "clin-ws-12",
+        "criticality": "unknown",
+        "data_classification": "unknown",
+        "network_zone": "unknown"
+      }
+    ],
+    "iocs": [
+      {
+        "type": "process_name",
+        "value": "RuntimeBroker.exe"
+      },
+      {
+        "type": "user_account",
+        "value": "MEDDEFENSE\\l.nguyen"
+      }
+    ],
+    "attack_techniques": [
+      "T1059.001",
+      "T1059.003"
+    ],
+    "recommended_containment": "isolate_host",
+    "related_incidents": []
+  }
+]
