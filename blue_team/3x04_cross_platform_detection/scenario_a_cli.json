@@ -1,0 +1,46 @@
+{
+  "finding_id": "scenario_a_cli",
+  "scenario_id": "scenario_a",
+  "interface": "cli",
+  "investigation_start": "2026-09-14T12:18:45Z",
+  "investigation_end": "2026-09-14T12:19:32Z",
+  "time_to_first_answer_seconds": 47,
+  "actions": [
+    "Read the Scenario A manifest and established host and time scope",
+    "Filtered enriched events for clin-ws-12 inside the scenario window",
+    "Counted all scoped host events",
+    "Filtered the scope for Sysmon event IDs 10, 11, and 3",
+    "Validated rundll32.exe access to lsass.exe and the granted access mask",
+    "Validated creation of the debug.dmp credential-dump file",
+    "Validated the subsequent cmd.exe SMB connection to srv-dc-01",
+    "Correlated the ordered events into a credential-theft and lateral-movement hypothesis"
+  ],
+  "fields_touched": [
+    "timestamp",
+    "hostname",
+    "event_id",
+    "process_name",
+    "file_path",
+    "src_ip",
+    "src_port",
+    "dst_ip",
+    "dst_port",
+    "user",
+    "event_ref",
+    "raw_message",
+    "details.SourceImage",
+    "details.TargetImage",
+    "details.GrantedAccess",
+    "details.TargetFilename",
+    "details.DestinationHostname"
+  ],
+  "event_refs": [],
+  "attack_techniques": [
+    "T1003.001",
+    "T1550.002",
+    "T1021.002"
+  ],
+  "hypothesis": "rundll32.exe accessed LSASS with access mask 0x1010 and created C:\\Temp\\debug.dmp, consistent with credential dumping. Shortly afterward, cmd.exe connected to srv-dc-01 at 10.1.1.10:445 over SMB, indicating likely lateral movement toward the domain controller.",
+  "confidence": "high",
+  "created_at": "2026-09-14T12:19:32Z"
+}
