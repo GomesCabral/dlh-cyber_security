@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Task 0 - CLI Toolkit Verification
-# Verifies required tools, environment directories, upstream data,
-# Sigma rules, Wazuh exports, and the anchor scenario.
+# Verify the required tools, upstream packages, Wazuh exports,
+# and the anchor scenario before beginning the investigation.
 
 set -u
 
@@ -18,7 +18,6 @@ SIGMA_DIR="$CATALOG_DIR/rules/sigma"
 ANCHOR_FILE="$ASSETS_DIR/anchor_event.json"
 
 ERRORS=0
-SIGMA_COMMAND=""
 
 pass()
 {
@@ -75,9 +74,7 @@ check_tool()
     fi
 
     version="$(get_version "$command_name")"
-    version="${version:-installed}"
-
-    pass "$label" "$version"
+    pass "$label" "${version:-installed}"
 }
 
 check_directory()
@@ -92,17 +89,7 @@ check_directory()
     fi
 }
 
-check_json_file()
-{
-    local filepath="$1"
-
-    [[ -s "$filepath" ]] && jq empty "$filepath" >/dev/null 2>&1
-}
-
-# -------------------------------------------------------------------
-# 1. Required tools
-# -------------------------------------------------------------------
-
+# Required command-line tools.
 check_tool "jq" "jq"
 check_tool "yq" "yq"
 check_tool "python3" "python3"
@@ -111,12 +98,13 @@ if command -v sigma-cli >/dev/null 2>&1; then
     SIGMA_COMMAND="sigma-cli"
 elif command -v sigma >/dev/null 2>&1; then
     SIGMA_COMMAND="sigma"
+else
+    SIGMA_COMMAND=""
 fi
 
 if [[ -n "$SIGMA_COMMAND" ]]; then
     SIGMA_VERSION="$(get_version "$SIGMA_COMMAND")"
-    SIGMA_VERSION="${SIGMA_VERSION:-installed}"
-    pass "sigma-cli" "$SIGMA_VERSION"
+    pass "sigma-cli" "${SIGMA_VERSION:-installed}"
 else
     fail "sigma-cli" "neither sigma-cli nor sigma found on PATH"
 fi
@@ -124,30 +112,21 @@ fi
 check_tool "xmllint" "xmllint"
 check_tool "curl" "curl"
 
-# -------------------------------------------------------------------
-# 2. Required environment directories
-# -------------------------------------------------------------------
-
+# Required upstream directories.
 check_directory "HANDOFF_DIR" "$HANDOFF_DIR"
 check_directory "BASELINE_PKG" "$BASELINE_PKG"
 check_directory "CATALOG_DIR" "$CATALOG_DIR"
 check_directory "TRIAGE_PKG" "$TRIAGE_PKG"
 check_directory "ASSETS_DIR" "$ASSETS_DIR"
 
-# -------------------------------------------------------------------
-# 3. Enriched event handoff
-# -------------------------------------------------------------------
-
+# Enriched events produced by project 3x00.
 if [[ -s "$ENRICHED_EVENTS" ]]; then
     pass "handoff" "ok (enriched_events.json present)"
 else
     fail "handoff" "missing or empty: $ENRICHED_EVENTS"
 fi
 
-# -------------------------------------------------------------------
-# 4. Sigma detection catalog
-# -------------------------------------------------------------------
-
+# Sigma rules produced by project 3x02.
 if [[ -d "$SIGMA_DIR" ]]; then
     SIGMA_COUNT="$(
         find "$SIGMA_DIR" -type f \
@@ -165,10 +144,7 @@ else
     fail "catalog" "missing directory: $SIGMA_DIR"
 fi
 
-# -------------------------------------------------------------------
-# 5. Wazuh export files
-# -------------------------------------------------------------------
-
+# Wazuh search results and dashboard workflow traces.
 WAZUH_REQUIRED_FILES=(
     "field_mapping.json"
     "index_metadata.json"
@@ -208,19 +184,13 @@ else
     fi
 fi
 
-# -------------------------------------------------------------------
-# 6. Anchor scenario verification
-# -------------------------------------------------------------------
-
+# Anchor verification against the enriched NDJSON event handoff.
 if [[ ! -s "$ANCHOR_FILE" ]]; then
     fail "anchor" "missing or empty: $ANCHOR_FILE"
-
 elif ! jq empty "$ANCHOR_FILE" >/dev/null 2>&1; then
     fail "anchor" "invalid JSON: $ANCHOR_FILE"
-
 elif [[ ! -s "$ENRICHED_EVENTS" ]]; then
     fail "anchor" "enriched_events.json unavailable"
-
 else
     TARGET_HOST="$(jq -r '.target_host // empty' "$ANCHOR_FILE")"
     TARGET_IP="$(jq -r '.target_ip // empty' "$ANCHOR_FILE")"
@@ -234,7 +204,27 @@ else
         fail "anchor" \
             "target_host, target_ip, or time_window missing from anchor_event.json"
     else
-                if [[ -n "$ANCHOR_MATCH" ]]; then
+        ANCHOR_MATCH="$(
+            jq -c \
+                --arg host "$TARGET_HOST" \
+                --arg target_ip "$TARGET_IP" \
+                --arg start "$WINDOW_START" \
+                --arg end "$WINDOW_END" '
+                select(
+                    (.timestamp >= $start)
+                    and (.timestamp <= $end)
+                    and (
+                        (.hostname == $host)
+                        or (.dst_ip == $target_ip)
+                        or (.target_host == $host)
+                        or (.target_ip == $target_ip)
+                    )
+                )
+            ' "$ENRICHED_EVENTS" 2>/dev/null |
+                head -n 1
+        )"
+
+        if [[ -n "$ANCHOR_MATCH" ]]; then
             MATCH_TIMESTAMP="$(
                 printf '%s\n' "$ANCHOR_MATCH" |
                     jq -r '.timestamp // "unknown timestamp"'
@@ -243,17 +233,11 @@ else
             MATCH_TARGET="$(
                 printf '%s\n' "$ANCHOR_MATCH" |
                     jq -r '
-                        if .hostname != null then
-                            .hostname
-                        elif .dst_ip != null then
-                            .dst_ip
-                        elif .target_host != null then
-                            .target_host
-                        elif .target_ip != null then
-                            .target_ip
-                        else
-                            "unknown target"
-                        end
+                        .hostname
+                        // .dst_ip
+                        // .target_host
+                        // .target_ip
+                        // "unknown target"
                     '
             )"
 
@@ -263,39 +247,10 @@ else
             fail "anchor" \
                 "no event matched $TARGET_HOST/$TARGET_IP between $WINDOW_START and $WINDOW_END"
         fi
-
-        if [[ -n "$ANCHOR_MATCH" ]]; then
-            MATCH_TIMESTAMP="$(
-                printf '%s\n' "$ANCHOR_MATCH" |
-                    jq -r '.timestamp // "unknown timestamp"'
-            )"
-
-            MATCH_HOST="$(
-                printf '%s\n' "$ANCHOR_MATCH" |
-                    jq -r '
-                        .hostname
-                        // .host
-                        // .target_host
-                        // .dst_host
-                        // .dst_ip
-                        // .target_ip
-                        // "unknown target"
-                    '
-            )"
-
-            pass "anchor" \
-                "ok ($TARGET_HOST matched at $MATCH_TIMESTAMP via $MATCH_HOST)"
-        else
-            fail "anchor" \
-                "no event matched $TARGET_HOST/$TARGET_IP between $WINDOW_START and $WINDOW_END"
-        fi
     fi
 fi
 
-# -------------------------------------------------------------------
-# 7. Final result
-# -------------------------------------------------------------------
-
+# Final result and process exit status.
 if (( ERRORS > 0 )); then
     pass "all checks" "failed ($ERRORS error(s))"
     exit 1
