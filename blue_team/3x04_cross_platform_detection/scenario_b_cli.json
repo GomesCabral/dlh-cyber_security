@@ -1,0 +1,43 @@
+{
+  "finding_id": "scenario_b_cli",
+  "scenario_id": "scenario_b",
+  "interface": "cli",
+  "investigation_start": "2026-09-14T12:51:15Z",
+  "investigation_end": "2026-09-14T12:52:02Z",
+  "time_to_first_answer_seconds": 47,
+  "actions": [
+    "Read the Scenario B manifest and ambiguity note",
+    "Scoped enriched events to clin-ws-07 and the incident window",
+    "Loaded asset criticality and data classification from the inventory",
+    "Validated the p.morales RemoteInteractive logon",
+    "Validated assignment of backup and restore privileges",
+    "Validated high-integrity PowerShell with ExecutionPolicy Bypass",
+    "Escalated the ambiguous activity for authorization confirmation"
+  ],
+  "fields_touched": [
+    "timestamp",
+    "hostname",
+    "event_id",
+    "user",
+    "outcome",
+    "src_ip",
+    "process_name",
+    "command_line",
+    "event_ref",
+    "details.LogonType",
+    "details.IpAddress",
+    "details.PrivilegeList",
+    "details.CommandLine",
+    "details.IntegrityLevel",
+    "asset_inventory.criticality",
+    "asset_inventory.data_classification"
+  ],
+  "event_refs": [],
+  "attack_techniques": [
+    "T1059.001",
+    "T1078.002"
+  ],
+  "hypothesis": "A successful off-hours RemoteInteractive logon by p.morales on the PHI-classified workstation was followed by special privileges and high-integrity PowerShell with ExecutionPolicy Bypass. Although p.morales is the CISO and authorized for EHR access, the timing and bypass behavior warrant escalation to validate whether the activity was authorized.",
+  "confidence": "high",
+  "created_at": "2026-09-14T12:52:02Z"
+}
