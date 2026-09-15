@@ -1,0 +1,47 @@
+{
+  "finding_id": "scenario_b_wazuh_export",
+  "scenario_id": "scenario_b",
+  "interface": "wazuh_export",
+  "investigation_start": "2026-09-15T12:30:50Z",
+  "investigation_end": "2026-09-15T12:30:52Z",
+  "time_to_first_answer_seconds": 2,
+  "actions": [
+    "Navigate to Discover → index meddefense-evidence-2026-03",
+    "Set time range: 2026-03-25T02:00:00Z to 2026-03-25T03:00:00Z",
+    "Type KQL: agent.name:\"clin-ws-07\" AND winlog.event_id:(4624 OR 4672 OR 1)",
+    "Sort by @timestamp ascending",
+    "Expand EID 4624 — note LogonType 10 (RemoteInteractive) for p.morales",
+    "Expand EID 4672 — note SeBackupPrivilege, SeRestorePrivilege assigned",
+    "Expand EID 1 (Sysmon) — note powershell.exe -ExecutionPolicy Bypass command line",
+    "Data classification absent from agent.labels; checked asset_inventory.json and resolved PHI"
+  ],
+  "fields_touched": [
+    "@timestamp",
+    "agent.labels",
+    "agent.name",
+    "asset_inventory.data_classification",
+    "source.ip",
+    "user.name",
+    "winlog.event_id"
+  ],
+  "event_refs": [
+    "06c08ad1-baea-4dfe-ba93-e9d25c8af167",
+    "307707bd-474a-4c08-81cd-93603c479027",
+    "5de13adb-9690-4132-8f67-d284adcc7bcf",
+    "636a099d-d719-4c4c-9c09-4602e6ee7a14",
+    "6629bef3-17be-4e29-9d14-03ea37fc64af",
+    "6da5b848-6561-42aa-819f-e7c548bfc256",
+    "cc905122-9b9e-4870-8e17-08a65df2fcd4",
+    "df444197-c660-4d88-8d02-d62aa516f0cd",
+    "e395f99b-2db2-469a-b19b-42f6b8a812c3",
+    "e7f265cf-72f1-434b-a8ea-a332156ff2b0",
+    "f2bf68ba-b0cd-41d2-8bf7-6bff6e0f3a21"
+  ],
+  "attack_techniques": [
+    "T1059.001",
+    "T1078.002"
+  ],
+  "hypothesis": "An off-hours RemoteInteractive logon by p.morales on a PHI workstation was followed by special privileges and PowerShell with ExecutionPolicy Bypass. Although the user is authorized for EHR access, the timing and execution behavior require escalation to confirm whether the session was legitimate.",
+  "confidence": "high",
+  "created_at": "2026-09-15T12:30:52Z"
+}
