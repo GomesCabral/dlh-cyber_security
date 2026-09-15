@@ -1,0 +1,153 @@
+{
+  "per_interface": {
+    "cli": {
+      "finding_count": 4,
+      "time_to_first_answer_seconds": {
+        "total": 144,
+        "average": 36,
+        "median": 47
+      },
+      "action_count": {
+        "total": 28,
+        "average": 7,
+        "median": 7.5
+      },
+      "fields_touched_count": {
+        "total": 62,
+        "average": 15.5,
+        "median": 16.5
+      },
+      "event_refs_count": {
+        "total": 0,
+        "average": 0,
+        "median": 0
+      }
+    },
+    "wazuh_export": {
+      "finding_count": 4,
+      "time_to_first_answer_seconds": {
+        "total": 11,
+        "average": 2.75,
+        "median": 3
+      },
+      "action_count": {
+        "total": 29,
+        "average": 7.25,
+        "median": 7
+      },
+      "fields_touched_count": {
+        "total": 27,
+        "average": 6.75,
+        "median": 6.5
+      },
+      "event_refs_count": {
+        "total": 69,
+        "average": 17.25,
+        "median": 8.5
+      }
+    }
+  },
+  "per_scenario": [
+    {
+      "scenario_id": "anchor",
+      "cli": {
+        "time_to_first_answer_seconds": 47,
+        "action_count": 5,
+        "fields_touched_count": 10,
+        "event_refs_count": 0
+      },
+      "wazuh_export": {
+        "time_to_first_answer_seconds": 3,
+        "action_count": 7,
+        "fields_touched_count": 5,
+        "event_refs_count": 47
+      },
+      "deltas": {
+        "time_to_first_answer_seconds": -44,
+        "action_count": 2,
+        "fields_touched_count": -5,
+        "event_refs_count": 47
+      },
+      "faster_interface": "wazuh_export"
+    },
+    {
+      "scenario_id": "scenario_a",
+      "cli": {
+        "time_to_first_answer_seconds": 47,
+        "action_count": 8,
+        "fields_touched_count": 17,
+        "event_refs_count": 0
+      },
+      "wazuh_export": {
+        "time_to_first_answer_seconds": 3,
+        "action_count": 7,
+        "fields_touched_count": 6,
+        "event_refs_count": 5
+      },
+      "deltas": {
+        "time_to_first_answer_seconds": -44,
+        "action_count": -1,
+        "fields_touched_count": -11,
+        "event_refs_count": 5
+      },
+      "faster_interface": "wazuh_export"
+    },
+    {
+      "scenario_id": "scenario_b",
+      "cli": {
+        "time_to_first_answer_seconds": 47,
+        "action_count": 7,
+        "fields_touched_count": 16,
+        "event_refs_count": 0
+      },
+      "wazuh_export": {
+        "time_to_first_answer_seconds": 2,
+        "action_count": 8,
+        "fields_touched_count": 7,
+        "event_refs_count": 11
+      },
+      "deltas": {
+        "time_to_first_answer_seconds": -45,
+        "action_count": 1,
+        "fields_touched_count": -9,
+        "event_refs_count": 11
+      },
+      "faster_interface": "wazuh_export"
+    },
+    {
+      "scenario_id": "scenario_c",
+      "cli": {
+        "time_to_first_answer_seconds": 3,
+        "action_count": 8,
+        "fields_touched_count": 19,
+        "event_refs_count": 0
+      },
+      "wazuh_export": {
+        "time_to_first_answer_seconds": 3,
+        "action_count": 7,
+        "fields_touched_count": 9,
+        "event_refs_count": 6
+      },
+      "deltas": {
+        "time_to_first_answer_seconds": 0,
+        "action_count": -1,
+        "fields_touched_count": -10,
+        "event_refs_count": 6
+      },
+      "faster_interface": "tie"
+    }
+  ],
+  "confidence_distribution": {
+    "cli": {
+      "low": 0,
+      "medium": 0,
+      "high": 4
+    },
+    "wazuh_export": {
+      "low": 0,
+      "medium": 0,
+      "high": 4
+    }
+  },
+  "generated_at": "2026-09-15T13:05:07Z"
+}
