@@ -1,0 +1,43 @@
+{
+  "finding_id": "scenario_c_wazuh_export",
+  "scenario_id": "scenario_c",
+  "interface": "wazuh_export",
+  "investigation_start": "2026-09-15T12:41:31Z",
+  "investigation_end": "2026-09-15T12:41:34Z",
+  "time_to_first_answer_seconds": 3,
+  "actions": [
+    "Navigate to Discover → index meddefense-evidence-2026-03",
+    "Set time range: 2026-03-25T11:00:00Z to 2026-03-25T13:00:00Z",
+    "Type KQL: source.ip:\"10.2.3.2\" AND destination.ip:\"198.51.100.73\"",
+    "Sort by @timestamp ascending",
+    "Note 5 matching flows — consistent 12-minute beacon interval",
+    "Check source.zone field — MEDICAL_IOT (should have no direct internet access)",
+    "Note bytes_out increasing per flow: 8KB, 14KB, 28KB, 42KB, 48KB — data staging pattern"
+  ],
+  "fields_touched": [
+    "@timestamp",
+    "agent.name",
+    "destination.ip",
+    "event_data.bytes_out",
+    "full_log",
+    "network.direction",
+    "network.transport",
+    "source.ip",
+    "source.zone"
+  ],
+  "event_refs": [
+    "057fb629-deda-4b97-be19-87ed1c8329fa",
+    "47d9731e-da35-4e02-87c9-14a1d70abd16",
+    "5161e1a6-6faf-47be-b647-9a6be7f1f34f",
+    "c0973003-dd64-4968-ba70-c5d8c114e8f1",
+    "e0f33d27-a580-4f7d-9799-d10370ec76f4",
+    "f425f331-5e21-4533-86b8-423292a59186"
+  ],
+  "attack_techniques": [
+    "T1071.001",
+    "T1041"
+  ],
+  "hypothesis": "Five HTTPS firewall flows from a MEDICAL_IOT source to the same external destination at 12-minute intervals are consistent with periodic command-and-control beaconing. The repeated egress transferred 103963 bytes and is consistent with possible exfiltration over the C2 channel.",
+  "confidence": "high",
+  "created_at": "2026-09-15T12:41:34Z"
+}
