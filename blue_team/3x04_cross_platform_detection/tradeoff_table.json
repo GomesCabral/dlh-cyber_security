@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-09-15T12:54:36Z",
+  "findings_loaded": 8,
+  "scenarios_analyzed": 4,
+  "export_advantages": 3,
+  "cli_advantages": 0,
+  "ties": 1,
+  "delta_definition": "wazuh_export minus cli; negative means export was faster or used fewer actions",
+  "comparisons": [
+    {
+      "scenario_id": "anchor",
+      "cli_time_seconds": 47,
+      "wazuh_export_time_seconds": 3,
+      "time_delta_seconds": -44,
+      "faster_interface": "wazuh_export",
+      "cli_action_count": 5,
+      "wazuh_export_action_count": 7,
+      "action_delta": 2,
+      "advantage_cause": "filter_bar_efficiency",
+      "evidence": "The prepared dashboard filter exposed the known SSH cluster without rescanning the large NDJSON handoff."
+    },
+    {
+      "scenario_id": "scenario_a",
+      "cli_time_seconds": 47,
+      "wazuh_export_time_seconds": 3,
+      "time_delta_seconds": -44,
+      "faster_interface": "wazuh_export",
+      "cli_action_count": 8,
+      "wazuh_export_action_count": 7,
+      "action_delta": -1,
+      "advantage_cause": "timeline_visualization",
+      "evidence": "The exported, host-scoped event set made the ordered credential-theft chain quick to reconstruct."
+    },
+    {
+      "scenario_id": "scenario_b",
+      "cli_time_seconds": 47,
+      "wazuh_export_time_seconds": 2,
+      "time_delta_seconds": -45,
+      "faster_interface": "wazuh_export",
+      "cli_action_count": 7,
+      "wazuh_export_action_count": 8,
+      "action_delta": 1,
+      "advantage_cause": "filter_bar_efficiency",
+      "evidence": "The prepared event filter surfaced the privileged logon chain quickly despite the inventory fallback."
+    },
+    {
+      "scenario_id": "scenario_c",
+      "cli_time_seconds": 3,
+      "wazuh_export_time_seconds": 3,
+      "time_delta_seconds": 0,
+      "faster_interface": "tie",
+      "cli_action_count": 8,
+      "wazuh_export_action_count": 7,
+      "action_delta": -1,
+      "advantage_cause": "reproducibility",
+      "evidence": "Both interfaces reached the first answer in the same measured time; action counts remain a secondary comparison."
+    }
+  ]
+}
