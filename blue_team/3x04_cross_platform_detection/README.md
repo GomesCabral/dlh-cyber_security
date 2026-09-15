@@ -12,7 +12,7 @@ interfaces:
 
 The objective is to demonstrate that the investigation process is independent
 of a specific SIEM product. The evidence, scenarios, and MITRE ATT&CK
-techniques remain the same; only the interaction model changes.
+techniques remain the same; only the interaction model changes
 
 ## Learning Objectives
 

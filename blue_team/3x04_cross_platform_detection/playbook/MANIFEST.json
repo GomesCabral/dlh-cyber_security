@@ -1,0 +1,187 @@
+Manifest {
+  "package": "tool_evaluation",
+  "generated_at": "2026-03-25T16:00:00Z",
+  "total_entries": 36,
+  "files": [
+    {
+      "path": "brief/vendor_brief.md",
+      "size_bytes": 4445,
+      "sha256": "14c28464fd726ea57755890c23b743b48e551c9e2d87ef019f1a1bddeeeedfd6"
+    },
+    {
+      "path": "comparison/query_comparison.json",
+      "size_bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "comparison/questions/q1.yml",
+      "size_bytes": 17,
+      "sha256": "a708245702e3f817e9108b9f68c67c862de2af5d5bb28367c4fa04acb668a004"
+    },
+    {
+      "path": "comparison/questions/q2.yml",
+      "size_bytes": 17,
+      "sha256": "ca9c8a736485b8493eedea4e8c8f760afd552a1c024be8a4bf0d14226d03a416"
+    },
+    {
+      "path": "comparison/questions/q3.yml",
+      "size_bytes": 17,
+      "sha256": "e0003a75dfc76296dfee08d847e607d68a09b1b4012c29726f90714ba1ee16b9"
+    },
+    {
+      "path": "comparison/questions/q4.yml",
+      "size_bytes": 17,
+      "sha256": "e7e427a09bc559a374aa603d3e03a41f67d5480efb0499aeb1b32340b0cf78a1"
+    },
+    {
+      "path": "comparison/tradeoff_table.json",
+      "size_bytes": 1222,
+      "sha256": "c8239f0be30d5586ef8b2c3166f2ffe0d3318c3dfb25a466b29c4351cb46708c"
+    },
+    {
+      "path": "comparison/tradeoff_table.md",
+      "size_bytes": 755,
+      "sha256": "212fb10f0c9174435d664ee9b8ba252d69715e1e99bff17d724c95c6f13e2c43"
+    },
+    {
+      "path": "comparison/workflow_comparison.json",
+      "size_bytes": 1125,
+      "sha256": "80f8ab4acaececb8f9a459937373b9d8e322ebc119c2b280abbf9edcdd01627e"
+    },
+    {
+      "path": "findings/anchor_cli.json",
+      "size_bytes": 908,
+      "sha256": "db800bc8c34dbf7c2944687ec5c3931ade2172abfce511b8362d9127524046cd"
+    },
+    {
+      "path": "findings/anchor_export.json",
+      "size_bytes": 1151,
+      "sha256": "61cac8da4f2a251e41603fd7f8a5fcb0dc012c8d700003f92b70b5695d65b7d2"
+    },
+    {
+      "path": "findings/scenario_a_cli.json",
+      "size_bytes": 1268,
+      "sha256": "0f0ed9172accfa1e3bfff6779e9cc433b33884090366be31c56c39e679a25b5d"
+    },
+    {
+      "path": "findings/scenario_a_export.json",
+      "size_bytes": 1368,
+      "sha256": "f7461e7650ae62f3cefd18eb2b2e4643c4258a0cfc4792b15af11a25d7684b0d"
+    },
+    {
+      "path": "findings/scenario_b_cli.json",
+      "size_bytes": 1290,
+      "sha256": "890da6200772f1fb2e74010aa2bf4b990c024e1c563ccb881117543cdc141065"
+    },
+    {
+      "path": "findings/scenario_b_export.json",
+      "size_bytes": 1321,
+      "sha256": "c671121e30022c6b6fe7b162504d666e8695bfde1eb6df19fd1717a3ff9da2a6"
+    },
+    {
+      "path": "findings/scenario_c_cli.json",
+      "size_bytes": 1230,
+      "sha256": "e6cc07a81313c0accc7b22e4bf87598b95dada430e1a6ca1d4cb4c2fe102b770"
+    },
+    {
+      "path": "findings/scenario_c_export.json",
+      "size_bytes": 1290,
+      "sha256": "7245d4f8fb9972bd2ae4a7dd31621427b176a3bce7c2a365ba675fae39abc626"
+    },
+    {
+      "path": "playbook/tool_agnostic_playbook.md",
+      "size_bytes": 4276,
+      "sha256": "31466bf030f9a1ac9e7270696915b61756657e9ca86033929fdbc6646505ee40"
+    },
+    {
+      "path": "rules/wazuh/001_ssh_brute_force.xml",
+      "size_bytes": 34,
+      "sha256": "7a1053554bf34c7b2b32eb472a1f66088c7b557c149bffe8407b41c88eef7e45"
+    },
+    {
+      "path": "rules/wazuh/003_interpreter_abuse.xml",
+      "size_bytes": 34,
+      "sha256": "7a1053554bf34c7b2b32eb472a1f66088c7b557c149bffe8407b41c88eef7e45"
+    },
+    {
+      "path": "rules/wazuh/010_credential_theft_chain.xml",
+      "size_bytes": 34,
+      "sha256": "7a1053554bf34c7b2b32eb472a1f66088c7b557c149bffe8407b41c88eef7e45"
+    },
+    {
+      "path": "rules/wazuh/translation_report.json",
+      "size_bytes": 34,
+      "sha256": "7a1053554bf34c7b2b32eb472a1f66088c7b557c149bffe8407b41c88eef7e45"
+    },
+    {
+      "path": "runtime/0-tool_check.sh",
+      "size_bytes": 5031,
+      "sha256": "6a02a4936fab3c23a5aa62c4673c1e9a9ac861abad9d47b14867ce2fbc5fb77b"
+    },
+    {
+      "path": "runtime/1-wazuh_workspace.sh",
+      "size_bytes": 4536,
+      "sha256": "15b7443da8c855ec1f73c230411d24acc94dab823bafd360b3ee20b7731a56b8"
+    },
+    {
+      "path": "runtime/12-tradeoff_analysis.sh",
+      "size_bytes": 3763,
+      "sha256": "412a2e868de1f593299a0f5eb5e0a2eaa66b7dc1a33d40474f83967129a456bf"
+    },
+    {
+      "path": "runtime/13-workflow_comparison.sh",
+      "size_bytes": 5889,
+      "sha256": "41c3e1fd200faf369520c3ef6497d56106fbb27e2011a2ae9fce4b44cd504175"
+    },
+    {
+      "path": "runtime/15-tool_evaluation_package.sh",
+      "size_bytes": 6806,
+      "sha256": "42f7debfa641398722ad903f2ec4918f088b53ac448b29d626f01eda79e30348"
+    },
+    {
+      "path": "runtime/2-cli_anchor.sh",
+      "size_bytes": 4992,
+      "sha256": "081728b848f3361b6d50e1efcab73f1625a90dff2e79d5229a2a3f72eb052dbe"
+    },
+    {
+      "path": "runtime/3-export_anchor.sh",
+      "size_bytes": 4329,
+      "sha256": "c329560f85c384c53ec1772e79f323daddbdb9ef6f35a25a7efb5612eee8edca"
+    },
+    {
+      "path": "runtime/4-cli_scenario_a.sh",
+      "size_bytes": 4664,
+      "sha256": "6ef4d87b055087161cc1b89dbd3a73374147199a354c62a64bb9c1e184cd9bee"
+    },
+    {
+      "path": "runtime/5-cli_scenario_b.sh",
+      "size_bytes": 5175,
+      "sha256": "af6b8647c940c9b3bc09825fe542828c6ef9e8ba325e4284f91f9281bca65478"
+    },
+    {
+      "path": "runtime/6-cli_scenario_c.sh",
+      "size_bytes": 4530,
+      "sha256": "18f7a20fecbf0ae62a7428a1ceebbf2058dbd7be27ffc1e906d7a73766a54b19"
+    },
+    {
+      "path": "runtime/7-export_scenario_a.sh",
+      "size_bytes": 3955,
+      "sha256": "5e22dd9ec086988c6200514372afa1c53f280771b06de176e63339bfcbb96524"
+    },
+    {
+      "path": "runtime/8-export_scenario_b.sh",
+      "size_bytes": 3537,
+      "sha256": "1c9e2ce2ac4aa01f0c38396d3f080c9c11584007d424eba8ff40e23b4678eb58"
+    },
+    {
+      "path": "runtime/9-export_scenario_c.sh",
+      "size_bytes": 3367,
+      "sha256": "85fed97ab5ae30462d1c5af75fa54e314823956393d6d790e4a809b41c6e30bf"
+    },
+    {
+      "path": "workspace/workspace_init.json",
+      "size_bytes": 289,
+      "sha256": "12cdc3e07a4d8c9bbba881606e6881726a9e31e8154b72fe590bc61184addb9d"
+    }
+  ]
+}
