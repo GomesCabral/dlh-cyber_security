@@ -1,0 +1,18 @@
+{
+  "catalog_rules_total": 4,
+  "catalog_rules_fired": 2,
+  "alerts_total": 422,
+  "alerts_by_severity": {
+    "critical": 0,
+    "high": 41,
+    "medium": 381,
+    "low": 0
+  },
+  "alerts_by_rule": {
+    "391a0e44-57da-4ccd-8d56-f8153187af53": 381,
+    "7d5d4b22-60c2-4ba7-8cce-1a5bc92cc5ef": 41
+  },
+  "started_at": "2026-09-16T12:28:27Z",
+  "ended_at": "2026-09-16T12:29:40Z",
+  "exit_status": 0
+}

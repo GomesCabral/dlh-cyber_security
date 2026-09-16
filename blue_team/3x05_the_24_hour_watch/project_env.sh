@@ -16,3 +16,5 @@ export BASELINE_PKG="$HOME/3x01_package/baseline_package"
 export TRIAGE_PKG="$HOME/3x03_package/triage_package"
 
 export PATH="$PROJECT_DIR/bin:$PATH"
+
+export CATALOG_DIR="$HOME/dlh-cyber_security/blue_team/3x02_the_alert_factory"
