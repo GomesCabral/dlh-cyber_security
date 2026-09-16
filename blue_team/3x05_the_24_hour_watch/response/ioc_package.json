@@ -1,0 +1,468 @@
+{
+  "shift_id": "SHIFT-20260915-1624",
+  "tlp": "AMBER",
+  "cluster_id": "unknown",
+  "generated_at": "2026-09-16T15:01:16Z",
+  "iocs": [
+    {
+      "type": "account",
+      "value": "a_sthompson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "b_smartin",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "c_staylor",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "d_swilson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "e_sthomas",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "f_slee",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "g_sclark",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "h_sjackson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "j_smartinez",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "james.chen_west",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "k_sbrown",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "l_snguyen",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "m_sjohnson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "n_swhite",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "p_sharris",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "r_sgarcia",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "robert.kim_west",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "s_spatel",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "sarah.park_west",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "t_sanderson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "v_slewis",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "w_srobinson",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "y_swalker",
+      "first_seen": "2026-04-08T00:04:19Z",
+      "last_seen": "2026-04-08T23:58:40Z",
+      "incident_id": "INC-20260916-A",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "event:4634:2026-04-07T23:52:28Z:sth-ws-03",
+        "event:4624:2026-04-07T23:55:56Z:wst-dc-01",
+        "event:4624:2026-04-07T23:57:29Z:ctr-admin-01",
+        "event:4634:2026-04-07T23:57:46Z:ctr-admin-01",
+        "event:4625:2026-04-07T23:57:49Z:wst-dc-02",
+        "event:4634:2026-04-07T23:58:00Z:wst-dc-02"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "j.martinez",
+      "first_seen": "2026-04-08T00:06:28Z",
+      "last_seen": "2026-04-08T18:59:11Z",
+      "incident_id": "INC-20260916-B",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "linux:None:line:150911",
+        "linux:None:line:153099",
+        "linux:None:line:153284",
+        "linux:None:line:153539",
+        "linux:None:line:153675",
+        "linux:None:line:154516",
+        "linux:None:line:156774",
+        "linux:None:line:157069",
+        "linux:None:line:159783",
+        "linux:None:line:161269",
+        "linux:None:line:162033",
+        "linux:None:line:163562"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "a.thompson",
+      "first_seen": "2026-04-08T00:18:10Z",
+      "last_seen": "2026-04-08T07:51:06Z",
+      "incident_id": "INC-20260916-C",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "linux:None:line:148773",
+        "linux:None:line:149625",
+        "linux:None:line:151291",
+        "linux:None:line:152495",
+        "linux:None:line:152689",
+        "linux:None:line:152768",
+        "linux:None:line:154421",
+        "linux:None:line:154525",
+        "linux:None:line:154754",
+        "linux:None:line:155656",
+        "linux:None:line:155670",
+        "linux:None:line:156220"
+      ]
+    },
+    {
+      "type": "account",
+      "value": "d.wilson",
+      "first_seen": "2026-04-08T00:18:10Z",
+      "last_seen": "2026-04-08T07:51:06Z",
+      "incident_id": "INC-20260916-C",
+      "source": "shift_discovered",
+      "confidence": "medium",
+      "event_refs": [
+        "linux:None:line:148773",
+        "linux:None:line:149625",
+        "linux:None:line:151291",
+        "linux:None:line:152495",
+        "linux:None:line:152689",
+        "linux:None:line:152768",
+        "linux:None:line:154421",
+        "linux:None:line:154525",
+        "linux:None:line:154754",
+        "linux:None:line:155656",
+        "linux:None:line:155670",
+        "linux:None:line:156220"
+      ]
+    }
+  ]
+}

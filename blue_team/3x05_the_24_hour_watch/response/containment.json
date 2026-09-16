@@ -1,0 +1,126 @@
+{
+  "shift_id": "SHIFT-20260915-1624",
+  "generated_at": "2026-09-16T15:01:16Z",
+  "actions": [
+    {
+      "action_id": "ACT-001",
+      "priority": "immediate",
+      "action": "Temporarily isolate ctr-admin-01 pending Tier 2 validation.",
+      "target_type": "host",
+      "target_value": "ctr-admin-01",
+      "incident_id": "INC-20260916-A",
+      "operational_impact": "Host loses normal network connectivity; clinical or business services may be interrupted.",
+      "requires_approval_from": "SOC Incident Commander"
+    },
+    {
+      "action_id": "ACT-002",
+      "priority": "short_term",
+      "action": "Reset credentials and revoke active sessions for a_sthompson, b_smartin, c_staylor.",
+      "target_type": "user",
+      "target_value": "a_sthompson, b_smartin, c_staylor",
+      "incident_id": "INC-20260916-A",
+      "operational_impact": "Users must authenticate again and may require service-desk assistance.",
+      "requires_approval_from": "Identity and Access Management"
+    },
+    {
+      "action_id": "ACT-003",
+      "priority": "medium_term",
+      "action": "Review and tighten firewall access affecting ctr-admin-01.",
+      "target_type": "rule",
+      "target_value": "ctr-admin-01",
+      "incident_id": "INC-20260916-A",
+      "operational_impact": "Firewall changes may interrupt legitimate application traffic.",
+      "requires_approval_from": "Security Architecture"
+    },
+    {
+      "action_id": "ACT-004",
+      "priority": "medium_term",
+      "action": "Deploy additional Sysmon or audit coverage on ctr-admin-01.",
+      "target_type": "host",
+      "target_value": "ctr-admin-01",
+      "incident_id": "INC-20260916-A",
+      "operational_impact": "Additional telemetry may increase endpoint and SIEM resource usage.",
+      "requires_approval_from": "Endpoint Engineering"
+    },
+    {
+      "action_id": "ACT-005",
+      "priority": "immediate",
+      "action": "Temporarily isolate ctr-db-01 pending Tier 2 validation.",
+      "target_type": "host",
+      "target_value": "ctr-db-01",
+      "incident_id": "INC-20260916-B",
+      "operational_impact": "Host loses normal network connectivity; clinical or business services may be interrupted.",
+      "requires_approval_from": "SOC Incident Commander"
+    },
+    {
+      "action_id": "ACT-006",
+      "priority": "short_term",
+      "action": "Reset credentials and revoke active sessions for j.martinez.",
+      "target_type": "user",
+      "target_value": "j.martinez",
+      "incident_id": "INC-20260916-B",
+      "operational_impact": "Users must authenticate again and may require service-desk assistance.",
+      "requires_approval_from": "Identity and Access Management"
+    },
+    {
+      "action_id": "ACT-007",
+      "priority": "medium_term",
+      "action": "Review and tighten firewall access affecting ctr-db-01.",
+      "target_type": "rule",
+      "target_value": "ctr-db-01",
+      "incident_id": "INC-20260916-B",
+      "operational_impact": "Firewall changes may interrupt legitimate application traffic.",
+      "requires_approval_from": "Security Architecture"
+    },
+    {
+      "action_id": "ACT-008",
+      "priority": "medium_term",
+      "action": "Deploy additional Sysmon or audit coverage on ctr-db-01.",
+      "target_type": "host",
+      "target_value": "ctr-db-01",
+      "incident_id": "INC-20260916-B",
+      "operational_impact": "Additional telemetry may increase endpoint and SIEM resource usage.",
+      "requires_approval_from": "Endpoint Engineering"
+    },
+    {
+      "action_id": "ACT-009",
+      "priority": "immediate",
+      "action": "Temporarily isolate ctr-db-02 pending Tier 2 validation.",
+      "target_type": "host",
+      "target_value": "ctr-db-02",
+      "incident_id": "INC-20260916-C",
+      "operational_impact": "Host loses normal network connectivity; clinical or business services may be interrupted.",
+      "requires_approval_from": "SOC Incident Commander"
+    },
+    {
+      "action_id": "ACT-010",
+      "priority": "short_term",
+      "action": "Reset credentials and revoke active sessions for a.thompson, d.wilson.",
+      "target_type": "user",
+      "target_value": "a.thompson, d.wilson",
+      "incident_id": "INC-20260916-C",
+      "operational_impact": "Users must authenticate again and may require service-desk assistance.",
+      "requires_approval_from": "Identity and Access Management"
+    },
+    {
+      "action_id": "ACT-011",
+      "priority": "medium_term",
+      "action": "Review and tighten firewall access affecting ctr-db-02.",
+      "target_type": "rule",
+      "target_value": "ctr-db-02",
+      "incident_id": "INC-20260916-C",
+      "operational_impact": "Firewall changes may interrupt legitimate application traffic.",
+      "requires_approval_from": "Security Architecture"
+    },
+    {
+      "action_id": "ACT-012",
+      "priority": "medium_term",
+      "action": "Deploy additional Sysmon or audit coverage on ctr-db-02.",
+      "target_type": "host",
+      "target_value": "ctr-db-02",
+      "incident_id": "INC-20260916-C",
+      "operational_impact": "Additional telemetry may increase endpoint and SIEM resource usage.",
+      "requires_approval_from": "Endpoint Engineering"
+    }
+  ]
+}
