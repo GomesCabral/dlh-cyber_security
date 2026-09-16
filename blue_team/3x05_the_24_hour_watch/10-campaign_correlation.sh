@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 : "${SHIFT_WORKSPACE:?Execute: source ./project_env.sh}"
