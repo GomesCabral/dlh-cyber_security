@@ -1,0 +1,142 @@
+{
+  "shift_id": "SHIFT-20260915-1624",
+  "analyst_host": "ip-10-42-218-134.ec2.internal",
+  "started_at": "2026-09-15T16:24:37Z",
+  "ended_at": "2026-09-16T15:07:13Z",
+  "duration_hours": 22.71,
+  "files": [
+    {
+      "path": "runtime/shift_start.json",
+      "sha256": "d2785bede68b4d98dce98b92020cdc82d2e7f870fab30d009d6d5b5eba0859a4",
+      "size": 534
+    },
+    {
+      "path": "runtime/pipeline_run.json",
+      "sha256": "a7909deba6e995dab174d29441eafd05eeaa31442213f4d8bfe65353e5266c95",
+      "size": 480
+    },
+    {
+      "path": "runtime/baseline_run.json",
+      "sha256": "b7e3e315b6679565e7223181326e09a1b9d740e2324426b0ce1d84f7670d8558",
+      "size": 190684
+    },
+    {
+      "path": "runtime/catalog_run.json",
+      "sha256": "dbe19743e58d4120efa698c24d0d4fefa6c5249cabbb8df8d909048a00bd6a9c",
+      "size": 401
+    },
+    {
+      "path": "enriched/enriched_events.jsonl",
+      "sha256": "fb0a3bc5ac3d779f2029fa96474e2955f61153e75311a6577ff7575d6fd8daac",
+      "size": 434165680
+    },
+    {
+      "path": "enriched/timeline.jsonl",
+      "sha256": "5c7c414edfc4c3e4fd930d25180b8674d08858b93fe14489815b13fb52a6c41d",
+      "size": 434165676
+    },
+    {
+      "path": "enriched/source_stats.json",
+      "sha256": "5cfe49155a67eea5761f3df6a44e1481821294da860a7fbf1717b4d804e8b5bd",
+      "size": 255
+    },
+    {
+      "path": "enriched/baseline.json",
+      "sha256": "7893a6880224699756c5ee56461dbdf02b742b5673a151f6ad58d37fa2658f9f",
+      "size": 193846
+    },
+    {
+      "path": "alerts/alert_queue.json",
+      "sha256": "bc3ecd8f72f3dda236f443eb27053feccf585ce5da6dcdb42986ac23e0bf50ad",
+      "size": 196426
+    },
+    {
+      "path": "alerts/shift_briefing.json",
+      "sha256": "29d37f6b60b499d5aad3ffc074b6714bd22093a5b362c784059cea244fe063eb",
+      "size": 1753
+    },
+    {
+      "path": "alerts/triage_log.jsonl",
+      "sha256": "92bbeedfd9da574deb7dd268ab4fd50d9f1f0a040b31e0a0a047cbae8277d023",
+      "size": 151417
+    },
+    {
+      "path": "alerts/incidents.json",
+      "sha256": "b9a2c506b208e87d48cb17fd65b750117a7e647b590a5644fba79c9bd67c95dd",
+      "size": 10119
+    },
+    {
+      "path": "investigations/incident_A.json",
+      "sha256": "1822931a183f59127eeb1f010fe1d9ca5fdd8336f093ee89dc34c45c6fce2e04",
+      "size": 1503
+    },
+    {
+      "path": "investigations/incident_B.json",
+      "sha256": "902281254685b5faabc893521b8d7116b31d9ca4f5f4bcf2f8c92c1c829180a8",
+      "size": 2781
+    },
+    {
+      "path": "investigations/incident_C_cli.json",
+      "sha256": "0f69999a4a93a0c80c71966c313a2ac56be9711d4f89dc455518642f979986cf",
+      "size": 2335
+    },
+    {
+      "path": "campaign/campaign_assessment.json",
+      "sha256": "fa8ebb2698f55f0d9d44a5dc85859d926020e827241943f2abc37676770a0e1d",
+      "size": 675
+    },
+    {
+      "path": "reports/incident_A.md",
+      "sha256": "509e03a0d44fdf9803656acf77b249f6ec257e8757ae29dc520f9ae34da447e3",
+      "size": 3893
+    },
+    {
+      "path": "reports/incident_B.md",
+      "sha256": "22570f21ed42d30c92934db88b8b701affdefd83859f5c3b1a807a125229ff96",
+      "size": 5010
+    },
+    {
+      "path": "reports/incident_C.md",
+      "sha256": "8536b8587ef598447dc310d24f4026017a1b203d83dc4c64be8fb652e7fb3db5",
+      "size": 4854
+    },
+    {
+      "path": "response/containment.json",
+      "sha256": "4a1ac4ba3efedcde0879a5f3ff32f179bc76558557bfd6a157cd33d4ec926181",
+      "size": 5195
+    },
+    {
+      "path": "response/ioc_package.json",
+      "sha256": "79fd71e9aef381313f19f3b5fbebe9139a23171476553b5a790ae3cb2826fbb0",
+      "size": 16302
+    },
+    {
+      "path": "handoff/shift_handoff.md",
+      "sha256": "abdaa2f06847ec7716e12e9e864853da7b56e0ab56ca28213b71b766efbc19fa",
+      "size": 4426
+    }
+  ],
+  "artifact_counts": {
+    "runtime": 4,
+    "enriched": 4,
+    "alerts": 4,
+    "investigations": 3,
+    "campaign": 1,
+    "reports": 3,
+    "response": 2,
+    "handoff": 1
+  },
+  "incident_ids": [
+    "INC-20260916-A",
+    "INC-20260916-B",
+    "INC-20260916-C",
+    "INC-20260916-D",
+    "INC-20260916-E",
+    "INC-20260916-F",
+    "INC-20260916-G",
+    "INC-20260916-H",
+    "INC-20260916-I"
+  ],
+  "campaign_linked": true,
+  "cluster_id": "unknown"
+}
