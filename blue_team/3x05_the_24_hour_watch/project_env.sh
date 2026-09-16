@@ -10,7 +10,7 @@ export HANDOFF_DIR="$HOME/3x00_handoff/evidence_handoff"
 export PIPELINE_BIN="$HOME/bt/3x00/pipeline/run_pipeline.sh"
 export BASELINE_BIN="$PROJECT_DIR/build_baseline.sh"
 export CATALOG_DIR="$HOME/3x02_package/detection_catalog"
-export TRIAGE_BIN="$HOME/bt/3x03/triage/triage.sh"
+export TRIAGE_BIN="$PROJECT_DIR/triage.sh"
 
 export BASELINE_PKG="$HOME/3x01_package/baseline_package"
 export TRIAGE_PKG="$HOME/3x03_package/triage_package"
