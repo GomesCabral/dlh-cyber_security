@@ -140,7 +140,7 @@ def build_zone_index(document: Any) -> List[Tuple[ipaddress._BaseNetwork, str]]:
         for item in records:
             if not isinstance(item, dict):
                 continue
-            zone_name = first_present(item, ("zone", "name", "zone_name", "id"))
+            zone_name = first_present(item, ("zone", "name", "zone_name", "zone_id", "id"))
             networks = first_present(
                 item,
                 ("cidrs", "ranges", "networks", "subnets", "cidr", "network", "subnet"),

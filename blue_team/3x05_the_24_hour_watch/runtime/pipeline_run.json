@@ -1,0 +1,19 @@
+{
+  "pipeline_version": "3x00-capstone-1.0",
+  "started_at": "2026-09-16T11:01:24Z",
+  "ended_at": "2026-09-16T11:13:41Z",
+  "duration_seconds": 737,
+  "input_pack": "/home/student/evidence_pack_secondary",
+  "events_in": 339287,
+  "events_out": 339287,
+  "events_dropped": 0,
+  "source_counts": {
+    "windows_json": 122511,
+    "linux_text": 135336,
+    "firewall": 67368,
+    "suricata_alert": 9976,
+    "pcap_flow": 4096
+  },
+  "dirty_data_detected": [],
+  "exit_status": 0
+}
