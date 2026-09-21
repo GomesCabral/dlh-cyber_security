@@ -1,136 +1,176 @@
 # Final Email Verdict Matrix
 
-This matrix provides the final classification of all eight emails after
-reviewing email headers, authentication results, sender infrastructure,
-URLs, attachments and social-engineering indicators.
-
 | Email | Initial Class | Final Class | Confidence | Key Evidence | Recommended Action |
 |---|---|---|---|---|---|
-| E1 | SPAM | SPAM | HIGH | SPF, DKIM and DMARC pass; authenticated bulk newsletter; `Precedence: bulk`; MailChimp and unsubscribe indicators; no targeted security lure | Mark as spam or unwanted bulk mail; no incident escalation required |
-| E2 | SUSPICIOUS | PHISHING-TARGETED | HIGH | MedDefense lookalike domain `meddefense-portal.com`; SPF fail; DKIM none; DMARC fail; PHPMailer 6.6.0; portal re-verification lure; 24-hour urgency; Diane Marsh confirmed clicking the link | Block/monitor indicators, investigate Diane's account and WS-NURSE-04, reset credentials if exposure cannot be excluded, revoke sessions and monitor authentication |
-| E3 | SUSPICIOUS | PHISHING-OPPORTUNISTIC | HIGH | Claims to be Microsoft Account Protection but uses `outlook-protection.com`; account-verification lure; 48-hour account-lock threat; PHPMailer 6.6.0; SPF/DKIM/DMARC pass only for the lookalike domain | Block the phishing domain, search for additional recipients/clicks and monitor related authentication activity |
-| E4 | LEGITIMATE | LEGITIMATE | HIGH | Internal `meddefense.com` sender; internal Exchange infrastructure; SPF, DKIM and DMARC pass; directs users to the normal internal portal rather than an external credential link | No security action required |
-| E5 | SUSPICIOUS | PHISHING-TARGETED | HIGH | Unexpected $24,716.38 invoice; Accounts Payable recipient; SPF softfail; DKIM none; DMARC fail; PHPMailer 6.6.0; suspicious invoice/login URLs; PDF attachment; recipient reported invoice looked wrong | Quarantine related messages, block/monitor indicators, investigate recipients and safely analyze attachment metadata/hash |
-| E6 | SPAM | SPAM | HIGH | Unsolicited pharmaceutical advertising; spam score 9.8; SPF softfail; DKIM none; DMARC fail with quarantine action; direct numeric-IP HTTP link | Quarantine or delete as spam and block related sender/infrastructure according to mail-security policy |
-| E7 | SUSPICIOUS | PHISHING-TARGETED | HIGH | MedDefense HR impersonation; lookalike `meddefense-benefits.org` domain; SPF fail; DKIM none; DMARC fail; PHPMailer 6.6.0; open-enrollment deadline lure | Block the domain, quarantine matching messages, identify other recipients and investigate any reported clicks |
-| E8 | LEGITIMATE | LEGITIMATE | HIGH | HHS/HC3 sender; SPF, DKIM and DMARC pass for `hhs.gov`; healthcare-sector phishing advisory consistent with the investigation context | Retain as legitimate threat-intelligence information and use the advisory to support investigation |
+| E1 | SPAM | SPAM | HIGH | SPF, DKIM and DMARC pass; authenticated bulk newsletter; bulk-mail and unsubscribe indicators; no credential or payment lure | Mark as spam or unwanted bulk mail |
+| E2 | SUSPICIOUS | PHISHING-TARGETED | HIGH | MedDefense lookalike domain `meddefense-portal.com`; SPF fail; DKIM none; DMARC fail; portal re-verification lure; 24-hour urgency; Diane Marsh confirmed clicking the link | Investigate Diane and WS-NURSE-04, reset password if exposure cannot be excluded, revoke sessions, monitor logins and block indicators |
+| E3 | SUSPICIOUS | PHISHING-TARGETED | HIGH | Impersonates Microsoft Account Protection; uses `outlook-protection.com` instead of a Microsoft-owned domain; credential-verification lure; account-lock threat; PHPMailer 6.6.0; authentication passes only for the lookalike sender domain | Block the domain, quarantine matching messages, identify recipients and investigate clicks or credential submission |
+| E4 | LEGITIMATE | LEGITIMATE | HIGH | Internal `meddefense.com` sender; internal Exchange infrastructure; SPF, DKIM and DMARC pass; directs users to the normal internal portal | No security action required |
+| E5 | SUSPICIOUS | PHISHING-TARGETED | HIGH | Unexpected $24,716.38 invoice; Accounts Payable context; SPF softfail; DKIM none; DMARC fail; suspicious invoice and login URLs; PDF attachment; recipient reported invoice looked wrong | Quarantine matching messages, block indicators, investigate recipients and safely analyze the attachment |
+| E6 | SPAM | SPAM | HIGH | Unsolicited pharmaceutical advertising; spam score 9.8; SPF softfail; DKIM none; DMARC fail; direct numeric-IP HTTP link | Quarantine or delete as spam and block related spam infrastructure according to policy |
+| E7 | SUSPICIOUS | PHISHING-TARGETED | HIGH | MedDefense HR impersonation; lookalike domain `meddefense-benefits.org`; SPF fail; DKIM none; DMARC fail; urgent open-enrollment lure | Block the domain, quarantine matching messages, identify recipients and investigate reported interaction |
+| E8 | LEGITIMATE | LEGITIMATE | HIGH | Authenticated HHS/HC3 sender; SPF, DKIM and DMARC pass for `hhs.gov`; message is a healthcare phishing advisory relevant to the investigation | Retain as legitimate threat-intelligence information |
 
 ## Final Classification Summary
 
-- SPAM: E1, E6
-- PHISHING-OPPORTUNISTIC: E3
-- PHISHING-TARGETED: E2, E5, E7
-- LEGITIMATE: E4, E8
-- LEGITIMATE-WITH-ISSUE: None
+- E1: SPAM
+- E2: PHISHING-TARGETED
+- E3: PHISHING-TARGETED
+- E4: LEGITIMATE
+- E5: PHISHING-TARGETED
+- E6: SPAM
+- E7: PHISHING-TARGETED
+- E8: LEGITIMATE
+
+The final investigation therefore identifies:
+
+- Spam-related emails: E1 and E6
+- Phishing-related emails: E2, E3, E5 and E7
+- Legitimate emails: E4 and E8
 
 
 ## Classification Changes After Deeper Analysis
 
-### E2
+### E2 — SUSPICIOUS to PHISHING-TARGETED
 
-Initial classification: `SUSPICIOUS`
+Initial triage identified E2 as suspicious.
 
-Final classification: `PHISHING-TARGETED`
+Deeper analysis confirmed multiple phishing indicators: the sender impersonates
+MedDefense IT Security, uses the lookalike domain `meddefense-portal.com`,
+fails SPF and DMARC, has no DKIM signature and directs Diane Marsh to a portal
+re-verification URL.
 
-Deeper analysis identified a MedDefense lookalike domain, failed SPF and DMARC,
-no DKIM signature, PHPMailer infrastructure, a portal re-verification lure and
-a URL containing Diane Marsh's email address.
+The URL also contains Diane's email address and the evidence confirms that she
+clicked the link.
 
-The evidence batch also confirms that Diane clicked the link from
-WS-NURSE-04, increasing the operational importance of the incident.
-
-
-### E3
-
-Initial classification: `SUSPICIOUS`
-
-Final classification: `PHISHING-OPPORTUNISTIC`
-
-E3 initially appeared more trustworthy because SPF, DKIM and DMARC all pass.
-
-Deeper analysis showed that those mechanisms authenticate
-`outlook-protection.com`, not Microsoft. The email claims to represent
-Microsoft Account Protection, but `outlook-protection.com` is not the same
-domain as `microsoft.com` or `outlook.com`.
-
-The account-verification lure, account-lock threat and lookalike branding
-support the final phishing classification.
+Final classification: PHISHING-TARGETED.
 
 
-### E5
+### E3 — SUSPICIOUS to PHISHING-TARGETED
 
-Initial classification: `SUSPICIOUS`
+Initial triage identified E3 as suspicious.
 
-Final classification: `PHISHING-TARGETED`
+Deeper analysis showed that the message impersonates Microsoft Account
+Protection and attempts to convince the recipient to perform account
+verification.
 
-Deeper analysis identified an invoice specifically relevant to an Accounts
-Payable workflow, a payment amount of $24,716.38, suspicious invoice/login
-URLs and a PDF attachment.
+Although SPF, DKIM and DMARC pass, they authenticate
+`outlook-protection.com`. They do not authenticate Microsoft.
+
+The sender uses a Microsoft-themed lookalike domain, an unusual-sign-in
+security pretext and a threat that the account will be locked within 48 hours.
+
+The combination of brand impersonation, credential-verification pretext and
+urgency supports a phishing classification.
+
+Final classification: PHISHING-TARGETED.
+
+
+### E5 — SUSPICIOUS to PHISHING-TARGETED
+
+Initial triage identified E5 as suspicious.
+
+Deeper analysis identified an unexpected invoice for $24,716.38, suspicious
+invoice and login URLs and a PDF attachment.
+
+The email is relevant to an Accounts Payable workflow, making the financial
+pretext more targeted than generic spam.
 
 SPF softfailed, DKIM was absent and DMARC failed. The recipient also reported
 that the invoice looked wrong.
 
-The combination of recipient role, financial pretext and technical indicators
-supports a targeted phishing classification.
+Final classification: PHISHING-TARGETED.
 
 
-### E7
+### E7 — SUSPICIOUS to PHISHING-TARGETED
 
-Initial classification: `SUSPICIOUS`
+Initial triage identified E7 as suspicious.
 
-Final classification: `PHISHING-TARGETED`
+Deeper analysis showed that the sender impersonates MedDefense HR Benefits
+using the lookalike domain `meddefense-benefits.org`.
 
-Deeper analysis identified impersonation of MedDefense HR using the lookalike
-domain `meddefense-benefits.org`.
+SPF failed, DKIM was absent and DMARC failed. The message also pressures the
+recipient with an open-enrollment deadline and directs the recipient to an
+external enrollment page.
 
-SPF failed, DKIM was absent and DMARC failed. The message also uses an urgent
-open-enrollment deadline to pressure the recipient into interacting with an
-external page.
+Final classification: PHISHING-TARGETED.
 
-These indicators support a targeted phishing classification.
+
+## Why E1 and E6 Remain Spam
+
+E1 remains SPAM because it is an authenticated bulk newsletter. SPF, DKIM and
+DMARC pass, and the message contains bulk-mail and unsubscribe characteristics.
+The investigation found no targeted credential, payment or account-security
+pretext.
+
+E6 remains SPAM because it is unsolicited pharmaceutical advertising with a
+high spam score and bulk advertising characteristics. Its authentication
+failures and numeric-IP link increase suspicion, but the evidence supports
+spam classification rather than the targeted phishing pattern identified in
+E2, E3, E5 and E7.
+
+
+## Why E4 and E8 Remain Legitimate
+
+E4 remains LEGITIMATE because it originates from MedDefense infrastructure,
+passes SPF, DKIM and DMARC and instructs employees to use the normal internal
+portal rather than an external credential-verification page.
+
+E8 remains LEGITIMATE because it is an authenticated HHS/HC3 healthcare
+security advisory. SPF, DKIM and DMARC pass for `hhs.gov`, and the advisory is
+consistent with the phishing activity being investigated.
 
 
 ## Triage Accuracy Assessment
 
-The initial triage correctly separated the eight emails into the appropriate
-high-level investigation categories:
+The initial triage correctly separated all eight emails into the appropriate
+high-level investigation categories.
 
-- E1 correctly identified as spam.
-- E2 correctly identified as suspicious.
-- E3 correctly identified as suspicious.
-- E4 correctly identified as legitimate.
-- E5 correctly identified as suspicious.
-- E6 correctly identified as spam.
-- E7 correctly identified as suspicious.
-- E8 correctly identified as legitimate.
+- E1 was correctly identified as spam.
+- E2 was correctly identified as suspicious.
+- E3 was correctly identified as suspicious.
+- E4 was correctly identified as legitimate.
+- E5 was correctly identified as suspicious.
+- E6 was correctly identified as spam.
+- E7 was correctly identified as suspicious.
+- E8 was correctly identified as legitimate.
 
-Therefore:
+Correct initial triage decisions: 8 of 8.
 
-- Correct initial triage decisions: 8 of 8
-- Triage accuracy: 100%
+Triage accuracy: 100%.
 
-The initial `SUSPICIOUS` classification for E2, E3, E5 and E7 was appropriate
-for first-pass triage. Deeper investigation then provided enough evidence to
-replace the broad suspicious label with specific phishing classifications.
+The initial SUSPICIOUS label for E2, E3, E5 and E7 was appropriate during
+first-pass triage. Deeper investigation provided sufficient evidence to
+replace that broad label with the final phishing classification.
 
 
-## Recommended Response Summary
+## Recommended Actions
 
-E2 requires the highest operational attention because a user interaction is
-confirmed. Diane Marsh's account and WS-NURSE-04 should be investigated and
-precautionary credential/session containment should be considered if
-credential exposure cannot be excluded.
+E2 requires immediate follow-up because Diane Marsh confirmed clicking the
+phishing link. Her account and WS-NURSE-04 should be investigated. Password
+reset, session revocation and increased authentication monitoring should be
+performed if credential exposure cannot be excluded.
 
-E3 should be treated as phishing despite passing email authentication because
-the authenticated domain is the lookalike `outlook-protection.com`, not
-Microsoft.
+E3 should be blocked and matching messages should be quarantined. Recipients
+should be identified and checked for clicks or credential submission.
 
-E5 should be treated as targeted phishing against the Accounts Payable
-workflow. The attachment and associated infrastructure should be investigated
-using safe static and passive methods.
+E5 should be quarantined and its indicators blocked or monitored. The PDF
+attachment should be analyzed safely using hashes, metadata and an authorized
+isolated analysis environment.
 
-E7 should be treated as targeted HR-themed phishing. Matching messages should
-be identified and quarantined, and recipients should be checked for interaction.
+E7 should be blocked and matching messages quarantined. Other recipients
+should be identified and investigated for interaction with the phishing link.
 
-E1 and E6 can be handled as spam, while E4 and E8 require no phishing
-containment action.
+
+## Conclusion
+
+The final evidence-based verdict is:
+
+E1 and E6 are spam-related messages.
+
+E2, E3, E5 and E7 are phishing-related messages.
+
+E4 and E8 are legitimate messages.
+
+E2 is the highest-priority phishing incident because the evidence confirms
+that Diane Marsh clicked the phishing link.
