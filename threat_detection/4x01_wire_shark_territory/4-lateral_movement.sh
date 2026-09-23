@@ -209,7 +209,7 @@ echo "=== ATTACK PATH EVIDENCE ==="
 echo
 echo "[RDP involving WS-NURSE-04]"
 tshark -r "$PCAP" \
-    -Y 'ip.addr == 10.10.2.15 && tcp.port == 3389 && tcp.flags.syn == 1' \
+    -Y 'ip.src == 10.10.2.15 && tcp.dstport == 3389 && tcp.flags.syn == 1 && tcp.flags.ack == 0' \
     -T fields \
     -e frame.time \
     -e ip.src \
@@ -256,9 +256,17 @@ echo "T1083      File and Directory Discovery"
 echo
 
 echo "=== ANALYST CONCLUSION ==="
-echo "Review the RDP, SMB, authentication, access-denied and TCP RST"
-echo "evidence above to reconstruct the lateral movement path."
+echo "Packet evidence shows lateral movement beginning with RDP from"
+echo "WS-NURSE-04 (10.10.2.15) to billing-srv-01 (10.10.1.10)."
 echo
-echo "A successful TCP/SMB exchange supports that a system was reached."
-echo "STATUS_ACCESS_DENIED shows the service responded but denied access."
-echo "TCP RST/refused shows that the attempted TCP connection did not complete."
+echo "billing-srv-01 subsequently initiated SMB connections to:"
+echo "10.10.1.20, 10.10.1.30, 10.10.1.31, 10.10.4.100,"
+echo "10.10.4.101 and 10.10.1.60."
+echo
+echo "RST traffic was observed immediately after the attempts toward"
+echo "10.10.4.100 and 10.10.4.101, indicating those connection"
+echo "attempts were refused or blocked."
+echo
+echo "SMB/NTLM application details were not decoded by tshark in this"
+echo "capture, so account names, share names and access-denied results"
+echo "are not asserted without packet evidence."
