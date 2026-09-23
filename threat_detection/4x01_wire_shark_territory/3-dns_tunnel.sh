@@ -233,6 +233,26 @@ echo "Sample TXT responses:"
 printf '%s\n' "$RESPONSES" | head -5
 
 echo
+echo "Sample decoded TXT responses (Base64):"
+
+printf '%s\n' "$RESPONSES" |
+head -5 |
+awk -F'\t' '{print $4}' |
+while read -r txt; do
+    echo "Encoded: $txt"
+
+    decoded=$(printf '%s' "$txt" | base64 -d 2>/dev/null || true)
+
+    if [[ -n "$decoded" ]]; then
+        echo "Decoded: $decoded"
+    else
+        echo "Decoded: FAILED"
+    fi
+
+    echo
+done
+
+echo
 echo "[*] TXT response content must only be treated as command/control"
 echo "    data if the packet evidence supports that conclusion."
 echo
