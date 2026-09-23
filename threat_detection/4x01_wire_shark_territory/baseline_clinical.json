@@ -1,0 +1,9 @@
+{
+  "pcap": "7fe2b4e3acd872e34f7ec949f63e606fc5496f33.pcap",
+  "total_packets": 2842,
+  "duration_seconds": 1798.08,
+  "dns_queries": 520,
+  "dns_queries_per_minute": 17.35,
+  "txt_queries": 7,
+  "txt_queries_per_minute": 0.234
+}
