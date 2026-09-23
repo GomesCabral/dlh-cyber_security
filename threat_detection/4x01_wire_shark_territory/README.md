@@ -1,394 +1,101 @@
 # 4x01 — Wireshark Territory
 
-## Project Overview
+## Network Forensics Investigation
 
-This project investigates a simulated phishing-driven compromise at **MedDefense Health Systems** using packet capture evidence.
+This project investigates a multi-stage compromise of the fictional MedDefense environment using packet-capture analysis.
 
-The objective is to reconstruct attacker activity directly from network traffic and identify suspicious behavior including phishing activity, command-and-control communication, DNS tunneling, lateral movement and possible data exfiltration.
+The investigation follows network evidence from normal baseline activity through phishing infrastructure contact, command-and-control behavior, external VPN access, lateral movement and DNS-based data exfiltration.
 
-The investigation uses **TShark** for automated PCAP analysis and **Wireshark** for manual validation.
+The central investigation principle is:
 
----
-
-## Investigation Principles
-
-The following principles are applied throughout the investigation:
-
-- Packet captures are treated as primary network evidence.
-- Every significant finding must include an exact timestamp.
-- Automated PCAP analysis is performed with `tshark`.
-- Wireshark is used for manual investigation and validation.
-- Every important filter and command is documented.
-- Findings are based on observable packet evidence.
-- An anomalous event is not automatically considered malicious.
-- Suspicious traffic is compared against the known-good baseline before classification.
+> Packet evidence must be separated from analytical inference.
 
 ---
 
-## Evidence Files
+## Project Objectives
 
-The investigation uses the following PCAP files:
+The project demonstrates practical network-forensics skills including:
 
-- `normal_baseline_clinical.pcap`
-- `phishing_click.pcap`
-- `c2_beaconing.pcap`
-- `dns_exfil.pcap`
-- `lateral_movement.pcap`
-- `full_timeline.pcap`
+- PCAP analysis with Wireshark and `tshark`
+- traffic baselining
+- DNS investigation
+- TLS metadata analysis
+- behavioral C2 detection
+- VPN investigation
+- RDP and SMB analysis
+- lateral-movement reconstruction
+- DNS tunneling detection
+- MITRE ATT&CK mapping
+- kill-chain reconstruction
+- detection engineering
+- evidence validation
+- incident reporting
 
 ---
 
-# Task 0 — The Baseline
+## Tools
 
-## Objective
+Primary tools used:
 
-Establish what normal MedDefense clinical network traffic looks like before the phishing incident.
+```text
+Wireshark
+tshark
+Bash
+awk
+grep
+sort
+base32
+base64
+whois
+shellcheck
+```
 
-The baseline provides a reference for identifying anomalies in later PCAP captures.
-
-The analysis covers:
-
-- protocol distribution
-- application/service usage
-- top source hosts
-- top destinations
-- DNS behavior
-- DNS query types
-- TLS metadata
-- TCP connection duration
-- traffic volume over time
-- known-good domains and services
+All automated PCAP analysis is performed with `tshark`.
 
 ---
 
 ## Evidence
 
-PCAP:
+The project uses six packet captures:
 
-```text
-normal_baseline_clinical.pcap
-```
-
-Capture duration:
-
-```text
-1798.08 seconds
-≈ 29.97 minutes
-```
-
-Total packets:
-
-```text
-2842
-```
-
-Average traffic volume:
-
-```text
-≈ 95 packets/minute
-```
-
-The capture represents approximately 30 minutes of legitimate clinical network activity.
+| PCAP | Purpose |
+|---|---|
+| `normal_baseline_clinical.pcap` | Establish normal network behavior |
+| `phishing_click.pcap` | Analyze interaction with phishing infrastructure |
+| `c2_beaconing.pcap` | Analyze repeated C2-like communication |
+| `dns_exfil.pcap` | Analyze DNS tunneling and exfiltration |
+| `lateral_movement.pcap` | Reconstruct internal RDP/SMB activity |
+| `full_timeline.pcap` | Correlate VPN access with the incident timeline |
 
 ---
 
-## Protocol Distribution
+# Investigation Tasks
 
-| Protocol | Packets | Percentage |
-|---|---:|---:|
-| TCP | 1742 | 61.29% |
-| UDP | 1100 | 38.71% |
-| ICMP | 0 | 0.00% |
-| Other | 0 | 0.00% |
+## Task 0 — Normal Baseline
 
-TCP is the dominant transport protocol, while UDP represents a significant portion of traffic primarily because of DNS and other UDP-based services.
+**Objective:** Establish normal MedDefense network behavior.
 
-No ICMP traffic was observed during the baseline period.
-
-### TShark Filters
-
-```bash
-tshark -r normal_baseline_clinical.pcap -Y "tcp"
-tshark -r normal_baseline_clinical.pcap -Y "udp"
-tshark -r normal_baseline_clinical.pcap -Y "icmp || icmpv6"
-```
-
----
-
-## Application Layer Breakdown
-
-| Service | Packets | Percentage |
-|---|---:|---:|
-| DNS | 1040 | 36.59% |
-| HTTPS | 800 | 28.15% |
-| Kerberos | 360 | 12.67% |
-| Printing | 126 | 4.43% |
-| SMB | 96 | 3.38% |
-| NTP | 60 | 2.11% |
-| LDAP | 0 | 0.00% |
-
-DNS and HTTPS represent the largest portions of observed network activity.
-
-The high DNS volume is important because later DNS-based anomalies must be evaluated against an already active DNS environment rather than assuming that DNS traffic itself is suspicious.
-
-### Relevant Filters
+Script:
 
 ```text
-HTTPS:
-tcp.port == 443
-
-DNS:
-udp.port == 53 || tcp.port == 53
-
-Kerberos:
-tcp.port == 88 || udp.port == 88
-
-LDAP:
-tcp.port == 389 || udp.port == 389
-
-SMB:
-tcp.port == 445
-
-NTP:
-udp.port == 123
-
-Printing:
-tcp.port == 9100
+0-baseline.sh
 ```
 
----
+The baseline capture contained:
 
-## Top Source IPs by Bytes
+- 2,842 packets
+- 1,798.08 seconds of traffic
+- 61.29% TCP
+- 38.71% UDP
 
-The most active source systems were:
-
-| Source IP | Data |
-|---|---:|
-| 10.10.20.5 | 0.25 MB |
-| 10.10.1.1 | 0.06 MB |
-| 151.101.1.140 | 0.05 MB |
-| 140.82.112.4 | 0.04 MB |
-| 204.79.197.200 | 0.04 MB |
-| 13.107.42.14 | 0.04 MB |
-| 10.10.2.41 | 0.04 MB |
-| 52.96.10.45 | 0.04 MB |
-| 10.10.2.22 | 0.04 MB |
-| 10.10.2.31 | 0.03 MB |
-
-`10.10.20.5` generated the largest amount of traffic during the baseline period.
-
-High traffic volume alone is not evidence of malicious activity. These values provide a reference for detecting unusual traffic volume in later captures.
-
----
-
-## Top Destination IPs
-
-Top destinations by observed TCP connections:
-
-| Destination | Connections |
-|---|---:|
-| 10.10.20.5 | 180 |
-| 10.10.2.70 | 35 |
-| 10.10.2.41 | 30 |
-| 10.10.2.80 | 29 |
-| 10.10.2.31 | 29 |
-| 10.10.2.22 | 27 |
-| 10.10.2.15 | 26 |
-| 10.10.2.75 | 23 |
-| 10.10.2.40 | 23 |
-| 10.10.2.55 | 22 |
-
-These systems represent frequently contacted destinations during normal network operations.
-
----
-
-# DNS Baseline
-
-DNS activity is particularly important because later stages of the investigation may involve DNS tunneling.
-
-## DNS Query Volume
+Normal DNS activity:
 
 ```text
-Total DNS queries: 520
-Average DNS rate: 17.35 queries/minute
+DNS queries:      17.35/min
+TXT queries:       0.234/min
 ```
 
-This establishes:
-
-```text
-NORMAL DNS RATE ≈ 17.35 queries/minute
-```
-
-Future DNS activity can be compared directly against this value.
-
----
-
-## Top Queried Domains
-
-| Domain | Queries |
-|---|---:|
-| pacs.meddefense.com | 77 |
-| outlook.office365.com | 71 |
-| windows.com | 68 |
-| time.windows.com | 66 |
-| www.bing.com | 64 |
-| login.microsoftonline.com | 60 |
-| meddefense.com | 58 |
-| ehr.meddefense.com | 56 |
-
-These domains represent known-good DNS activity observed during the baseline.
-
----
-
-## DNS Query Types
-
-| Type | Queries |
-|---|---:|
-| A | 421 |
-| AAAA | 79 |
-| MX | 13 |
-| TXT | 7 |
-
-Most queries are standard A and AAAA address resolution requests.
-
-TXT queries are rare.
-
-```text
-TXT queries: 7
-TXT rate: 0.234 queries/minute
-```
-
-Therefore:
-
-```text
-NORMAL TXT RATE ≈ 0.234 queries/minute
-```
-
-This metric will be especially important when investigating potential DNS tunneling.
-
-A significant increase in TXT queries combined with long encoded subdomains, unusual destinations and regular timing would represent a strong deviation from the baseline.
-
----
-
-# TLS Baseline
-
-## Observed SNI Values
-
-The following TLS Server Name Indication values were observed:
-
-```text
-api.github.com
-login.microsoftonline.com
-outlook.office365.com
-windows.com
-www.bing.com
-```
-
-These represent known TLS destinations during normal network activity.
-
-SNI metadata can help identify the destination hostname of encrypted HTTPS connections even when the application payload cannot be inspected.
-
----
-
-## TLS Versions
-
-Observed TLS record versions included:
-
-```text
-0x0303
-0x0301
-```
-
-TLS metadata provides useful information even when encrypted traffic cannot be decrypted.
-
-Network investigations can still analyze:
-
-- source and destination IPs
-- ports
-- timestamps
-- SNI
-- TLS metadata
-- connection duration
-- transferred bytes
-- communication frequency
-
-Certificate issuer information was not available from the captured traffic using the selected extraction method.
-
-No certificate issuer values were invented or assumed.
-
----
-
-# Connection Duration Baseline
-
-TCP streams were classified according to their observed duration.
-
-| Duration | Connections | Percentage |
-|---|---:|---:|
-| Short (<1 second) | 222 | 75.00% |
-| Medium (1–30 seconds) | 68 | 22.97% |
-| Long (>30 seconds) | 6 | 2.03% |
-
-Most legitimate TCP connections in the baseline are short.
-
-Therefore, a short connection alone should not be considered suspicious.
-
-For later C2 beaconing analysis, connection **regularity, destination, frequency and transferred data** must also be considered.
-
----
-
-# Temporal Traffic Pattern
-
-The baseline shows relatively stable network activity throughout the approximately 30-minute capture.
-
-Most one-minute intervals contain approximately:
-
-```text
-50–120 packets/minute
-```
-
-An observed legitimate peak occurred at:
-
-```text
-08:05 → 167 packets
-```
-
-The overall average is approximately:
-
-```text
-95 packets/minute
-```
-
-The network therefore shows normal variation rather than perfectly constant traffic.
-
-Future traffic spikes should be compared against this natural variation before being classified as anomalous.
-
----
-
-# Baseline Signatures
-
-The following values establish the initial known-good network profile:
-
-| Indicator | Baseline |
-|---|---:|
-| Capture duration | ~30 minutes |
-| Total packets | 2842 |
-| Average packet volume | ~95 packets/min |
-| TCP | 61.29% |
-| UDP | 38.71% |
-| ICMP | 0% |
-| DNS traffic | 36.59% |
-| HTTPS traffic | 28.15% |
-| DNS queries | 520 |
-| Normal DNS rate | **17.35 queries/min** |
-| TXT queries | 7 |
-| Normal TXT rate | **0.234 queries/min** |
-| Short TCP connections | 75.00% |
-| Medium TCP connections | 22.97% |
-| Long TCP connections | 2.03% |
-
----
-
-## Known-Good DNS Domains
+Common legitimate domains included:
 
 ```text
 pacs.meddefense.com
@@ -401,137 +108,527 @@ meddefense.com
 ehr.meddefense.com
 ```
 
-## Known-Good TLS SNI
+This baseline is used throughout the investigation to distinguish expected from anomalous activity.
+
+---
+
+## Task 1 — The Click in the Wire
+
+**Objective:** Investigate the network activity generated after interaction with the phishing campaign.
+
+Script:
 
 ```text
-api.github.com
-login.microsoftonline.com
-outlook.office365.com
-windows.com
-www.bing.com
+1-phishing_click.sh
+```
+
+Key evidence:
+
+```text
+10.10.2.15
+      |
+      | DNS
+      v
+meddefense-portal.com
+      |
+      v
+91.234.99.107
+      |
+      | TLS / 443
+      v
+Encrypted phishing session
+```
+
+The phishing domain resolved to:
+
+```text
+91.234.99.107
+```
+
+TLS SNI independently confirmed:
+
+```text
+meddefense-portal.com
+```
+
+A 487-byte encrypted client payload was observed approximately 25 seconds after connection establishment.
+
+The encrypted content cannot be read directly, so credential submission is treated as strong inference rather than confirmed plaintext evidence.
+
+---
+
+## Task 2 — C2 Beaconing
+
+**Objective:** Identify automated repeated communication consistent with command-and-control beaconing.
+
+Script:
+
+```text
+2-c2_beaconing.sh
+```
+
+The investigation focuses on:
+
+- repeated connections
+- source/destination pairs
+- communication interval
+- mean interval
+- standard deviation
+- jitter
+- session volume
+- comparison with baseline behavior
+
+MITRE ATT&CK:
+
+```text
+T1071.001 — Application Layer Protocol: Web Protocols
+```
+
+> Final exact Task 2 statistics should be populated from the completed dedicated beaconing analysis.
+
+---
+
+## Task 3 — The DNS Tunnel
+
+**Objective:** Detect and analyze DNS-based data exfiltration.
+
+Script:
+
+```text
+3-dns_tunnel.sh
+```
+
+Source:
+
+```text
+billing-srv-01
+10.10.1.10
+```
+
+Anomalous domain:
+
+```text
+data-sync.meddefense-portal.com
+```
+
+Results:
+
+```text
+Total DNS queries:       487
+Normal queries:          367
+Anomalous queries:       120
+
+Anomalous TXT rate:      4.85/min
+Baseline TXT rate:       0.234/min
+Increase:                ~20.7x
+
+Encoded characters:      6263
+Estimated raw data:      ~3914 bytes
+```
+
+Decoded Base32 fragments referenced:
+
+```text
+patient_record
+financial_record
+backup_metadata
+server_config
+```
+
+MITRE ATT&CK:
+
+```text
+T1048.003 — Exfiltration Over Alternative Protocol
 ```
 
 ---
 
-# SOC Interpretation
+## Task 4 — The Lateral Trail
 
-The baseline establishes that the clinical network normally contains significant DNS and HTTPS traffic.
+**Objective:** Reconstruct lateral movement across the internal network.
 
-Therefore, future DNS or HTTPS activity should not be considered malicious simply because those protocols are present.
+Script:
 
-The investigation should instead look for deviations such as:
+```text
+4-lateral_movement.sh
+```
 
-- previously unseen domains
-- unusual external IP addresses
-- significant increases in DNS TXT queries
-- long or encoded DNS labels
-- highly regular connection intervals
-- unusual traffic volumes
-- unexpected protocols
-- abnormal connection durations
-- communication patterns not present in the baseline
+Initial RDP activity:
 
-An important investigation principle is:
+```text
+10.10.2.15
+     |
+     | RDP / TCP 3389
+     v
+10.10.1.10
+billing-srv-01
+```
 
-> **Anomalous does not automatically mean malicious.**
+Subsequent SMB activity originated from `10.10.1.10` toward:
 
-An anomaly identifies behavior that differs from the known baseline and requires further investigation.
+```text
+10.10.1.20
+10.10.1.30
+10.10.1.31
+10.10.4.100
+10.10.4.101
+10.10.1.60
+```
+
+Attempts toward `10.10.4.100` and `10.10.4.101` were followed by reset/refusal behavior.
+
+MITRE ATT&CK:
+
+```text
+T1021.001 — Remote Desktop Protocol
+T1021.002 — SMB/Windows Admin Shares
+```
+
+Application-level SMB enumeration was not fully decoded and is therefore not overclaimed.
 
 ---
 
-# Key Baseline Values for Later Tasks
+## Task 5 — The VPN Pivot
 
-## DNS Tunneling Comparison
+**Objective:** Identify the external VPN connection linking credential compromise with internal activity.
+
+Script:
 
 ```text
-Normal DNS rate: 17.35 queries/min
-Normal TXT rate: 0.234 queries/min
-TXT queries in 30 minutes: 7
+5-vpn_pivot.sh
 ```
 
-These values will be compared against DNS activity observed during the suspected exfiltration period.
-
-## C2 Beaconing Comparison
+VPN evidence:
 
 ```text
-75% of TCP connections last less than one second.
-Normal external communication is expected to have variable timing.
+Source:
+154.118.42.89:49872
+
+Destination:
+10.10.0.1:443
+
+TLS SNI:
+vpn.meddefense.com
+
+Account context:
+dmarsh
 ```
 
-Therefore, short connections alone are insufficient to identify C2 activity.
-
-Later beaconing analysis must consider:
+VPN connection:
 
 ```text
-same source
-      +
-same destination
-      +
-repeated connections
-      +
-regular intervals
-      +
-similar duration/size
-      +
-deviation from baseline
+2026-04-15 15:45:22 +0200
+```
+
+First RDP activity:
+
+```text
+2026-04-15 16:30:12 +0200
+```
+
+Gap:
+
+```text
+44.84 minutes
+```
+
+Observed VPN TCP session duration:
+
+```text
+~2904.97 seconds
+~48.4 minutes
+```
+
+MITRE ATT&CK:
+
+```text
+T1133 — External Remote Services
 ```
 
 ---
 
-# Generated Baseline Artifact
+## Task 6 — The Kill Chain Reconstruction
 
-The analysis script generates:
+**Objective:** Combine the individual PCAP findings into a single chronological incident timeline.
+
+Script:
 
 ```text
-baseline_clinical.json
+6-kill_chain.sh
 ```
 
-Current baseline values:
+Attack sequence:
 
-```json
-{
-  "pcap": "7fe2b4e3acd872e34f7ec949f63e606fc5496f33.pcap",
-  "total_packets": 2842,
-  "duration_seconds": 1798.08,
-  "dns_queries": 520,
-  "dns_queries_per_minute": 17.35,
-  "txt_queries": 7,
-  "txt_queries_per_minute": 0.234
-}
+```text
+Phishing campaign
+        |
+        v
+Phishing infrastructure contact
+        |
+        v
+Credential exposure suspected
+        |
+        v
+C2-like communication
+        |
+        v
+External VPN access
+        |
+        v
+RDP lateral movement
+        |
+        v
+SMB internal activity
+        |
+        v
+DNS tunneling / exfiltration
 ```
 
-This structured baseline can be reused by later investigation scripts to compare suspicious traffic against known-good behavior.
+Each phase is mapped to MITRE ATT&CK and separated into:
+
+```text
+CONFIRMED
+STRONG INFERENCE
+UNCONFIRMED
+```
 
 ---
 
-## Task 0 Conclusion
+## Task 7 — Detection Engineering
 
-The baseline capture represents approximately 30 minutes of legitimate clinical network activity.
+**Objective:** Convert forensic findings into operational detection rules.
 
-Normal traffic is dominated by TCP and UDP, with DNS and HTTPS accounting for a large proportion of observed packets.
+Script:
 
-DNS activity averages **17.35 queries per minute**, while TXT queries are uncommon at only **0.234 queries per minute**.
+```text
+7-detection_rules.sh
+```
 
-Most TCP connections are short-lived, and normal traffic volume is relatively stable with natural minute-to-minute variation.
+Six detection strategies were developed:
 
-These measurements establish the reference point that will be used to identify and quantify anomalies throughout the remaining investigation.
+| Detection | Purpose |
+|---|---|
+| C2 Beaconing | Detect periodic outbound communications |
+| DNS Label Length | Detect abnormally long DNS labels |
+| VPN Geo/ASN Anomaly | Detect unusual VPN origins |
+| Cross-Role RDP | Detect inappropriate workstation-to-server RDP |
+| DNS TXT Tunnel | Detect high-frequency encoded TXT queries |
+| TLS Campaign IOC | Detect TLS SNI matching phishing infrastructure |
+
+The objective is to transform incident intelligence into reusable defensive controls.
 
 ---
 
-## Investigation Progress
+## Task 8 — The Evidence Cross-Check
+
+**Objective:** Determine what packet evidence proves and what remains inference.
+
+Script:
 
 ```text
-[✓] Task 0 — The Baseline
-[ ] Task 1
-[ ] Task 2
-[ ] Task 3
-[ ] Task 4
-[ ] Task 5
-[ ] Task 6
-[ ] Task 7
-[ ] Task 8
-[ ] Task 9
-[ ] Task 10
-[ ] Task 11
-[ ] Task 12
+8-evidence_crosscheck.sh
 ```
+
+Evidence is classified as:
+
+```text
+CONFIRMED
+STRONG INFERENCE
+UNCONFIRMED
+NOT VISIBLE IN PCAP
+```
+
+Direct network evidence exists for six of seven primary kill-chain phases.
+
+Packet visibility:
+
+```text
+6 / 7
+~85%
+```
+
+The central lesson is:
+
+> Packets show communication and network behavior. Logs provide system, identity and application context.
+
+---
+
+## Task 9
+
+Task 9 forms part of the complete 4x01 workflow.
+
+Its final description and findings should be documented here using the results of the completed Task 9 analysis.
+
+> Do not add findings that have not been supported by the corresponding task evidence.
+
+---
+
+## Task 10
+
+Task 10 forms part of the complete 4x01 workflow.
+
+Its final description and findings should be documented here using the results of the completed Task 10 analysis.
+
+> Do not add findings that have not been supported by the corresponding task evidence.
+
+---
+
+## Task 11 — Network Forensics Report
+
+**Objective:** Produce the final incident-response deliverable.
+
+Report:
+
+```text
+11-network_forensics_report.md
+```
+
+The report contains:
+
+- Executive Summary
+- Investigation Scope
+- Methodology
+- Findings by Attack Phase
+- Network-Level IOC Table
+- Impact Assessment
+- Detection Gap Analysis
+- Detection Rules Recommended
+- Recommendations
+- Evidence Chain
+- Continuity with 4x00
+
+The final report maintains a strict distinction between packet evidence and analytical inference.
+
+---
+
+# Master Incident Timeline
+
+| Timestamp | Event |
+|---|---|
+| 2026-04-14 17:02:33 | Phishing domain resolved |
+| 2026-04-14 17:02:33 | TLS connection to phishing infrastructure |
+| 2026-04-14 17:02:58 | 487-byte encrypted client TLS payload |
+| 2026-04-14 17:03:20 | Phishing TLS session closes |
+| 2026-04-15 15:45:22 | External VPN connection begins |
+| 2026-04-15 16:30:12 | RDP activity toward billing-srv-01 |
+| 2026-04-15 16:35:22 | SMB activity begins from billing-srv-01 |
+| 2026-04-15 16:38:07 | Restricted endpoint connection attempts |
+| 2026-04-15 16:40:33 | SMB connection toward 10.10.1.60 |
+| Later incident activity | DNS tunneling/exfiltration observed |
+
+---
+
+# MITRE ATT&CK Mapping
+
+| Technique | Description | Evidence |
+|---|---|---|
+| T1566.002 | Spearphishing Link | 4x00 campaign context |
+| T1056.003 | Web Portal Capture | Phishing-session context |
+| T1071.001 | Web Protocols | C2 communication |
+| T1133 | External Remote Services | VPN pivot |
+| T1021.001 | Remote Desktop Protocol | RDP lateral movement |
+| T1021.002 | SMB/Windows Admin Shares | Internal SMB activity |
+| T1048.003 | Exfiltration Over Alternative Protocol | DNS tunnel |
+
+---
+
+# Indicators of Compromise
+
+| Type | Indicator |
+|---|---|
+| Domain | `meddefense-portal.com` |
+| Domain | `data-sync.meddefense-portal.com` |
+| IPv4 | `91.234.99.107` |
+| External IPv4 | `154.118.42.89` |
+| Account Context | `dmarsh` |
+
+Important internal investigation pivots:
+
+```text
+10.10.2.15
+10.10.1.10
+10.10.0.1
+10.10.2.200
+```
+
+---
+
+# Key Findings
+
+The investigation established direct network contact between a MedDefense workstation and known phishing infrastructure.
+
+An external VPN-style session associated with `dmarsh` context occurred before internal RDP activity.
+
+The billing server subsequently initiated SMB connections toward multiple internal systems.
+
+DNS traffic later carried encoded structured information at a TXT query rate approximately 20.7 times the established baseline.
+
+The observed sequence supports a multi-stage network compromise.
+
+---
+
+# Evidence vs Inference
+
+## Confirmed
+
+Examples:
+
+```text
+DNS query occurred.
+TCP connection occurred.
+TLS SNI contained a specific hostname.
+RDP/3389 communication occurred.
+SMB/445 communication occurred.
+Encoded DNS labels contained structured fragments.
+```
+
+## Strong Inference
+
+Examples:
+
+```text
+Encrypted web traffic was a credential submission.
+VPN activity represents use of previously stolen credentials.
+DNS tunneling was used to exfiltrate the observed structured data.
+```
+
+## Not Proven by PCAP Alone
+
+Examples:
+
+```text
+Exact password entered
+Attacker identity
+User intent
+Endpoint process execution
+MFA decision
+SIEM alert status
+Complete attacker-side receipt of data
+```
+
+---
+
+# Detection Recommendations
+
+Priority detections developed from this investigation:
+
+1. C2 periodicity detection.
+2. Long DNS label detection.
+3. High-frequency TXT query detection.
+4. VPN GeoIP/ASN anomaly detection.
+5. Cross-role RDP detection.
+6. TLS SNI matching against phishing campaign IOCs.
+
+---
+
+# Final Conclusion
+
+This investigation demonstrates how individual packet observations can be transformed into a complete incident narrative.
+
+The evidence supports a progression from phishing infrastructure contact to account-associated VPN access, internal RDP/SMB activity and DNS-based data transfer.
+
+The project also demonstrates an important network-forensics principle:
+
+> Never claim more than the evidence proves.
+
+Network evidence is highly effective for reconstructing communication, timing, protocols and behavioral patterns, but endpoint, identity and application logs are required to answer questions that encrypted packet traffic cannot resolve.
