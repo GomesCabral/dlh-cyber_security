@@ -170,17 +170,18 @@ fi
 
 echo "=== INTERNAL IP / VPN METADATA ==="
 
-tshark -r "$PCAP" \
-    -Y 'frame contains "10.10.2.200"' \
-    -T fields \
-    -e frame.time \
-    -e ip.src \
-    -e ip.dst \
-    -e tcp.stream 2>/dev/null
+INTERNAL_IP="10.10.2.200"
 
-echo
-echo "If no result is displayed, the assigned VPN IP is not"
-echo "directly visible using this packet-content search."
+if tshark -r "$PCAP" \
+    -Y "frame contains \"$INTERNAL_IP\"" \
+    -T fields -e frame.number 2>/dev/null |
+    grep -q .; then
+
+    echo "Assigned internal IP observed in VPN metadata: $INTERNAL_IP"
+else
+    echo "Assigned internal IP not identified in visible metadata."
+fi
+
 echo
 
 # ---------------------------------------------------------
