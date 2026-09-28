@@ -43,23 +43,6 @@ Throughout the project:
 -   prefer evidence over assumptions;
 -   document source conflicts and data-quality issues.
 
-## Progress
-
-  Task                        Deliverable           Status
-  --------------------------- --------------------- ----------
-  0 --- Intelligence Intake   `0-intel_intake.md`   Complete
-  1                           TBD                   Pending
-  2                           TBD                   Pending
-  3                           TBD                   Pending
-  4                           TBD                   Pending
-  5                           TBD                   Pending
-  6                           TBD                   Pending
-  7                           TBD                   Pending
-  8                           TBD                   Pending
-  9                           TBD                   Pending
-  10                          TBD                   Pending
-  11                          TBD                   Pending
-
 ## Task 0 --- Intelligence Intake
 
 Four intelligence sources were normalized and compared:
