@@ -52,58 +52,6 @@ Important sample files include:
 
 Original evidence and supplied samples should not be modified in place.
 
-------------------------------------------------------------------------
-
-# Project Deliverables
-
-  ----------------------------------------------------------------------------
-  Task                    Deliverable                  Status
-  ----------------------- ---------------------------- -----------------------
-  0 --- Intelligence      `0-intel_intake.md`          Complete
-  Intake                                               
-
-  1 --- Indicator Triage  `1-indicator_triage.sh`      Complete
-
-  2 --- Source            `2-source_assessment.md`     Complete
-  Credibility Matrix                                   
-
-  3                       Not completed in this        Not claimed
-                          sequence                     
-
-  4                       Not completed in this        Not claimed
-                          sequence                     
-
-  5                       Not completed in this        Not claimed
-                          sequence                     
-
-  6 --- Kill Chain        `6-kill_chain.md`            Complete
-  Reconstruction                                       
-
-  7 --- ATT&CK Navigator  `7-attack_navigator.md`,     Complete
-                          `healthbane_layer.json`      
-
-  8 --- Detection Gap     `8-detection_gaps.md`        Complete
-  Analysis                                             
-
-  9 --- YARA Foundations  `9-yara_phishing_pdf.yar`    Complete
-
-  10                      No Task 10 was provided in   N/A
-                          this sequence                
-
-  11 --- Testing the      `11-yara_testing.sh`         Complete
-  Arsenal                                              
-
-  12                      Not completed in this        Not claimed
-                          sequence                     
-
-  13 --- Intelligence     `13-intelligence_brief.md`   Complete
-  Brief                                                
-  ----------------------------------------------------------------------------
-
-This README intentionally does not mark missing tasks as complete or
-invent outputs that were not produced.
-
-------------------------------------------------------------------------
 
 # Task 0 --- Intelligence Intake
 
