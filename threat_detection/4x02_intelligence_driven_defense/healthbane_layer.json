@@ -1,0 +1,507 @@
+{
+  "name": "HEALTHBANE \u2014 Observed vs Inferred",
+  "versions": {
+    "attack": "18",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "HEALTHBANE campaign mapping. OBSERVED techniques score 100 and are red; INFERRED techniques score 50 and are amber.",
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Office 365",
+      "SaaS"
+    ]
+  },
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "aggregateFunction": "average",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1589.002",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Target email addresses were collected for healthcare spear-phishing operations. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Pre-attack / Stage 1 preparation.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Pre-attack / Stage 1 preparation"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1583.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Healthcare-themed lookalike domains were registered shortly before campaign use. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Pre-attack.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Pre-attack"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1585.002",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Attacker-controlled email accounts were used as part of the phishing infrastructure. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Pre-attack / Stage 1.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Pre-attack / Stage 1"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1587.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Campaign-specific malware/tooling was used, including svchost_update.exe and supporting scripts. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2 preparation.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2 preparation"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1608.005",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Credential-harvesting URLs were staged on lookalike healthcare domains and delivered to targets. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Stage 1.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 1"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1566.002",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Stage 1 emails directed healthcare staff to credential-harvesting links. MedDefense directly observed a user click. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Stage 1.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 1"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1566.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Compromised mailboxes sent follow-up emails containing HEALTHBANE_S2_invoice.docm. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1204.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Victims were induced to open malicious links; MedDefense recorded the dmarsh click. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Stage 1.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 1"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1204.002",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Stage 2 required the malicious macro-enabled document to be opened by a user. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.005",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. VBA macro execution in the .docm initiated the Stage 2 malware chain. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. PowerShell artifact sync_healthdata.ps1 was associated with the campaign execution/exfiltration chain. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2 / Stage 3.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2 / Stage 3"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1053.005",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Persistence used the scheduled task 'HealthSync Update Service'. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1547.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. A Registry Run key was used as an additional persistence mechanism. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1056.003",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Lookalike web portals captured usernames and passwords. MedDefense assessed one local credential submission as likely. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Stage 1.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 1"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1071.004",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Stage 3 used DNS TXT traffic and encoded subdomain labels for command traffic and tunneling. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 3.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 3"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1071.001",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. HTTPS/web infrastructure was used for credential harvesting and malware retrieval. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt. Attack phase: Stages 1\u20132.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt; meddefense_4x00_findings.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stages 1\u20132"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1048.003",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. Patient and insurance data were encoded into DNS traffic; HC3 maps the observed alternative-protocol exfiltration to T1048.003. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 3.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 3"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1041",
+      "score": 100,
+      "color": "#ff0000",
+      "comment": "OBSERVED. HC3 maps campaign data movement over the established attacker-controlled channel to T1041. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 3.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "OBSERVED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 3"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078",
+      "score": 50,
+      "color": "#ffc000",
+      "comment": "INFERRED. HC3 assesses that stolen credentials were likely used to access cloud email accounts, but excludes this technique from its observed table pending confirmation. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 1 \u2192 Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "INFERRED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 1 \u2192 Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1021",
+      "score": 50,
+      "color": "#ffc000",
+      "comment": "INFERRED. Remote-service use is a plausible follow-on behavior and is identified by HC3 as likely, but the supplied evidence does not directly confirm it. Source: HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt. Attack phase: Stage 2.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classification",
+          "value": "INFERRED"
+        },
+        {
+          "name": "source",
+          "value": "HC3_Advisory_HEALTHBANE_TLP_CLEAR.txt"
+        },
+        {
+          "name": "attack phase",
+          "value": "Stage 2"
+        }
+      ],
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffc000",
+      "#ff0000"
+    ],
+    "minValue": 50,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "OBSERVED \u2014 score 100",
+      "color": "#ff0000"
+    },
+    {
+      "label": "INFERRED \u2014 score 50",
+      "color": "#ffc000"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "campaign",
+      "value": "HEALTHBANE"
+    },
+    {
+      "name": "observed",
+      "value": "18"
+    },
+    {
+      "name": "inferred",
+      "value": "2"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#dddddd",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false,
+  "selectVisibleTechniques": false
+}
