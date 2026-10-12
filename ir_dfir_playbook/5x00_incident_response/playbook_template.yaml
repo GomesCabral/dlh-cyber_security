@@ -1,0 +1,48 @@
+playbook_id: "<PB-XXX>"
+title: "<short descriptive title>"
+owner_role: "<IR role responsible for this playbook>"
+
+applies_to:
+  triggers:
+    - "<detection rule ID or alert condition>"
+  indicators:
+    - "<IOC type or observable pattern>"
+
+severity_mapping:
+  initial: "<SEV1-SEV4>"
+  escalate_if:
+    - "<condition that raises severity>"
+
+immediate_actions:
+  - step: "<first action within the first 15 minutes>"
+    owner: "<responsible role>"
+    timebox_minutes: "<number>"
+
+evidence_preservation:
+  - artifact: "<evidence to capture>"
+    method: "<collection and integrity-preservation method>"
+    before_step: "<containment action this must precede>"
+
+containment_actions:
+  - step: "<specific containment action>"
+    owner: "<responsible role>"
+    decision_point: "<approval or condition, if applicable>"
+    trade_off: "<operational capability preserved or sacrificed>"
+
+eradication_actions:
+  - "<specific removal, remediation, or credential reset>"
+
+recovery_validation:
+  - check: "<how to verify recovery>"
+    criterion: "<measurable condition for passing>"
+
+communication_plan:
+  - audience: "<role or stakeholder>"
+    trigger: "<event or time requiring communication>"
+    template: "<communication template filename>"
+
+escalation_triggers:
+  - "<condition that raises severity or expands incident scope>"
+
+post_incident_tasks:
+  - "<item to hand to the post-incident review>"
