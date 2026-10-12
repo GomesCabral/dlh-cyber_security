@@ -1,0 +1,126 @@
+# MedDefense Health Systems — Incident Response Team and Escalation
+# Proposed backup assignments and escalation thresholds require organizational approval.
+# Role names in notification lists reference keys under roles.
+roles:
+  IR_Commander:
+    primary: "James Chen, SOC Lead / IR Commander"
+    backup: "Robert Kim, Infrastructure Lead"
+    responsibilities:
+      - "Own incident coordination through closure and maintain incident command"
+      - "Run the incident bridge and approve response actions within delegated authority"
+      - "Escalate SEV1 decisions to the CISO and document decisions"
+    authority_ceiling: SEV2
+
+  Technical_Lead:
+    primary: "Robert Kim, Infrastructure Lead"
+    backup: "Mike Torres, Network Engineer"
+    responsibilities:
+      - "Coordinate technical investigation, evidence preservation, and containment"
+      - "Assess impact on Epic, LIS, identity services, and clinical infrastructure"
+      - "Direct authorized eradication and recovery work"
+    authority_ceiling: SEV2
+
+  Communications_Lead:
+    primary: "Marcus Webb, Communications Director"
+    backup: "Sarah Park, IT Director"
+    responsibilities:
+      - "Coordinate approved internal and external incident messaging"
+      - "Maintain consistent stakeholder updates with incident command"
+      - "Obtain Legal Liaison and Executive Sponsor approval for sensitive statements"
+    authority_ceiling: SEV2
+
+  Legal_Liaison:
+    primary: "Helena Reyes, General Counsel"
+    backup: "Dr. Patricia Morales, CISO"
+    responsibilities:
+      - "Coordinate HIPAA and applicable state-law notification assessments"
+      - "Direct legal holds and advise on evidence handling and disclosure"
+      - "Review regulatory and patient notification language"
+    authority_ceiling: SEV2
+
+  Executive_Sponsor:
+    primary: "Dr. Patricia Morales, CISO"
+    backup: "Sarah Park, IT Director"
+    responsibilities:
+      - "Own SEV1 executive decisions and accept major clinical risk trade-offs"
+      - "Secure organizational resources and brief executive leadership"
+      - "Approve strategic response direction with clinical and legal stakeholders"
+    authority_ceiling: SEV1
+
+  Scribe:
+    primary: "Mike Torres, Network Engineer"
+    backup: "Sarah Park, IT Director"
+    responsibilities:
+      - "Record timestamps, evidence references, actions, and decisions"
+      - "Maintain the incident timeline and status-update log"
+      - "Track assigned actions and preserve handover notes"
+    authority_ceiling: SEV4
+
+# Notification arrays are additive: notify these roles at the named event,
+# in addition to those already engaged. Repeated roles may be updated again.
+# Thresholds below measure minutes without documented progress and are distinct
+# from the initial response times in severity_matrix.md.
+escalation:
+  SEV1:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+      - Executive_Sponsor
+      - Scribe
+    on_confirmation:
+      - Legal_Liaison
+      - Communications_Lead
+    on_scope_expansion:
+      - IR_Commander
+      - Technical_Lead
+      - Executive_Sponsor
+      - Legal_Liaison
+      - Communications_Lead
+    time_threshold_minutes_to_escalate: 15
+
+  SEV2:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+      - Scribe
+    on_confirmation:
+      - Legal_Liaison
+      - Communications_Lead
+    on_scope_expansion:
+      - Executive_Sponsor
+      - IR_Commander
+      - Technical_Lead
+    time_threshold_minutes_to_escalate: 60
+
+  SEV3:
+    on_detection:
+      - IR_Commander
+      - Scribe
+    on_confirmation:
+      - Technical_Lead
+    on_scope_expansion:
+      - Executive_Sponsor
+      - Legal_Liaison
+      - Communications_Lead
+    time_threshold_minutes_to_escalate: 120
+
+  SEV4:
+    on_detection:
+      - Scribe
+    on_confirmation:
+      - IR_Commander
+    on_scope_expansion:
+      - Technical_Lead
+      - IR_Commander
+    time_threshold_minutes_to_escalate: 240
+
+# Governance notes:
+# - SEV1 cannot escalate to a higher numeric severity; if stalled, escalate
+#   immediately to executive crisis governance and external IR retainer.
+# - A backup performs coordination only within their own delegated authority.
+#   In particular, the IT Director does not automatically inherit CISO SEV1
+#   decision authority, and the CISO does not replace qualified legal counsel.
+# - Reassess severity immediately when patient-safety, data, or availability
+#   evidence crosses a higher threshold; do not wait for the time threshold.
+# - The SEV3/SEV4 notifications to IR_Commander are routing via the SOC Lead
+#   function, not a transfer of SEV3/SEV4 decision ownership.
