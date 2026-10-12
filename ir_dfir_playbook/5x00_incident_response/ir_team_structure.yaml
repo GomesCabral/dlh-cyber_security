@@ -40,7 +40,7 @@ roles:
 
   Executive_Sponsor:
     primary: "Dr. Patricia Morales, CISO"
-    backup: "Sarah Park, IT Director"
+    backup: "Sarah Park, IT Director (acting Executive Sponsor; delegated SEV1 decision authority)"
     responsibilities:
       - "Own SEV1 executive decisions and accept major clinical risk trade-offs"
       - "Secure organizational resources and brief executive leadership"
@@ -117,9 +117,12 @@ escalation:
 # Governance notes:
 # - SEV1 cannot escalate to a higher numeric severity; if stalled, escalate
 #   immediately to executive crisis governance and external IR retainer.
-# - A backup performs coordination only within their own delegated authority.
-#   In particular, the IT Director does not automatically inherit CISO SEV1
-#   decision authority, and the CISO does not replace qualified legal counsel.
+# - Executive_Sponsor succession rule (proposed): when the CISO is unavailable,
+#   the named backup assumes the Executive_Sponsor role with the same SEV1
+#   authority ceiling. This is a proposed delegation requiring formal approval
+#   before the playbook is adopted; it is not an existing MedDefense policy.
+# - Backup appointments for other roles likewise require formal approval;
+#   legal notification determinations remain subject to qualified legal review.
 # - Reassess severity immediately when patient-safety, data, or availability
 #   evidence crosses a higher threshold; do not wait for the time threshold.
 # - The SEV3/SEV4 notifications to IR_Commander are routing via the SOC Lead
