@@ -1,0 +1,108 @@
+playbook_id: "PB-CLINICAL-001"
+title: "Radiology Imaging Service Degradation — Patient-Safe Response"
+owner_role: "IR_Commander"
+
+applies_to:
+  triggers:
+    - "ER staff report X-rays cannot be retrieved or radiology images load too slowly for active care."
+    - "Radiology imaging server health alerts show sustained latency, errors, or failed image retrievals."
+    - "Splunk, Wazuh, or Microsoft Defender alerts coincide with degradation of radiology services."
+  indicators:
+    - "Performance-only candidate: high CPU/memory, full disk, storage I/O latency, queue backlog, or network congestion aligned with errors; no corroborating security anomalies after log review."
+    - "Security candidate: unexpected privileged logons, new services/processes, EDR alerts, unauthorized configuration changes, unusual outbound traffic, or lateral movement near onset."
+    - "Clinical impact: ER nurses cannot retrieve X-rays for waiting patients; determine whether active patient care is delayed."
+    - "Uncertain cause: do not label as benign solely because CPU or storage utilization is high; continue security and availability triage in parallel."
+
+severity_mapping:
+  initial: "SEV2"
+  escalate_if:
+    - "SEV1: clinical lead reports high patient safety impact, including inability to deliver time-critical imaging for active care."
+    - "SEV1: confirmed broad ePHI exposure or full outage of critical clinical services."
+    - "Raise severity immediately if degradation spreads to Epic, LIS, another hospital site, or other critical clinical workflows; select the level matching observed impact."
+
+immediate_actions:
+  - step: "Within 2 minutes open incident record and bridge; record first report, affected imaging service, ER impact, symptom onset, and current severity; page IR Commander and Technical Lead."
+    owner: "IR_Commander"
+    timebox_minutes: 2
+  - step: "By minute 5 contact the on-call ER clinical lead (ER charge nurse or designated clinical incident lead) and radiology clinical lead; ask whether imaging delay affects active care and who can authorize downtime workflow. Do not isolate before clinical coordination."
+    owner: "IR_Commander"
+    timebox_minutes: 3
+  - step: "By minute 10 compare infrastructure metrics (CPU, memory, disk I/O, queues, storage/network latency) with Splunk authentication, process, EDR, and network alerts for the onset window; document performance evidence versus security indicators."
+    owner: "Technical_Lead"
+    timebox_minutes: 5
+  - step: "By minute 15 obtain a clinical decision: if time-critical images are unavailable or care is delayed, the on-call ER clinical lead activates the hospital's approved imaging downtime procedures immediately; otherwise continue service under elevated monitoring and constrained access while triage continues. Record approver and time."
+    owner: "IR_Commander"
+    timebox_minutes: 5
+
+evidence_preservation:
+  - artifact: "Incident timeline, clinical impact statement, and radiology image-retrieval error samples"
+    method: "Record UTC timestamps, affected workflows, error codes, request IDs, clinical lead assessment, and screenshots with patient identifiers redacted where feasible; restrict access to any ePHI."
+    before_step: "Network segmentation, account restriction, or service throttling"
+  - artifact: "Splunk security and authentication logs, Wazuh/Defender alerts, and network connection records"
+    method: "Export onset-window and preceding baseline events to restricted evidence storage; preserve original timestamps, hashes, collector identity, and chain of custody."
+    before_step: "Account restriction or network segmentation, when clinically safe; do not delay urgent patient-safety action"
+  - artifact: "Server performance metrics, imaging service logs, storage health, and configuration snapshot"
+    method: "Capture CPU, memory, disk I/O, network utilization, application queues, service status, and relevant configuration; hash exported files and document capture time."
+    before_step: "Service throttling or remediation changes"
+
+containment_actions:
+  - step: "Choose clinical operating mode: investigate under approved imaging downtime procedures, OR continue live service with elevated monitoring and constrained access. Record clinical and technical rationale, approval, and review time."
+    owner: "IR_Commander"
+    decision_point: "On-call ER clinical lead confirms patient safety and activates downtime procedures immediately if urgent image retrieval is unavailable or care is delayed; IR Commander authorizes technical response within SEV2 ceiling; CISO approves SEV1 decisions."
+    trade_off: "Downtime workflow protects patient care when the system is unsafe but may slow manual processes; continuing service preserves image access but leaves a bounded exposure risk requiring close monitoring."
+  - step: "Apply targeted network segmentation: restrict unneeded management, lateral, and outbound paths while retaining verified ER/radiology image delivery, storage, and required identity dependencies. Test permitted clinical flows with radiology staff."
+    owner: "Technical_Lead"
+    decision_point: "Only after ER/radiology clinical lead confirms required flows and IR Commander authorizes; if essential flows cannot be preserved, use approved downtime workflow before stronger isolation."
+    trade_off: "Reduces attacker movement but may interrupt image retrieval or clinical integrations if required ports are blocked."
+  - step: "Restrict or suspend suspicious administrative/service accounts and remote access without disabling known-good clinical access; validate break-glass access with clinical IT."
+    owner: "Technical_Lead"
+    decision_point: "IR Commander approval after reviewing dependencies with IT Director and clinical lead; emergency restrictions may proceed under approved patient-safety procedures."
+    trade_off: "Limits unauthorized changes and lateral movement but may disrupt image processing, vendor support, or automated workflows."
+  - step: "Throttle only nonessential batch jobs, exports, or background image-processing queues; preserve urgent ER image requests and monitor latency with radiology."
+    owner: "Technical_Lead"
+    decision_point: "Radiology clinical lead and IT Director approve affected workloads; do not throttle urgent image delivery."
+    trade_off: "Improves urgent care responsiveness and may reduce suspicious load but delays nonurgent imaging workflows and exports."
+
+eradication_actions:
+  - "If malicious activity is confirmed, preserve additional forensic evidence as feasible; remove unauthorized processes, persistence, and network access through approved change control and the IR Commander."
+  - "Rotate compromised privileged or service credentials and revoke active sessions after mapping imaging, Epic, storage, and identity dependencies."
+  - "If performance-only, correct verified capacity, storage, queue, or network faults without claiming a security compromise; record root cause and change history."
+
+recovery_validation:
+  - check: "ER and radiology end-to-end clinical workflow test"
+    criterion: "On-call clinical leads confirm that representative urgent X-rays can be requested, retrieved, and viewed without unsafe delay; record sign-off."
+  - check: "Imaging server stability and dependencies"
+    criterion: "No unresolved image retrieval failures; service queues, storage, and network metrics return to approved baseline for an agreed observation window."
+  - check: "Security validation"
+    criterion: "No continuing unauthorized sessions, malicious processes, or unexplained network activity in correlated SIEM/EDR review; constrained rules are reviewed before removal."
+  - check: "Return from clinical downtime"
+    criterion: "ER clinical lead authorizes return to normal imaging workflow, reconciles any deferred studies, and confirms handover to clinical teams."
+
+communication_plan:
+  - audience: "On-call ER clinical lead and radiology clinical lead"
+    trigger: "Immediately on report of delayed patient imaging; before any isolation; whenever downtime is activated or ended."
+    template: "clinical_service_status_template.md"
+  - audience: "IR_Commander, Technical_Lead, and IT Director"
+    trigger: "At declaration, after first 15-minute triage, and whenever clinical or technical scope changes."
+    template: "incident_status_update_template.md"
+  - audience: "Executive_Sponsor (CISO)"
+    trigger: "Immediately if SEV1 criteria are met, high patient-safety risk emerges, or critical clinical service requires major isolation."
+    template: "executive_incident_brief_template.md"
+  - audience: "Legal_Liaison"
+    trigger: "If unauthorized ePHI access is suspected or confirmed; assess HIPAA notification obligations with documented facts."
+    template: "legal_privacy_assessment_template.md"
+  - audience: "Communications_Lead"
+    trigger: "If staff-wide guidance, patient-facing messaging, or external communications may be necessary."
+    template: "clinical_service_status_template.md"
+
+escalation_triggers:
+  - "Immediately escalate to SEV1 and CISO when the clinical lead confirms high patient-safety impact or time-critical care cannot continue safely."
+  - "Escalate on confirmed broad ePHI exposure, full critical clinical outage, or expansion across sites or into Epic/LIS according to severity matrix."
+  - "If SEV2 shows no documented progress for 60 minutes, escalate according to ir_team_structure.yaml; do not wait when clinical risk increases."
+  - "If imaging becomes unsafe or urgent X-rays remain unavailable, clinical lead activates downtime procedures immediately, regardless of whether compromise is confirmed."
+
+post_incident_tasks:
+  - "Complete joint clinical/IT/security root-cause review: performance fault, security incident, or unresolved; retain supporting evidence."
+  - "Review timeline, patient safety impact, clinical downtime decision, authorization records, and restoration sign-offs."
+  - "Update radiology segmentation rules, detection content, monitoring baselines, capacity controls, and playbook after lessons learned."
+  - "Determine whether any ePHI was accessed or disclosed and record Legal Liaison's HIPAA assessment and required follow-up."
