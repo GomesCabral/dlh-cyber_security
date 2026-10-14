@@ -40,3 +40,5 @@ Each entry uses the fields `timestamp | type | actor | description | source | ce
 ## Append-only continuation
 
 Add subsequent OBSERVATION, DECISION, ACTION, COMMUNICATION, and EVIDENCE entries below this line as they occur. For EVIDENCE, include the verified artifact path and SHA-256. Do not record a planned action as completed, or a notification as sent, until verified. If an earlier interpretation changes, append a correction referencing the original timestamp rather than editing the prior entry.
+
+- 2026-04-14T02:53:00Z | DECISION | Pedro Cabral, on-call SOC (simulated) | Selected quarantine-VLAN network isolation as the proposed containment strategy for WST-WS-031, conditional on volatile evidence preservation, James Chen's authorization and clinical continuity check; no containment executed yet. | source=containment_decision.md (Task 3; simulated decision timestamp) | certainty=confirmed
