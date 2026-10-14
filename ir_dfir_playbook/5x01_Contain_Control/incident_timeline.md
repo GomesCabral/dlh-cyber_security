@@ -3,14 +3,14 @@
 ## Header
 
 - incident_id: IR-2026-0414-01
-- declared_at: 2026-04-14T02:51:04Z
+- declared_at: 2026-04-14T02:48:00Z
 - declared_by: Pedro Cabral, on-call SOC (simulated analyst decision)
 - initial_severity: SEV2
 - current_severity: SEV2
 - ir_commander: James Chen, SOC Lead
 - scribe: Pedro Cabral, on-call SOC
 
-> **Exercise note:** `declared_at` (02:51:04Z) is the illustrative declaration time in the task example, **not** an event proved by the supplied logs. Replace it with the actual simulated declaration time you choose and keep all dependent entries consistent. Historical log events below are recorded at their original event timestamps; their presence in this timeline does not imply the analyst had reviewed the proxy export before its export at 02:52:18Z. Future changes must be appended, not edited.
+> **Simulation scope:** The incident declaration at `2026-04-14T02:48:00Z` is the analyst's chosen exercise decision time, not a timestamp recorded by the SIEM. Earlier observations retain their original event timestamps. The proxy export was produced at `2026-04-14T02:52:18Z`; its historical events are included retrospectively, not claimed to have been reviewed at declaration.
 
 ## Legend
 
@@ -22,6 +22,8 @@
 
 ## Entries
 
+Each entry uses the fields `timestamp | type | actor | description | source | certainty`, in that order. Times describe when the underlying event occurred; retrospective log observations are explicitly sourced.
+
 - 2026-04-13T18:13:44Z | OBSERVATION | Proxy log / dmarsh | Browser requested an Outlook message URL before the suspicious web visit. | source=proxy_24h_dmarsh.log | certainty=confirmed
 - 2026-04-13T18:14:02Z | OBSERVATION | Proxy log / dmarsh | GET to ms0365-support.login-verification.click/auth returned HTTP 200; page resembles Microsoft sign-in. | source=proxy_24h_dmarsh.log | certainty=confirmed
 - 2026-04-13T18:14:41Z | OBSERVATION | Proxy log / dmarsh | POST to /auth/submit returned HTTP 302; submission contents and credential theft are not established by this log alone. | source=proxy_24h_dmarsh.log | certainty=confirmed
@@ -32,8 +34,8 @@
 - 2026-04-14T02:47:02Z | OBSERVATION | WazuhEDR | MSBuild.exe established outbound TCP connection from 10.42.118.31 to 185.220.101.47:443; destination tagged Tor exit relay by internal threat intelligence. | source=alert_A-20260414-9841.json:network_connection+enrichment | certainty=confirmed
 - 2026-04-14T02:47:08Z | OBSERVATION | Proxy log / dmarsh | Additional CONNECT to 185.220.101.47:443 returned HTTP 200; destination intent and exfiltration remain unconfirmed. | source=proxy_24h_dmarsh.log | certainty=confirmed
 - 2026-04-14T02:47:11Z | OBSERVATION | MedDefense-SOC-Splunk / WazuhEDR | Rule wz-edr-100041 fired for suspicious PowerShell-to-MSBuild process tree on clinical workstation WST-WS-031. | source=alert A-20260414-9841 | certainty=confirmed
-- 2026-04-14T02:51:04Z | DECISION | Pedro Cabral, on-call SOC (simulated) | Declared incident IR-2026-0414-01 at initial SEV2: suspicious execution and outbound connection on high-criticality clinical workstation; clinical disruption and data exposure not confirmed. | source=alert A-20260414-9841 + severity_matrix.md; simulated declaration | certainty=confirmed
-- 2026-04-14T02:51:04Z | DECISION | Pedro Cabral, on-call SOC (simulated) | Selected PB-CRED-001 Credential Exposure for credential-risk investigation as recommended by alert; preserve volatile evidence and assess clinical impact before disruptive containment. | source=alert_A-20260414-9841.json:recommended_playbook + PB-CRED-001; simulated decision | certainty=confirmed
+- 2026-04-14T02:48:00Z | DECISION | Pedro Cabral, on-call SOC (simulated) | Declared incident IR-2026-0414-01 at initial SEV2: suspicious execution and outbound connection on high-criticality clinical workstation; clinical disruption and data exposure not confirmed. | source=alert A-20260414-9841 + severity_matrix.md; simulated analyst decision | certainty=confirmed
+- 2026-04-14T02:48:00Z | DECISION | Pedro Cabral, on-call SOC (simulated) | Selected PB-CRED-001 Credential Exposure for credential-risk investigation as recommended by alert; preserve volatile evidence and assess clinical impact before disruptive containment. | source=alert_A-20260414-9841.json:recommended_playbook + PB-CRED-001; simulated analyst decision | certainty=confirmed
 
 ## Append-only continuation
 
