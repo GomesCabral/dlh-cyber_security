@@ -1,0 +1,221 @@
+incident_id: IR-2026-0414-01
+purpose: Eradication plan with independent verification; commands are proposed, not executed. Preserve forensic
+  evidence before destructive changes.
+evidence_basis:
+- alert_A-20260414-9841.json
+- edr_wst_ws_031_24h.jsonl
+- auth_expansion_0334Z.log
+- containment_decision.md
+- containment_execution.md
+items:
+- id: ERAD-001
+  category: malware_artifact
+  target_host: WST-WS-031
+  description: 'Remove malicious dropper and MSBuild project after forensic imaging: update.zip, update.xml, update.exe.'
+  command_or_action: 'PowerShell (elevated, after preservation): Remove-Item -LiteralPath ''C:\Users\dmarsh\Downloads\update.zip'',''C:\Users\dmarsh\AppData\Local\Temp\update.xml'',''C:\Users\dmarsh\AppData\Local\Temp\update.exe''
+    -Force'
+  verification_command: 'PowerShell: @(''C:\Users\dmarsh\Downloads\update.zip'',''C:\Users\dmarsh\AppData\Local\Temp\update.xml'',''C:\Users\dmarsh\AppData\Local\Temp\update.exe'')
+    | ForEach-Object { [pscustomobject]@{Path=$_;Exists=(Test-Path -LiteralPath $_)} }; cross-check EDR live-response
+    file inventory'
+  expected_verification_result: All three Exists values False; EDR reports no matching artifacts.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-002
+  category: malware_artifact
+  target_host: WST-WS-031
+  description: Remove observed GUID scheduled task that launches update.exe.
+  command_or_action: 'PowerShell: Unregister-ScheduledTask -TaskName ''{7B4F2D81-19E2-4A8C-9E67-A1F0DE2C7B3A}''
+    -Confirm:$false'
+  verification_command: 'PowerShell: Get-ScheduledTask -TaskName ''{7B4F2D81-19E2-4A8C-9E67-A1F0DE2C7B3A}'' -ErrorAction
+    SilentlyContinue'
+  expected_verification_result: No task returned; task scheduler operational log has no subsequent launches.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-003
+  category: malware_artifact
+  target_host: WST-WS-031
+  description: Remove observed HKCU Run persistence WindowsUpdateSvc under dmarsh user hive.
+  command_or_action: 'PowerShell in dmarsh user context: Remove-ItemProperty -Path ''HKCU:\Software\Microsoft\Windows\CurrentVersion\Run''
+    -Name ''WindowsUpdateSvc'''
+  verification_command: 'PowerShell in same user context: Get-ItemProperty -Path ''HKCU:\Software\Microsoft\Windows\CurrentVersion\Run''
+    -Name ''WindowsUpdateSvc'' -ErrorAction SilentlyContinue'
+  expected_verification_result: Property absent; validate correct user SID/hive and EDR persistence inventory.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-004
+  category: process
+  target_host: WST-WS-031
+  description: Terminate confirmed malicious update.exe PID 7204, powershell.exe PID 7812 and MSBuild.exe PID 8104
+    after RAM/process evidence captured.
+  command_or_action: 'PowerShell: Stop-Process -Id 8104,7812,7204 -Force -ErrorAction SilentlyContinue; validate
+    image/command line and PID identity before action'
+  verification_command: 'PowerShell: Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match ''update\.xml|AppData.*Temp.*update\.exe''
+    } | Select-Object ProcessId,ParentProcessId,CommandLine'
+  expected_verification_result: No attacker-related process/command line remains; verify with EDR and fresh process
+    snapshot.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-005
+  category: malware_artifact
+  target_host: WST-WS-017
+  description: Remove copied update.xml from second host after evidence capture and search for other related dropped
+    files/persistence.
+  command_or_action: 'PowerShell: Remove-Item -LiteralPath ''C:\Users\dmarsh\AppData\Local\Temp\update.xml'' -Force;
+    investigate any additional EDR-identified artifacts before deleting'
+  verification_command: 'PowerShell: Test-Path -LiteralPath ''C:\Users\dmarsh\AppData\Local\Temp\update.xml''; Get-ScheduledTask
+    | Where-Object {$_.Actions.Execute -match ''update\.exe''}'
+  expected_verification_result: Test-Path False; no attacker persistence discovered in task/registry/EDR sweeps.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-006
+  category: process
+  target_host: WST-WS-017
+  description: Terminate attacker-linked PowerShell PID 4402 and MSBuild PID 5108 after volatile evidence capture.
+  command_or_action: 'PowerShell: Stop-Process -Id 5108,4402 -Force -ErrorAction SilentlyContinue; verify PID identity
+    first'
+  verification_command: 'PowerShell: Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match ''update\.xml|-ep
+    bypass -w hidden'' } | Select-Object ProcessId,ParentProcessId,CommandLine'
+  expected_verification_result: No attacker-linked command line/process; EDR confirms no new suspicious child processes.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-007
+  category: malware_artifact
+  target_host: LIS-WSIDE-01
+  description: Forensically inspect LIS workstation for malware and persistence; remove only confirmed malicious
+    artifacts, not patient reports.
+  command_or_action: 'EDR live-response: acquire full file/persistence inventory; quarantine only artifacts positively
+    identified by hash, path, and analyst approval; do not delete C:\LIS\reports'
+  verification_command: 'EDR live-response: rescan malicious file hashes, scheduled tasks, autoruns and startup
+    locations; review LIS service health'
+  expected_verification_result: No identified malicious artifacts or persistence; LIS application and reports intact.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-008
+  category: process
+  target_host: LIS-WSIDE-01
+  description: Inspect and terminate only confirmed malicious processes/sessions after collecting volatile evidence;
+    avoid terminating LIS services.
+  command_or_action: 'PowerShell: Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine;
+    EDR live-response isolate/terminate only analyst-confirmed malicious PID(s)'
+  verification_command: 'PowerShell: Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match ''update\.xml|AppData.*Temp.*update\.exe''
+    }; review EDR alerts'
+  expected_verification_result: No attacker-linked process remains; critical LIS services running normally.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-009
+  category: credential
+  target_host: domain / MEDDEFENSE\dmarsh
+  description: Disable or restrict dmarsh, reset AD password, revoke Entra ID sign-in sessions/refresh tokens, and
+    invalidate applicable sessions/tickets using approved identity incident playbook.
+  command_or_action: 'PowerShell (AD): Disable-ADAccount -Identity dmarsh; Set-ADAccountPassword -Identity dmarsh
+    -Reset -NewPassword (Read-Host -AsSecureString ''New password''); Entra/Graph: Revoke-MgUserSignInSession -UserId
+    ''<resolved-user-object-id>''; coordinate logoff and ticket purge on affected hosts'
+  verification_command: 'PowerShell: Get-ADUser dmarsh -Properties Enabled,PasswordLastSet | Select Enabled,PasswordLastSet;
+    Graph: Get-MgUser -UserId ''<resolved-user-object-id>'' -Property signInSessionsValidFromDateTime; query AD/Entra
+    sign-ins and 4768/4769/4624 events after cutoff'
+  expected_verification_result: AD disabled pending safe reenablement; PasswordLastSet advanced; Entra session invalidation
+    time advanced; no successful reuse of old sessions/tickets after propagation (verify over monitoring window).
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-010
+  category: machine_account
+  target_host: WST-WS-031
+  description: Rotate WST-WS-031$ machine-account password following domain-controller replication and endpoint
+    rebuild/clean-state validation.
+  command_or_action: 'On WST-WS-031, after approved recovery: Test-ComputerSecureChannel -Repair -Credential (Get-Credential);
+    Reset-ComputerMachinePassword -Server ''<approved-DC>'' -Credential (Get-Credential) (coordinate AD team; use
+    only one approved rotation workflow)'
+  verification_command: 'PowerShell on WST-WS-031: Test-ComputerSecureChannel -Verbose; AD: Get-ADComputer ''WST-WS-031''
+    -Properties PasswordLastSet | Select Name,PasswordLastSet'
+  expected_verification_result: Secure channel True; machine account PasswordLastSet later than incident rotation;
+    AD replication healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-011
+  category: machine_account
+  target_host: WST-WS-017
+  description: Rotate WST-WS-017$ machine-account password following domain-controller replication and endpoint
+    rebuild/clean-state validation.
+  command_or_action: 'On WST-WS-017, after approved recovery: Test-ComputerSecureChannel -Repair -Credential (Get-Credential);
+    Reset-ComputerMachinePassword -Server ''<approved-DC>'' -Credential (Get-Credential) (coordinate AD team; use
+    only one approved rotation workflow)'
+  verification_command: 'PowerShell on WST-WS-017: Test-ComputerSecureChannel -Verbose; AD: Get-ADComputer ''WST-WS-017''
+    -Properties PasswordLastSet | Select Name,PasswordLastSet'
+  expected_verification_result: Secure channel True; machine account PasswordLastSet later than incident rotation;
+    AD replication healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-012
+  category: machine_account
+  target_host: LIS-WSIDE-01
+  description: Rotate LIS-WSIDE-01$ machine-account password following domain-controller replication and endpoint
+    rebuild/clean-state validation.
+  command_or_action: 'On LIS-WSIDE-01, after approved recovery: Test-ComputerSecureChannel -Repair -Credential (Get-Credential);
+    Reset-ComputerMachinePassword -Server ''<approved-DC>'' -Credential (Get-Credential) (coordinate AD team; use
+    only one approved rotation workflow)'
+  verification_command: 'PowerShell on LIS-WSIDE-01: Test-ComputerSecureChannel -Verbose; AD: Get-ADComputer ''LIS-WSIDE-01''
+    -Properties PasswordLastSet | Select Name,PasswordLastSet'
+  expected_verification_result: Secure channel True; machine account PasswordLastSet later than incident rotation;
+    AD replication healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-013
+  category: krbtgt
+  target_host: AD domain
+  description: Assess whether a coordinated krbtgt double reset is warranted; do not assume key theft from Pass-the-Ticket
+    alone.
+  command_or_action: 'IR Commander + AD forest owners: investigate DC compromise, Golden Ticket/krbtgt key exposure
+    and forged TGT evidence. If confirmed, follow Microsoft-supported krbtgt double-reset procedure, allow full
+    replication and sufficient interval between resets; do not run ad hoc commands.'
+  verification_command: 'AD team: verify domain-controller replication (repadmin /replsummary), krbtgt pwdLastSet
+    after each authorized reset, Kerberos authentication health and absence of forged/pre-reset tickets in monitored
+    auth logs'
+  expected_verification_result: 'If indicated and approved: two reset cycles completed with replication and appropriate
+    interval; domain auth healthy; legacy forged TGTs rejected. Otherwise: written decision that reset is not indicated.'
+  status: pending
+  executed_at: null
+  executed_by: null
+  rationale: auth_expansion_0334Z.log suggests ticket misuse/lateral movement, not confirmed krbtgt secret compromise.
+    Double reset is high-impact and requires domain-wide change management; evaluate, do not automatically execute.
+- id: ERAD-014
+  category: network
+  target_host: perimeter / internal segmentation
+  description: Retain egress deny for both observed C2 destinations 185.220.101.47 and 91.234.99.107 and block lateral
+    access from affected endpoints until cleared.
+  command_or_action: 'Firewall console: deny/log outbound destination 185.220.101.47:443 and 91.234.99.107:443 for
+    scoped assets; apply quarantine ACL blocking production lateral paths while permitting approved IR jumpbox;
+    save change IDs'
+  verification_command: Firewall rule audit + SIEM/NetFlow query for both IPs after enforcement; verify deny logs
+    and no successful established sessions; test quarantine reachability from jumpbox and user VLAN
+  expected_verification_result: Both IPs blocked; no successful C2 connections after enforcement within validated
+    collection coverage (denied attempts may still generate packets); production lateral paths blocked; IR jumpbox
+    allowed.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ERAD-015
+  category: network
+  target_host: WST-WS-031 / WST-WS-017 / LIS-WSIDE-01
+  description: Validate host firewall and EDR containment policies across all three hosts; retain isolation until
+    recovery criteria met.
+  command_or_action: 'EDR console: confirm containment policy enabled for each host where supported; firewall console:
+    review effective ACLs; do not release host before recovery approval'
+  verification_command: EDR device status + firewall effective policy export + connectivity tests from IR jumpbox
+    and production segment
+  expected_verification_result: Containment status and network segmentation confirmed for each scoped host; deviations
+    logged and approved.
+  status: pending
+  executed_at: null
+  executed_by: null
