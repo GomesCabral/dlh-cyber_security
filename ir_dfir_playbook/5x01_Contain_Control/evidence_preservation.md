@@ -20,7 +20,8 @@
 ```bash
 bash evidence_store_init.sh
 ROOT=/evidence/IR-2026-0414-01
-cd "$ROOT" || exit 1
+# Keep the shell in the lab-materials directory so subsequent cp commands
+# can find their source files; use absolute destinations under $ROOT.
 # The initializer creates hashes.txt; retain its custody header in the requested canonical manifest.
 cp -n hashes.txt IR-2026-0414-01-hashes.txt
 chmod 640 IR-2026-0414-01-hashes.txt
@@ -101,7 +102,7 @@ cp -- edr_wst_ws_031_24h.jsonl "$ROOT/endpoint_telemetry/WST-WS-031_edr_24h.json
 record_hash 'endpoint_telemetry/WST-WS-031_edr_24h.jsonl'
 ```
 
-Run the `cp` command from the directory holding the lab file (and after defining `ROOT` and `record_hash`). For a live environment, export the same UTC window through the authorized Wazuh/SIEM export interface; API URL, token and credentials are **not supplied**, so no working API invocation can be asserted.
+Run the `cp` command from the directory holding the lab file (and after defining `ROOT` and `record_hash`). The initializer does not change directories. For a live environment, export the same UTC window through the authorized Wazuh/SIEM export interface; API URL, token and credentials are **not supplied**, so no working API invocation can be asserted.
 - **Where:** `/evidence/IR-2026-0414-01/endpoint_telemetry/WST-WS-031_edr_24h.jsonl`.
 - **Hash:** `record_hash 'endpoint_telemetry/WST-WS-031_edr_24h.jsonl'`.
 - **Ordering:** after volatile snapshots but before EDR retention, cleanup, agent disconnection or log rotation. This log includes scheduled-task persistence, `update.exe`, PowerShell, MSBuild and an executable writable memory region.
@@ -142,7 +143,31 @@ This captures the available local event channel, **not necessarily the full 24-h
 record_hash 'proxy_dns/WST-WS-031_dns_client.evtx'
 ```
 
-For a **complete DNS history**, request a raw server-side export from the authorized DNS/SIEM operator using `client_ip=10.42.118.31`, `start_utc=2026-04-13T02:47:11Z`, `end_utc=2026-04-14T02:47:11Z`; save the returned original as `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl`. The precise API invocation cannot be specified without inventing an API endpoint that the lab does not provide. Once that export actually exists:
+For a **complete DNS history**, use the authorized DNS/SIEM search-and-export interface. The following is an **illustrative Splunk search** (field names and index must be confirmed against the actual deployment, which is not supplied):
+
+```spl
+index=dns earliest="04/13/2026:02:47:11" latest="04/14/2026:02:47:12"
+(client_ip="10.42.118.31" OR src_ip="10.42.118.31")
+| fields _time host client_ip src_ip query query_name answer response_code
+```
+
+Export the **raw, unmodified results** as JSON through Splunk's export control, naming the output `dns_24h_dmarsh.jsonl` only if the export is actually newline-delimited JSON. If using the Splunk CLI on an authorized search head, an **example command** is:
+
+```bash
+# Requires a configured Splunk CLI, permission to search DNS data, and
+# a verified index/field mapping; not executable with lab files alone.
+/opt/splunk/bin/splunk search \
+  'search index=dns earliest="04/13/2026:02:47:11" latest="04/14/2026:02:47:12" (client_ip="10.42.118.31" OR src_ip="10.42.118.31")' \
+  -output json > "$ROOT/proxy_dns/dns_24h_dmarsh.json"
+```
+
+If that interface is available, inspect and hash `dns_24h_dmarsh.json`; otherwise record **DNS export PENDING** and do not fabricate a file. For the JSON export:
+
+```bash
+record_hash 'proxy_dns/dns_24h_dmarsh.json'
+```
+
+If a verified, raw server-side export is instead delivered as JSONL, preserve its native format as `dns_24h_dmarsh.jsonl`. Once that export actually exists:
 
 ```bash
 record_hash 'proxy_dns/dns_24h_dmarsh.jsonl'
@@ -150,14 +175,14 @@ record_hash 'proxy_dns/dns_24h_dmarsh.jsonl'
 
 Mark server-side DNS collection as `PENDING` until confirmed. If the endpoint channel is unavailable, log the failure and do not create an empty placeholder file.
 
-- **Where:** `/evidence/IR-2026-0414-01/proxy_dns/proxy_24h_dmarsh.log` and `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl` (pending).
+- **Where:** `/evidence/IR-2026-0414-01/proxy_dns/proxy_24h_dmarsh.log` and `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.json` (Splunk example, pending), or the original `.jsonl` format if provided.
 - **Hash:** SHA-256 using the commands above.
 - **Ordering:** preserve before proxy/DNS retention rollover or account/session remediation; these records help trace the suspected phishing site, `update.zip` download and external connection. The provided proxy export was produced at `02:52:18Z`; do not backdate collection.
 
 ## 7. Authentication history — AD and Azure AD, 24 hours
 
 - **What:** account sign-ins and domain authentication for `MEDDEFENSE\dmarsh` / `dmarsh@meddefense.local`, including AD DC01/DC02 and Azure AD, over `[2026-04-13T02:47:11Z, 2026-04-14T02:47:11Z]`.
-- **How (provided combined export):**
+- **How (provided combined AD + Azure AD export):**
 
 ```bash
 cp -- auth_24h_dmarsh.json "$ROOT/authentication/auth_24h_dmarsh.json"
@@ -167,6 +192,21 @@ record_hash 'authentication/auth_24h_dmarsh.json'
 - **Where:** `/evidence/IR-2026-0414-01/authentication/auth_24h_dmarsh.json`.
 - **Hash:** `record_hash 'authentication/auth_24h_dmarsh.json'`.
 - **Ordering:** before credential resets, token/session revocation and retention expiry. Existing logs survive a reset, but preserving the pre-remediation view is important for investigating account misuse. The provided export includes both AD and Azure AD events; do not label it as two independent exports.
+
+### Required artifact register (mark each CAPTURED only after file + hash exist)
+
+| Required artifact | Collection method | Evidence-store relative path | SHA-256 command | State before execution |
+|---|---|---|---|---|
+| Full RAM | WinPmem, elevated Windows host | `memory/WST-WS-031_20260414.mem` | `record_hash 'memory/WST-WS-031_20260414.mem'` | PENDING |
+| Live process list, PID/PPID/cmdline | `Get-CimInstance Win32_Process` | `process_tree/WST-WS-031_processes.json` | `record_hash 'process_tree/WST-WS-031_processes.json'` | PENDING |
+| Live TCP/UDP connections | `Get-NetTCPConnection` / `Get-NetUDPEndpoint` | `network/WST-WS-031_connections.json` | `record_hash 'network/WST-WS-031_connections.json'` | PENDING |
+| 24h Wazuh endpoint telemetry | Preserve supplied raw JSONL | `endpoint_telemetry/WST-WS-031_edr_24h.jsonl` | `record_hash 'endpoint_telemetry/WST-WS-031_edr_24h.jsonl'` | AVAILABLE, NOT YET CAPTURED |
+| SIEM alert JSON | Preserve supplied original JSON | `siem/A-20260414-9841.json` | `record_hash 'siem/A-20260414-9841.json'` | AVAILABLE, NOT YET CAPTURED |
+| 24h proxy | Preserve supplied log | `proxy_dns/proxy_24h_dmarsh.log` | `record_hash 'proxy_dns/proxy_24h_dmarsh.log'` | AVAILABLE, NOT YET CAPTURED |
+| 24h DNS | Authorized DNS/Splunk export; optional endpoint EVTX | `proxy_dns/dns_24h_dmarsh.json` (or native JSONL) | `record_hash 'proxy_dns/dns_24h_dmarsh.json'` | PENDING |
+| 24h AD + Azure AD | Preserve supplied combined export | `authentication/auth_24h_dmarsh.json` | `record_hash 'authentication/auth_24h_dmarsh.json'` | AVAILABLE, NOT YET CAPTURED |
+
+Each entry requires actual UTC collection start/end time, operator, tool/version, source, destination, hash and any deviation in the incident timeline. No state in this table asserts that the live acquisitions occurred.
 
 ## 8. Verification, chain of custody and handoff
 
