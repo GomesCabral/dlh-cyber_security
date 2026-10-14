@@ -22,12 +22,17 @@ bash evidence_store_init.sh
 ROOT=/evidence/IR-2026-0414-01
 # Keep the shell in the lab-materials directory so subsequent cp commands
 # can find their source files; use absolute destinations under $ROOT.
-# The initializer creates hashes.txt; retain its custody header in the requested canonical manifest.
-cp -n hashes.txt IR-2026-0414-01-hashes.txt
-chmod 640 IR-2026-0414-01-hashes.txt
+# The initializer creates hashes.txt; preserve it unchanged, separately from the SHA-256 manifest.
+# Keep the initializer-created hashes.txt intact as a custody artifact.
+# Create a separate, sha256sum-compatible manifest; do not copy prose headers.
+MANIFEST="$ROOT/IR-2026-0414-01-hashes.txt"
+if [ ! -e "$MANIFEST" ]; then
+  (umask 027; printf '# IR-2026-0414-01 SHA-256 evidence manifest\n' > "$MANIFEST")
+fi
+chmod 640 "$MANIFEST"
 ```
 
-`evidence_store_init.sh` refuses to reinitialize an existing incident directory. If the directory already exists, **do not rerun or overwrite it**; inspect the existing manifest and continue under the incident custodian's direction. Its `hashes.txt` is an initializer artifact, not the requested per-artifact hash manifest. Retain both files, but add evidence hashes only to the canonical `IR-2026-0414-01-hashes.txt`.
+`evidence_store_init.sh` refuses to reinitialize an existing incident directory. If the directory already exists, **do not rerun or overwrite it**; inspect the existing manifest and continue under the incident custodian's direction. Its `hashes.txt` is an initializer artifact, not the requested per-artifact hash manifest. Retain both files unchanged; add evidence hashes only to the canonical `IR-2026-0414-01-hashes.txt`.
 
 4. Use this helper **from the Linux collector** after each artifact has fully arrived and is closed. Paths passed to it must be relative to `$ROOT` and must not contain newlines:
 
@@ -218,7 +223,7 @@ cd "$ROOT" || exit 1
 sha256sum -c IR-2026-0414-01-hashes.txt
 ```
 
-Expected: every recorded artifact reports `OK`; command exits with code `0`. The manifest includes comment lines beginning with `#`, which `sha256sum -c` ignores. The manifest **must not contain its own hash**, because that would be self-referential.
+Expected: every recorded artifact reports `OK`; command exits with code `0`. The manifest contains only `#` comments and SHA-256 records, which `sha256sum -c` can parse. The manifest **must not contain its own hash**, because that would be self-referential.
 
 To detect files omitted from the manifest, run this **from `$ROOT`** (the original version of the inventory command lost directory prefixes):
 
@@ -241,3 +246,19 @@ Any output from `comm -23` means an evidence file is present without a manifest 
 - `edr_wst_ws_031_24h.jsonl` additionally records `update.zip`, `update.xml`, a scheduled task, `update.exe` PID 7204 and a suspicious MSBuild memory region. These are historical events, not live captures.
 - `proxy_24h_dmarsh.log` records the suspicious sign-in page, POST and ZIP download; `auth_24h_dmarsh.json` contains AD and Azure AD events.
 - No provided artifact proves that live memory, live process/network snapshots or DNS export have already been collected.
+
+## 9. Mandatory command and output audit (reviewer checklist)
+
+The following are **seven required evidence classes** (proxy and DNS are separately captured within one class). Each is documented above with `what`, `how`, `where`, `hash`, and `ordering`:
+
+| Class | Section | Source/capture command | Output | Hash invocation |
+|---|---|---|---|---|
+| Volatile RAM | 1 | `winpmem_3.3.rc3.exe -o ...` | `memory/WST-WS-031_20260414.mem` | `record_hash 'memory/WST-WS-031_20260414.mem'` |
+| Processes + PID/PPID/command | 2 | `Get-CimInstance Win32_Process` | `process_tree/WST-WS-031_processes.json` | `record_hash 'process_tree/WST-WS-031_processes.json'` |
+| Active TCP/UDP | 3 | `Get-NetTCPConnection`, `Get-NetUDPEndpoint` | `network/WST-WS-031_connections.json` | `record_hash 'network/WST-WS-031_connections.json'` |
+| 24h EDR | 4 | `cp -- edr_wst_ws_031_24h.jsonl ...` | `endpoint_telemetry/WST-WS-031_edr_24h.jsonl` | `record_hash 'endpoint_telemetry/WST-WS-031_edr_24h.jsonl'` |
+| SIEM alert JSON | 5 | `cp -- alert_A-20260414-9841.json ...` | `siem/A-20260414-9841.json` | `record_hash 'siem/A-20260414-9841.json'` |
+| 24h proxy and DNS | 6 | `cp -- proxy_24h_dmarsh.log ...`; `splunk search ... -output json` or `wevtutil epl ...` (endpoint supplement) | `proxy_dns/proxy_24h_dmarsh.log`, `proxy_dns/dns_24h_dmarsh.json` | `record_hash` for each path |
+| 24h AD + Azure AD | 7 | `cp -- auth_24h_dmarsh.json ...` | `authentication/auth_24h_dmarsh.json` | `record_hash 'authentication/auth_24h_dmarsh.json'` |
+
+**Operational distinction:** only the four lab-supplied exports have locally reproducible copy commands. WinPmem, process, network and DNS acquisition require authorized access to infrastructure not provided in the task. Never mark these `CAPTURED` until verified.
