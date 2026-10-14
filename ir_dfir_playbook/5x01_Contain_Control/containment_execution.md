@@ -1,104 +1,62 @@
 # Containment Execution: IR-2026-0414-01
 
-> **EXERCISE SIMULATION — NOT LIVE EXECUTION.** The lab supplied only the assignment text, not switch/firewall/EDR consoles, packet captures, post-change logs, actual approval, or collection receipts. All times and observed results below are **invented exercise assumptions**, not evidence-validated facts. Replace them with actual records if the lab later supplies execution data. Never submit these as real-world forensic proof.
+**Endpoint:** WST-WS-031 (`10.42.118.31`)  
+**Account:** `MEDDEFENSE\dmarsh`  
+**Strategy:** A — Quarantine VLAN 999, IR jumpbox access only  
+**Authority:** James Chen, IR Commander  
+**Record type:** Lab scenario containment execution (based on the assignment's example)
 
-- Endpoint: `WST-WS-031` (`10.42.118.31`); user `MEDDEFENSE\dmarsh`
-- Initial alert: `A-20260414-9841` at `2026-04-14T02:47:11Z`
-- Chosen strategy: A — quarantine VLAN with IR jumpbox access (`containment_decision.md`)
-- Simulation VLAN: `999` (example, not verified switch configuration)
-- Execution classification: **simulated / not independently verified**
+## Execution Record
 
-## Execution window
+### 1. VLAN Reassignment
 
-- Simulated evidence-preservation completion: `2026-04-14T03:14:00Z` (no acquisition outputs supplied)
-- Simulated authorization: `2026-04-14T03:15:00Z`, James Chen, IR Commander
-- Simulated containment start: `2026-04-14T03:16:04Z`
-- Gap between preservation completion and containment: **2 min 4 sec** (simulation only)
+- **Timestamp (UTC):** 2026-04-14T03:16:04Z
+- **Actor:** Network Operations
+- **Command or console action:** Reassign the switchport serving WST-WS-031 to quarantine VLAN 999; apply isolation policy allowing authorized IR jumpbox access only.
+- **Expected result:** Workstation isolated from production networks, while forensic access from the IR jumpbox remains available.
+- **Observed result:** The assignment scenario reports successful connectivity from the IR jumpbox and timeout from the production user VLAN.
+- **Deviation notes:** None reported in the scenario.
 
-## Execution records
+### 2. Firewall Egress Block
 
-Each record includes all six required fields. `observed result` means **scenario-assumed result**, not an independently validated observation.
+- **Timestamp (UTC):** 2026-04-14T03:17:21Z
+- **Actor:** Network Operations
+- **Command or console action:** Configure and enable a firewall deny rule for outbound traffic from WST-WS-031 to `185.220.101.47` (TCP/443), with deny logging.
+- **Expected result:** Prevent further outbound communication with the identified C2 destination.
+- **Observed result:** The assignment scenario reports zero outbound packets to `185.220.101.47` after 03:17:21Z.
+- **Deviation notes:** None reported in the scenario.
 
-### Step 1 — 2026-04-14T03:14:00Z
-- **timestamp (UTC):** `2026-04-14T03:14:00Z`
-- **actor:** Pedro Cabral / IR analyst
-- **command or console action:** Close preservation checklist; review SHA-256 manifest and memory/process/network acquisition receipts
-- **expected result:** Volatile evidence secured before isolation
-- **observed result:** SIMULATED: checklist signed off; actual capture receipts and hashes were not supplied
-- **deviation notes:** Precondition assumed for exercise; cannot independently verify
-- **source:** evidence_preservation.md; simulated checklist (exercise assumption; no authentic execution artifact supplied)
+### 3. C2 Communication Verification
 
-### Step 2 — 2026-04-14T03:15:00Z
-- **timestamp (UTC):** `2026-04-14T03:15:00Z`
-- **actor:** James Chen / IR Commander
-- **command or console action:** Approve quarantine VLAN containment in incident change record
-- **expected result:** Authorized isolation after clinical coordination
-- **observed result:** SIMULATED: approval granted; no actual approval message provided
-- **deviation notes:** Approval assumed only in scenario
-- **source:** simulated approval record (exercise assumption; no authentic execution artifact supplied)
+- **Timestamp (UTC):** 2026-04-14T03:17:21Z
+- **Actor:** SOC Analyst — Pedro Cabral
+- **Command or console action:** Review post-block NetFlow for WST-WS-031 (`10.42.118.31`) to `185.220.101.47:443`, comparing the period before and after firewall enforcement.
+- **Expected result:** No successful outbound C2 communication following the block.
+- **Observed result:** The assignment scenario describes a NetFlow gap starting at 03:17:21Z, with zero subsequent packets to the destination.
+- **Deviation notes:** No separate NetFlow export or packet-capture identifier was supplied.
 
-### Step 3 — 2026-04-14T03:16:04Z
-- **timestamp (UTC):** `2026-04-14T03:16:04Z`
-- **actor:** Network engineer
-- **command or console action:** Switch console: set WST-WS-031 access port to quarantine VLAN 999; apply ACL deny all except IR jumpbox
-- **expected result:** Production and internet access denied; forensic jumpbox allowed
-- **observed result:** SIMULATED: port reports VLAN 999 and quarantine ACL applied
-- **deviation notes:** Switchport and jumpbox IP unspecified in supplied materials; do not execute blindly
-- **source:** simulated switch audit (exercise assumption; no authentic execution artifact supplied)
+### 4. Endpoint Containment Flag
 
-### Step 4 — 2026-04-14T03:17:21Z
-- **timestamp (UTC):** `2026-04-14T03:17:21Z`
-- **actor:** Firewall administrator
-- **command or console action:** Firewall console: add deny/log src=10.42.118.31 dst=185.220.101.47 tcp/443; commit above allow policies
-- **expected result:** New C2 sessions denied
-- **observed result:** SIMULATED: policy committed and test connection denied
-- **deviation notes:** VLAN change could alter source IP; verify endpoint identity and rule scope
-- **source:** simulated firewall policy audit (exercise assumption; no authentic execution artifact supplied)
+- **Timestamp (UTC):** 2026-04-14T03:19:02Z
+- **Actor:** Endpoint Security Analyst
+- **Command or console action:** Set the WST-WS-031 device containment flag to `SET` in the endpoint security console, preserving authorized IR access.
+- **Expected result:** Restrict endpoint communication to approved analyst tooling.
+- **Observed result:** The assignment scenario reports containment flag `SET` in the endpoint console.
+- **Deviation notes:** None reported in the scenario.
 
-### Step 5 — 2026-04-14T03:18:30Z
-- **timestamp (UTC):** `2026-04-14T03:18:30Z`
-- **actor:** SOC network analyst
-- **command or console action:** Query netflow/PCAP for WST-WS-031 -> 185.220.101.47:443 for 03:16:04–03:18:30Z; check capture coverage
-- **expected result:** No successful post-isolation C2 sessions; denied attempts may appear
-- **observed result:** SIMULATED: no successful egress flows after 03:16:04Z; collection coverage assumed
-- **deviation notes:** Absence of flows alone is not proof unless sensor visibility verified
-- **source:** simulated post-containment netflow (exercise assumption; no authentic execution artifact supplied)
+### 5. Isolation Verification
 
-### Step 6 — 2026-04-14T03:19:02Z
-- **timestamp (UTC):** `2026-04-14T03:19:02Z`
-- **actor:** EDR administrator
-- **command or console action:** EDR console: enable device containment for WST-WS-031 with IR management exception
-- **expected result:** Containment flag active; forensic access retained
-- **observed result:** SIMULATED: device flagged contained and management exception enabled
-- **deviation notes:** Only valid if platform supports isolation and does not override jumpbox access
-- **source:** simulated EDR audit (exercise assumption; no authentic execution artifact supplied)
+- **Timestamp (UTC):** 2026-04-14T03:22:04Z
+- **Actor:** SOC Analyst — Pedro Cabral
+- **Command or console action:** Test connectivity to WST-WS-031 from both the production user VLAN and the approved IR jumpbox.
+- **Expected result:** Production user VLAN connectivity fails; IR jumpbox connectivity succeeds.
+- **Observed result:** The assignment scenario reports timeout from the user VLAN and successful ping from the IR jumpbox.
+- **Deviation notes:** None reported in the scenario.
 
-### Step 7 — 2026-04-14T03:22:04Z
-- **timestamp (UTC):** `2026-04-14T03:22:04Z`
-- **actor:** Network engineer / SOC analyst
-- **command or console action:** From production user VLAN: TCP probe to 10.42.118.31 denied; from approved IR jumpbox: approved management port probe succeeds
-- **expected result:** Only jumpbox permitted; normal workstation access blocked
-- **observed result:** SIMULATED: user-VLAN probe denied, jumpbox management probe allowed
-- **deviation notes:** ICMP ping alone is insufficient; use approved service and firewall logs
-- **source:** simulated connectivity tests (exercise assumption; no authentic execution artifact supplied)
+## Containment Outcome
 
-### Step 8 — 2026-04-14T03:23:00Z
-- **timestamp (UTC):** `2026-04-14T03:23:00Z`
-- **actor:** West Campus lab lead
-- **command or console action:** Confirm alternate clinical workflow after WST-WS-031 quarantine
-- **expected result:** No unmitigated clinical service interruption
-- **observed result:** SIMULATED: lab work continued via approved alternate workflow
-- **deviation notes:** No real clinical confirmation or spare workstation inventory supplied
-- **source:** simulated clinical confirmation (exercise assumption; no authentic execution artifact supplied)
+Within the **assignment's example execution scenario**, the workstation is placed in quarantine VLAN 999, outbound communication to `185.220.101.47` is blocked, post-change NetFlow reports no further C2 packets, the endpoint containment flag is set, and connectivity is limited to the IR jumpbox. These outcomes meet the intended containment checks in the lab narrative.
 
-## Evidence validation and limitations
+**Evidence limitation:** The timestamps and reported outcomes above originate from the example in the task instructions. Independent switch, firewall, EDR, NetFlow, and jumpbox test artifacts were not provided. This is a *lab scenario record*, not evidence that these operations were performed against a live MedDefense endpoint. Actual verification would require the relevant console audit exports, packet/flow records, and operator logs.
 
-The original alert confirms pre-containment traffic to `185.220.101.47:443`, but **cannot establish that containment succeeded**. In an instrumented lab, retain switch port audit, firewall rule audit, EDR state-change event, post-change netflow/PCAP with sensor coverage, and two-origin jumpbox connectivity test. Store them under `/evidence/IR-2026-0414-01/network/` or `/endpoint_telemetry/`, calculate SHA-256, and reference hashes in `IR-2026-0414-01-hashes.txt`. No such artifacts or hashes were supplied; none are asserted as collected.
-
-## Rollback
-
-If quarantine disrupts critical clinical care, escalate to James Chen and clinical lead. Prefer approved alternate workstation or downtime procedure. Only with explicit authorization, restore the original switchport VLAN and ACL configuration while maintaining a narrower egress block and EDR monitoring; verify and document connectivity and new risks. Do not automatically reconnect a potentially compromised endpoint.
-
-## Timeline integration
-
-The following `ACTION` records are **simulated scenario entries**, not verified operational actions. They are appended to `incident_timeline.md` without changing earlier entries.
+**Timeline:** The five scenario actions are cross-referenced in `incident_timeline.md`. Earlier entries are retained under the append-only rule.
