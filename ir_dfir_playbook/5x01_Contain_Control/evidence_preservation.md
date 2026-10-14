@@ -7,7 +7,7 @@
 **Evidence store:** `/evidence/IR-2026-0414-01/` (Linux collection host)  
 **Hash algorithm:** SHA-256  
 **Canonical manifest:** `/evidence/IR-2026-0414-01/IR-2026-0414-01-hashes.txt`  
-**Responsible analyst:** on-call SOC analyst; record actual name, acquisition timestamps and authorizations in `incident_timeline.md`.
+**Responsible analyst:** Pedro Cabral (simulated on-call SOC analyst); record actual acquisition timestamps and authorizations in `incident_timeline.md`.
 
 > **Status:** This is an executable *plan*, not proof that live acquisitions were performed. The provided lab exports are available, but no actual RAM image, live process/network snapshot, DNS export, or verified collection output was supplied. Do not record these as preserved until acquisition and hashing succeed. All timestamps in collection notes must be actual UTC timestamps, not simulated.
 
@@ -130,11 +130,25 @@ cp -- proxy_24h_dmarsh.log "$ROOT/proxy_dns/proxy_24h_dmarsh.log"
 record_hash 'proxy_dns/proxy_24h_dmarsh.log'
 ```
 
-- **How (DNS):** request a raw export from the organization's DNS logging platform using the same UTC window and identifiers; save it as `dns_24h_dmarsh.jsonl` **without transforming the source records**. A DNS file or DNS export API is **not provided** in the lab materials; therefore DNS capture is **PENDING**, not completed. After obtaining the export:
+- **How (DNS):** collect the organization's authoritative DNS query log from its DNS logging platform for the UTC window and filter by client IP `10.42.118.31` (the DNS platform, API, server names and credentials are **not supplied** in this lab). Do not pretend a server-side DNS export has happened. If the Windows DNS Client Operational event log is enabled, an **additional, partial endpoint-side** source can be captured using this exact elevated PowerShell command on `WST-WS-031` before isolation:
+
+```powershell
+wevtutil epl 'Microsoft-Windows-DNS-Client/Operational' 'Z:\proxy_dns\WST-WS-031_dns_client.evtx'
+```
+
+This captures the available local event channel, **not necessarily the full 24-hour DNS query history**; the channel may be disabled or have rolled over. Hash the resulting artifact on the Linux collector:
+
+```bash
+record_hash 'proxy_dns/WST-WS-031_dns_client.evtx'
+```
+
+For a **complete DNS history**, request a raw server-side export from the authorized DNS/SIEM operator using `client_ip=10.42.118.31`, `start_utc=2026-04-13T02:47:11Z`, `end_utc=2026-04-14T02:47:11Z`; save the returned original as `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl`. The precise API invocation cannot be specified without inventing an API endpoint that the lab does not provide. Once that export actually exists:
 
 ```bash
 record_hash 'proxy_dns/dns_24h_dmarsh.jsonl'
 ```
+
+Mark server-side DNS collection as `PENDING` until confirmed. If the endpoint channel is unavailable, log the failure and do not create an empty placeholder file.
 
 - **Where:** `/evidence/IR-2026-0414-01/proxy_dns/proxy_24h_dmarsh.log` and `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl` (pending).
 - **Hash:** SHA-256 using the commands above.
@@ -166,14 +180,17 @@ sha256sum -c IR-2026-0414-01-hashes.txt
 
 Expected: every recorded artifact reports `OK`; command exits with code `0`. The manifest includes comment lines beginning with `#`, which `sha256sum -c` ignores. The manifest **must not contain its own hash**, because that would be self-referential.
 
-To check which files were collected but omitted from the manifest:
+To detect files omitted from the manifest, run this **from `$ROOT`** (the original version of the inventory command lost directory prefixes):
 
 ```bash
 find memory process_tree network endpoint_telemetry siem proxy_dns authentication \
-  -type f -printf '%P\n' | sort
+  -type f -print | sed 's#^./##' | sort > /tmp/IR-2026-0414-01-files.txt
+awk 'NF >= 2 && $1 !~ /^#/ { $1=""; sub(/^  */, ""); print }' \
+  IR-2026-0414-01-hashes.txt | sort > /tmp/IR-2026-0414-01-manifest-files.txt
+comm -23 /tmp/IR-2026-0414-01-files.txt /tmp/IR-2026-0414-01-manifest-files.txt
 ```
 
-Compare this inventory with the manifest entries (taking directory prefixes into account). Record all missing expected artifacts, failed acquisitions, incomplete transfers and hash mismatches in `incident_timeline.md` as `OBSERVATION` entries; do not silently replace or overwrite originals. If an artifact changes, quarantine it, preserve the original manifest and open a chain-of-custody exception. Record collector, acquisition time, source system, tool/version, destination, access restrictions, SHA-256 and transfer details for every item.
+Any output from `comm -23` means an evidence file is present without a manifest entry. Check the required-artifact checklist separately: a missing RAM dump or DNS export will **not** be discovered by hashing files that do not exist. Do not report `COMPLETE` if mandatory artifacts remain pending or formally waived. Record all missing expected artifacts, failed acquisitions, incomplete transfers and hash mismatches in `incident_timeline.md` as `OBSERVATION` entries; do not silently replace or overwrite originals. If an artifact changes, quarantine it, preserve the original manifest and open a chain-of-custody exception. Record collector, acquisition time, source system, tool/version, destination, access restrictions, SHA-256 and transfer details for every item.
 
 **Containment gate:** confirm RAM and live snapshots are complete or explicitly waived by the authorized IR Commander; verify available evidence hashes; then execute the approved containment step. Never let this gate delay an urgent patient-safety action. The runbook itself does not authorize isolation, password reset, process termination or network blocking.
 
