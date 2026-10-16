@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # MedDefense | IR-2026-0414-01 | LH-2026-0414-01
 # Verify three forensic artifacts before analysis. Never alter evidence files.
 set -uo pipefail
