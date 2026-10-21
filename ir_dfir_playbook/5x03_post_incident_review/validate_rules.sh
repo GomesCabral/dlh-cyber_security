@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Validates the supported Sigma detection subset directly against supplied Sysmon JSONL.
 set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
