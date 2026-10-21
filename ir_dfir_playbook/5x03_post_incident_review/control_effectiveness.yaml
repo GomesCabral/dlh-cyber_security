@@ -1,0 +1,97 @@
+# MedDefense IR-2026-0414-01 — post-incident control effectiveness audit
+# Source: forensic_findings_summary.md; supporting incident_sysmon.jsonl
+# 'controls_fired' means evidenced telemetry or action, NOT necessarily a SOC alert.
+# 'controls_missed' includes proposed gaps; absence of alert evidence is not proof
+# that a particular product/control was installed or failed.
+
+- phase: Credential phishing and submission
+  att_ck_technique: "T1566.002 + T1078"
+  controls_expected:
+    - Email anti-phishing filtering and URL reputation checks
+    - DNS or secure web gateway blocking known credential-harvesting domains
+    - Phishing-resistant MFA and anomalous sign-in monitoring
+  controls_fired: []
+  controls_missed:
+    - No preventive block of the phishing domain is evidenced
+    - No confirmed interruption of credential submission or subsequent account misuse
+    - Azure AD risk signals require review because a conditional-access compliant-device rule suppressed signals
+  gap_severity: critical
+  gap_reason: "Credentials were phished and later abused; the source does not establish that preventive identity controls stopped the attack."
+
+- phase: VPN access using stolen credentials from a foreign IP
+  att_ck_technique: "T1078"
+  controls_expected:
+    - VPN MFA with device and session verification
+    - Geolocation and impossible-travel sign-in detection
+    - VPN authentication logs correlated with identity risk alerts
+  controls_fired: []
+  controls_missed:
+    - No confirmed VPN anomaly alert or blocking action is documented
+    - Foreign-IP Office 365 session origin and follow-on activity remain untraced
+    - Effectiveness of conditional access and identity risk handling remains unresolved
+  gap_severity: high
+  gap_reason: "Foreign-IP identity activity warrants investigation, but the supplied summary does not independently confirm a VPN logon."
+
+- phase: PowerShell to MSBuild LOLBin execution
+  att_ck_technique: "T1127.001"
+  controls_expected:
+    - Endpoint detection for suspicious PowerShell-to-MSBuild process ancestry
+    - Application control restricting unapproved MSBuild execution
+    - PowerShell script block logging and encoded-command detection
+  controls_fired:
+    - Sysmon process-creation telemetry recorded PowerShell and MSBuild execution
+    - Memory and UserAssist forensics confirmed the PowerShell-to-MSBuild chain
+  controls_missed:
+    - No documented blocking of the malicious MSBuild execution
+    - No SOC detection rule firing or timely response to this process chain is evidenced
+    - No effective restriction on the malicious loader execution is demonstrated
+  gap_severity: critical
+  gap_reason: "A malicious PowerShell-to-MSBuild chain executed despite available endpoint evidence."
+
+- phase: C2 beaconing to external IPs
+  att_ck_technique: "T1071.001"
+  controls_expected:
+    - Egress filtering and proxy or firewall threat-intelligence enforcement
+    - Detection of unusual MSBuild outbound HTTPS connections
+    - Network and endpoint correlation for periodic C2 communications
+  controls_fired:
+    - Sysmon network-connection events recorded MSBuild outbound activity
+    - Memory forensics confirmed established C2 connectivity to 185.220.101.47:443
+    - Forensics identified additional beaconing to 91.234.99.107:443
+  controls_missed:
+    - No documented timely block of the two identified C2 destinations
+    - No confirmed alert for MSBuild communicating with external C2 infrastructure
+    - No effective egress restriction is demonstrated for compromised workstations
+  gap_severity: critical
+  gap_reason: "Compromised workstations established external C2 communications without a documented preventive response."
+
+- phase: LSASS credential access and Kerberos ticket extraction
+  att_ck_technique: "T1003.001 + T1558.003"
+  controls_expected:
+    - LSASS protection and credential isolation
+    - EDR monitoring of suspicious LSASS access and credential dumping
+    - Kerberos abuse detection and privileged-account monitoring
+  controls_fired:
+    - Memory forensics identified dmarsh NTLM hash material in LSASS
+  controls_missed:
+    - No documented alert or block for credential theft activity
+    - No evidence of effective credential isolation or access prevention
+    - No documented timely detection of the Kerberos-related activity
+  gap_severity: critical
+  gap_reason: "Credential-access techniques are listed in the findings, but preventive controls and timely detection are not evidenced."
+
+- phase: Lateral movement and PHI access
+  att_ck_technique: "T1550.003 + T1078"
+  controls_expected:
+    - Kerberos logon anomaly detection and lateral-movement correlation
+    - Network segmentation and least-privilege access to clinical file shares
+    - PHI access auditing, DLP monitoring, and bulk-read anomaly alerts
+  controls_fired:
+    - Memory forensics confirmed Kerberos-based activity from WST-WS-031 to WST-WS-017
+    - AD logs recorded 14 laboratory PDF reads by dmarsh on LIS-WSIDE-01
+  controls_missed:
+    - No documented interruption of lateral movement to WST-WS-017
+    - No documented prevention or timely alert for the 14 PHI document reads
+    - DLP review remains open; external exfiltration has not been confirmed
+  gap_severity: critical
+  gap_reason: "Lateral movement and access to 14 patients' PHI occurred; the available evidence does not show timely enforcement."
