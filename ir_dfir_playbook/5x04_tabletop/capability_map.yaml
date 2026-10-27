@@ -1,0 +1,124 @@
+# MedDefense 5x04 — facilitator/evaluator planning artifact.
+# Inject IDs are planned references for the future inject schedule, not completed injects.
+# Hypotheses are testable possibilities, not established organizational failures.
+exercise: "Nexus Supply Chain Compromise"
+scenario_version: "1.0"
+classification: "Internal - Exercise Use Only"
+capability_map_version: "1.0"
+capabilities:
+  - capability_id: CAP-01
+    name: supply_chain_detection
+    expected_behavior: >-
+      Correlate the four-hour outbound EDR pattern with Nexus agent deployments,
+      signed automatic updates and vendor provenance; treat a valid code signature
+      as evidence of signing, not proof of benign content. Check the vendor-risk
+      review's lack of independent client-side hash pinning and missing agent
+      dependency bill of materials. Preserve evidence and test alternative causes.
+    gap_hypothesis: >-
+      Analysts may trust the signed Nexus update by default, focus only on the
+      external destination IP, or fail to examine the common vendor update path
+      across the three sites.
+    tested_by_inject: [INJ-00, INJ-01]
+    evaluation_owner: "Technical evaluator (SOC / security engineering)"
+
+  - capability_id: CAP-02
+    name: vendor_communication
+    expected_behavior: >-
+      Activate the documented Nexus 24x7 security response contact, establish an
+      incident liaison and escalation cadence, request a written incident scope,
+      affected versions, indicators, containment guidance and discovery time,
+      and record all communications. Escalate to Nexus CISO and legal as needed;
+      recognize that the joint communication path has not been exercised.
+    gap_hypothesis: >-
+      The team may rely on an account representative, fail to establish a single
+      owner and contact log, or accept vague vendor assurances without time-bound
+      follow-up or independent validation.
+    tested_by_inject: [INJ-01, INJ-02]
+    evaluation_owner: "Vendor-risk / incident-coordination evaluator"
+
+  - capability_id: CAP-03
+    name: business_continuity_decision
+    expected_behavior: >-
+      Explicitly weigh containment of the Nexus integration and on-prem agent
+      against disruption of scheduling and pre-registration at all three sites
+      (about 3,500 patient-facing interactions weekly). Consult clinical leaders,
+      identify decision authority, select and document compensating workflows,
+      and define triggers for shutdown, restoration and revalidation.
+    gap_hypothesis: >-
+      Security and clinical leaders may disagree on authority or patient-safety
+      tradeoffs, or assume an undocumented manual scheduling fallback and SLA
+      recovery commitment exist.
+    tested_by_inject: [INJ-03, INJ-06]
+    evaluation_owner: "Clinical continuity / incident-command evaluator"
+
+  - capability_id: CAP-04
+    name: phi_exposure_assessment
+    expected_behavior: >-
+      Define the potential ePHI exposure window, affected patient population,
+      access paths and evidence needs across Nexus SaaS, the agent and HL7 FHIR R4
+      integration. Include demographics and insurance information; distinguish
+      possible access from confirmed acquisition or disclosure, and avoid assuming
+      clinical charting or staff rostering is in scope without evidence.
+    gap_hypothesis: >-
+      The team may assume that a vendor-side compromise proves all PHI was stolen,
+      or overlook inbound and outbound FHIR flows and the service principal
+      svc-nexus-prod when bounding exposure.
+    tested_by_inject: [INJ-02, INJ-04]
+    evaluation_owner: "Privacy / digital-forensics evaluator"
+
+  - capability_id: CAP-05
+    name: hipaa_notification_posture
+    expected_behavior: >-
+      Bring privacy and legal counsel into the response; distinguish the BAA's
+      requirement for Nexus to notify MedDefense within 24 hours of breach
+      discovery from MedDefense's separate HIPAA assessment and any applicable
+      notification duties. Document when Nexus discovered the issue, what is
+      known or unknown, risk-assessment rationale, decision owners and deadlines;
+      do not assume every suspected compromise is automatically reportable.
+    gap_hypothesis: >-
+      Participants may confuse the contractual 24-hour vendor-to-MedDefense
+      notification requirement with a universal HIPAA notification deadline,
+      or assume the Business Associate alone handles all notification decisions.
+    tested_by_inject: [INJ-04, INJ-05]
+    evaluation_owner: "Legal / HIPAA privacy evaluator"
+
+  - capability_id: CAP-06
+    name: data_integrity_response
+    expected_behavior: >-
+      Treat suspected appointment changes as a patient-safety risk; preserve
+      scheduling and FHIR audit trails, reconcile Nexus appointments against
+      trusted Epic and clinical records, prioritize time-sensitive visits,
+      coordinate clinical verification and document correction and patient
+      outreach decisions before returning to normal operations.
+    gap_hypothesis: >-
+      Responders may concentrate on exfiltration and endpoint containment while
+      failing to validate modified, cancelled or misrouted appointments and
+      establish who owns clinical reconciliation.
+    tested_by_inject: [INJ-06, INJ-07]
+    evaluation_owner: "Clinical safety / data-integrity evaluator"
+
+  - capability_id: CAP-07
+    name: crisis_communications
+    expected_behavior: >-
+      Route media questions through an authorized spokesperson and legal/privacy
+      review; issue a timely, accurate holding statement that distinguishes
+      confirmed facts from unknowns, protects patient confidentiality, and
+      coordinates messaging with Nexus and clinical operations.
+    gap_hypothesis: >-
+      Leaders may release premature breach claims, provide inconsistent messages
+      or delay any response because the investigation is incomplete.
+    tested_by_inject: [INJ-08]
+    evaluation_owner: "Communications / legal evaluator"
+
+  - capability_id: CAP-08
+    name: executive_briefing_under_pressure
+    expected_behavior: >-
+      Within 90 minutes of a board briefing request, deliver a concise,
+      decision-ready update covering confirmed facts, uncertainty, patient and
+      operational impact, containment status, PHI/HIPAA posture, vendor actions,
+      key decisions needed, accountable owners and next update time.
+    gap_hypothesis: >-
+      Technical details may crowd out executive decisions, or the briefing may
+      lack clear confidence levels, accountable owners and a patient-safety view.
+    tested_by_inject: [INJ-09]
+    evaluation_owner: "Exercise lead / executive-briefing evaluator"
