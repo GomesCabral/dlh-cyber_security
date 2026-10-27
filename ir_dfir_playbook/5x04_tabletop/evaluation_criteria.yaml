@@ -1,0 +1,187 @@
+# Facilitator/evaluator only. Pre-exercise observable scoring criteria.
+exercise: Nexus Supply Chain Compromise
+classification: Internal - Exercise Use Only
+document_version: '1.0'
+scoring_guidance:
+  observation_rule: Score only decisions, statements, named assignments or artifacts observed during the
+    inject window; do not infer intent.
+  pass_rule: Pass when all pass criteria are observed; otherwise mark fail and record the matching fail
+    indicators with evidence, time and speaker.
+  finding_rule: Use finding_if_fail as a starting template; retain only clauses supported by observed
+    failures and assign the stated owner and deadline.
+  timing_note: Inject times are minutes relative to exercise start; the board briefing is due at minute
+    110.
+criteria:
+- inject_id: INJ-00
+  capability_tested:
+  - CAP-01
+  evaluation_owner: Technical evaluator (SOC / security engineering)
+  pass_criteria:
+  - Within five exercise minutes, explicitly opens an incident record and states provisional severity
+    with a reason tied to the observed EDR traffic.
+  - Names an incident commander and at least two notification recipients by role or name.
+  - Directs preservation of EDR, network, agent-version and update logs before destructive containment.
+  - Requests comparison of the four-hour pattern across sites and raises the Nexus agent or vendor update
+    channel as a hypothesis without claiming attribution.
+  fail_indicators:
+  - No incident is declared or no severity rationale is stated by minute 5.
+  - No named incident commander or fewer than two recipients are identified.
+  - Immediate host shutdown or wiping is ordered without naming any preservation step.
+  - The team treats the external IP as the only investigative lead and never considers the Nexus vendor
+    path.
+  finding_if_fail: 'Initial incident triage did not consistently establish command, severity, evidence
+    preservation and vendor-origin investigation. Action: update the SOC escalation matrix and first-response
+    checklist with a vendor-agent anomaly trigger, named notification roles and a preserve-before-containment
+    prompt. Owner: SOC Lead (James Chen); due: 14 days.'
+- inject_id: INJ-01
+  capability_tested:
+  - CAP-01
+  - CAP-02
+  - CAP-08
+  evaluation_owner: Technical evaluator (SOC / security engineering); Vendor-risk / incident-coordination
+    evaluator; Exercise lead / executive-briefing evaluator
+  pass_criteria:
+  - States that a valid Nexus code signature does not establish that the signed update is safe; requests
+    deployed agent versions, timestamps and available indicators.
+  - References the vendor review limitation (certificate-only validation without independent hash pinning)
+    and assigns investigation of update provenance and dependency risk.
+  - Names a Nexus SecOps contact through the documented 24x7 channel, a MedDefense liaison, a written
+    request for affected versions and containment guidance, and a timed follow-up.
+  - Assigns an owner to deliver the board brief by exercise minute 110, explicitly covering unknowns.
+  fail_indicators:
+  - The signed update is described as safe solely because its certificate is valid.
+  - No check of deployed versions, update integrity or residual update-channel risks is proposed.
+  - No contact with Nexus SecOps is initiated, or no named liaison and follow-up time are set.
+  - No board-brief owner or deadline is assigned.
+  finding_if_fail: 'The response lacked a repeatable process to challenge trusted signed vendor updates,
+    use the tested 24x7 escalation path, or assign executive reporting. Action: add certificate-compromise
+    and independent validation steps to the supply-chain playbook, run a joint vendor contact drill, and
+    add a timed board-brief assignment. Owner: IT Director (Sarah Park), with Vendor Risk; due: 21 days.'
+- inject_id: INJ-02
+  capability_tested:
+  - CAP-02
+  - CAP-04
+  evaluation_owner: Vendor-risk / incident-coordination evaluator; Privacy / digital-forensics evaluator
+  pass_criteria:
+  - Records that matching four-hour patterns on additional Nexus agent hosts increase the potential scope
+    and explicitly reassesses severity and affected sites.
+  - Escalates to Nexus SecOps or CISO with a written, time-bound request for affected versions, scope,
+    IOCs, discovery timestamp and next update.
+  - Assigns a single vendor liaison and records contact attempt, response, owner and next contact time;
+    acknowledges that the joint communications route was not previously tested.
+  - Orders preservation and correlation of FHIR access/audit records, OAuth2 svc-nexus-prod activity and
+    endpoint telemetry; states a provisional exposure window without claiming confirmed PHI theft.
+  fail_indicators:
+  - New cross-site evidence is ignored or the severity and scope are not revisited.
+  - Vendor contact is limited to informal assurances or the account executive without security escalation
+    and a scheduled follow-up.
+  - No single vendor liaison or contact log is identified.
+  - No FHIR/service-principal audit review is requested, or possible PHI exposure is described as proven
+    exfiltration.
+  finding_if_fail: 'Cross-site vendor compromise was not escalated through a controlled vendor-contact
+    and evidence-scoping process. Action: amend the vendor incident playbook to require a single liaison,
+    SecOps/CISO escalation, documented update cadence and FHIR/service-principal audit collection across
+    sites. Owner: Incident Commander (James Chen), with Vendor Risk; due: 21 days.'
+- inject_id: INJ-03
+  capability_tested:
+  - CAP-03
+  evaluation_owner: Clinical continuity / incident-command evaluator
+  pass_criteria:
+  - Security and clinical representatives each state their operational concerns before an isolation, partial
+    restriction or temporary-operation decision is recorded.
+  - Names the person with decision authority and records a time-limited choice, risk acceptance and a
+    specific reassessment time.
+  - Identifies how critical appointments will be prioritized and how manual scheduling, duplicate booking
+    prevention and reconciliation will operate across all three sites.
+  - Defines monitoring and conditions for further containment or restoration; requests verification of
+    any assumed SLA or fallback rather than inventing it.
+  fail_indicators:
+  - Security disconnects the system without clinical consultation or clinical leaders refuse containment
+    without a recorded decision.
+  - The decision is deferred without an owner, deadline or risk acceptance.
+  - No specific workflow for time-sensitive appointments or duplicate-booking checks is stated.
+  - The team relies on an unverified SLA or untested manual process as if it were confirmed.
+  finding_if_fail: 'No accountable, patient-safety-informed containment decision or workable scheduling
+    fallback was demonstrated. Action: approve a joint IT/clinical isolation authority matrix, rehearse
+    manual appointment prioritization and reconciliation, and validate vendor recovery commitments. Owner:
+    IT Director (Sarah Park) and Clinical Director; due: 30 days.'
+- inject_id: INJ-04
+  capability_tested:
+  - CAP-04
+  - CAP-05
+  evaluation_owner: Privacy / digital-forensics evaluator; Legal / HIPAA privacy evaluator
+  pass_criteria:
+  - Legal/Privacy explicitly starts and assigns a documented HIPAA breach-risk assessment and distinguishes
+    suspected access from confirmed acquisition or disclosure.
+  - States the Nexus BAA obligation to notify MedDefense within 24 hours of discovery of a breach, separately
+    from MedDefense notification determinations; requests the vendor discovery timestamp.
+  - Requests a bounded ePHI population, demographics/insurance categories, FHIR access evidence and affected
+    records, without asserting unsupported clinical-chart exposure.
+  - Records an owner, next evidence deadline, notification decision checkpoint and reasons for any current
+    uncertainty.
+  fail_indicators:
+  - Participants state that a suspected vendor incident automatically proves a reportable breach, or dismiss
+    it because Nexus is the breached party.
+  - The BAA 24-hour vendor-to-MedDefense term is confused with all MedDefense statutory notification deadlines.
+  - No vendor discovery time or record-level exposure evidence is requested.
+  - No Legal/Privacy owner, risk-assessment record or decision checkpoint is assigned.
+  finding_if_fail: 'The team did not establish an evidence-based PHI assessment and distinct Business
+    Associate versus covered-entity notification responsibilities. Action: update the privacy incident
+    checklist with the Nexus BAA 24-hour discovery trigger, evidence requests, HIPAA risk-assessment ownership
+    and notification decision checkpoints. Owner: Legal Counsel (Helena Reyes) / Privacy Officer; due:
+    14 days.'
+- inject_id: INJ-05
+  capability_tested:
+  - CAP-07
+  - CAP-08
+  evaluation_owner: Communications / legal evaluator; Exercise lead / executive-briefing evaluator
+  pass_criteria:
+  - Names an authorized spokesperson and routes the media request for Legal/Privacy review before any
+    external statement.
+  - Produces or dictates a holding statement separating confirmed operational facts from unverified PHI
+    and appointment claims, without patient identifiers.
+  - Delivers the requested board update by exercise minute 110 with confirmed facts, unknowns, patient
+    and operational impact, vendor status, containment decision, HIPAA posture, owners and next update
+    time.
+  - Documents whether Nexus coordination is pending and does not make vendor approval a prerequisite for
+    all time-critical MedDefense communications.
+  fail_indicators:
+  - An unapproved spokesperson makes a public breach or safety claim, or discloses patient-identifying
+    details.
+  - The team refuses to communicate at all solely because the investigation or joint vendor statement
+    is incomplete.
+  - The board brief is absent at minute 110 or omits patient impact, key unknowns, required decisions
+    or accountable owners.
+  - The team repeats social media cancellation claims as verified facts.
+  finding_if_fail: 'External and executive communications were not controlled, timely or decision-ready
+    under uncertainty. Action: test a Legal-reviewed holding-statement template, spokesperson authorization
+    chain and 90-minute board-brief template with a scheduled update cadence. Owner: Communications Lead
+    (Marcus Webb), with Legal Counsel; due: 21 days.'
+- inject_id: INJ-06
+  capability_tested:
+  - CAP-03
+  - CAP-06
+  evaluation_owner: Clinical continuity / incident-command evaluator; Clinical safety / data-integrity
+    evaluator
+  pass_criteria:
+  - Names a clinical owner and orders immediate verification and prioritization of time-sensitive discrepant
+    appointments, including a patient contact decision with a documented rationale.
+  - Preserves Nexus and Epic audit/change logs and describes record-by-record reconciliation without unverified
+    bulk synchronization.
+  - Records explicit criteria and approval authority for any service restoration, including clean agent
+    validation, integrity checks and clinical sign-off.
+  - Lists at least two unresolved questions (such as whether changes were malicious and which records
+    are affected), each with an owner, evidence request and next checkpoint.
+  fail_indicators:
+  - Appointment discrepancies are treated only as an IT synchronization issue with no clinical triage
+    or patient contact assessment.
+  - Records are overwritten, bulk-resynced or service is restored before evidence preservation and integrity
+    validation are named.
+  - No accountable restoration decision-maker or measurable restoration criteria are identified.
+  - The team declares the incident resolved despite unknown change provenance or fails to assign owners
+    and follow-up times for open questions.
+  finding_if_fail: 'The response lacked patient-centered appointment integrity triage, evidence-preserving
+    reconciliation and accountable restoration gates. Action: create a clinical/IT data-integrity playbook
+    covering priority patient outreach, Epic/Nexus audit reconciliation, validated clean-agent requirements
+    and an unresolved-issues register. Owner: Clinical Director and IT Director (Sarah Park); due: 30
+    days.'
