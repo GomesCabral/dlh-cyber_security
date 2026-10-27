@@ -1,0 +1,193 @@
+# Facilitator-only exercise control document. All incident developments are simulated.
+# Seven-inject schedule; capability_map.yaml v1.0 references INJ-07..INJ-09
+# and must be reconciled to this seven-inject design before exercise execution.
+exercise: "Nexus Supply Chain Compromise"
+scenario_version: "1.0"
+schedule_version: "1.0"
+classification: "Internal - Exercise Use Only"
+facilitator: "Pedro Cabral"
+time_reference: "Minutes after tabletop exercise starts"
+injects:
+  - id: INJ-00
+    time_minutes: 0
+    delivery: "Facilitator reads aloud; SOC alert card"
+    situation: >-
+      Forty-five minutes ago, the SOC flagged unusual outbound traffic from
+      SCHED-SVR-01, the Main campus scheduling server running the Nexus agent,
+      to an unidentified external IP. EDR shows connections recurring about
+      every four hours. Nexus appointment services remain available; there is
+      no confirmed malicious cause, exfiltration, or appointment tampering.
+    capability_tested: [CAP-01]
+    decision_point: >-
+      Will you declare an incident and at what provisional severity? Who leads
+      triage, what evidence is preserved, and who is notified immediately?
+    roles_challenged:
+      - "James Chen (SOC Lead)"
+      - "Sarah Park (IT Director)"
+    expected_response: >-
+      Open and classify an incident using the organization's severity matrix;
+      assign incident command, preserve EDR/network and agent-update evidence,
+      check the same behavior at other sites, and investigate vendor provenance
+      without treating the unknown IP or signed software as proof of compromise.
+
+  - id: INJ-01
+    time_minutes: 20
+    delivery: "Facilitator reads aloud; simulated Nexus security advisory"
+    situation: >-
+      Nexus SecOps issues an advisory: its build pipeline was accessed by an
+      unauthorized actor three days ago, and a malicious component may have
+      been distributed through the automatic signed nexus-agent update channel.
+      The update is signed with Nexus Health Technologies' valid certificate.
+      Nexus has no validated clean replacement yet and cannot confirm which
+      customers or versions are affected. The board requests a decision-ready
+      incident briefing in 90 minutes (due at exercise minute 110).
+    capability_tested: [CAP-01, CAP-02, CAP-08]
+    decision_point: >-
+      How will you verify the vendor warning, determine whether your signed
+      agent is affected, establish a vendor liaison, and assign the board brief?
+    roles_challenged:
+      - "James Chen (SOC Lead)"
+      - "Sarah Park (IT Director)"
+      - "Dr. Patricia Morales (Executive sponsor)"
+    expected_response: >-
+      Treat signing as authenticity of the signing process, not a guarantee of
+      safety; compare versions, timestamps and telemetry; halt unreviewed agent
+      updates where feasible; contact Nexus 24x7 SecOps at +1 512 555 0184 or
+      soc@nexushealth.io; request written IOCs, affected builds, discovery time,
+      and containment guidance; assign an owner and deadline for the board brief.
+
+  - id: INJ-02
+    time_minutes: 40
+    delivery: "Facilitator reads aloud; simulated vendor call and SOC correlation"
+    situation: >-
+      Nexus confirms that the affected signed release was delivered to
+      SCHED-SVR-01 and says other customer installations may be exposed. The
+      SOC now finds matching four-hour outbound connection patterns on Nexus
+      agent systems at West Campus and North Site; their hostnames have not
+      yet been validated. Nexus cannot say whether patient demographics,
+      insurance data, or appointment records were accessed through the HL7
+      FHIR R4 integration and svc-nexus-prod account. The vendor asks MedDefense
+      to keep the integration online while it investigates.
+    capability_tested: [CAP-02, CAP-04]
+    decision_point: >-
+      Who owns vendor escalation and the exposure assessment? What evidence
+      will you require before accepting the vendor's advice to remain online?
+    roles_challenged:
+      - "James Chen (SOC Lead)"
+      - "Helena Reyes (Legal counsel)"
+      - "Robert Kim (Vendor / operations liaison)"
+    expected_response: >-
+      Escalate through Nexus SecOps/CISO with written requests and a fixed
+      update cadence; preserve FHIR access/audit logs, OAuth2 service-principal
+      activity and agent telemetry across sites; bound a provisional exposure
+      window and affected records; separate potential access from confirmed
+      disclosure, and independently assess vendor recommendations.
+
+  - id: INJ-03
+    time_minutes: 60
+    delivery: "Facilitator reads aloud; simulated security-versus-clinical escalation"
+    situation: >-
+      Security recommends isolating the Nexus agent hosts and suspending the
+      inbound Nexus-to-Epic scheduling feed. The clinical director objects:
+      three sites rely on Nexus for outpatient scheduling, pre-registration and
+      eligibility checks, representing about 3,500 patient interactions each
+      week. A same-day clinic has time-sensitive appointments; switching to
+      manual booking may create delays or duplicate bookings. No approved
+      recovery-time SLA or fully tested manual fallback has been produced.
+    capability_tested: [CAP-03]
+    decision_point: >-
+      Do you isolate, partially restrict, or temporarily keep the service
+      running? Who has authority, what is the patient-safety trade-off, and
+      when will you reassess the decision?
+    roles_challenged:
+      - "Sarah Park (IT Director)"
+      - "Clinical Director representative"
+      - "Dr. Patricia Morales (Executive sponsor)"
+    expected_response: >-
+      Make an explicit, time-bound risk decision with named authority and
+      clinical sign-off; consider selective containment of update delivery,
+      agent execution or integration flows; establish a documented manual
+      scheduling and critical-patient prioritization plan, with reconciliation,
+      monitoring, restoration criteria and a next decision checkpoint.
+
+  - id: INJ-04
+    time_minutes: 80
+    delivery: "Facilitator reads aloud; simulated vendor privacy notice"
+    situation: >-
+      Nexus reports that an attacker may have queried patient demographic and
+      insurance records during the compromise window, but has not confirmed
+      acquisition or disclosure. Its legal team says the investigation is
+      ongoing and will not yet label the event a breach. The Nexus BAA requires
+      notification to MedDefense within 24 hours of Nexus discovering a breach;
+      the vendor has not supplied a reliable discovery timestamp or affected
+      patient count. MedDefense's own HIPAA notification posture remains open.
+    capability_tested: [CAP-04, CAP-05]
+    decision_point: >-
+      What is the provisional ePHI scope and legal posture? What must Nexus
+      provide, and who decides whether any notification obligation is triggered?
+    roles_challenged:
+      - "Helena Reyes (Legal counsel)"
+      - "Marcus Webb (Communications / privacy coordination)"
+      - "James Chen (SOC Lead)"
+    expected_response: >-
+      Start a documented HIPAA breach-risk assessment with Legal/Privacy;
+      distinguish the contractual vendor-to-MedDefense 24-hour obligation from
+      MedDefense's separate legal notification analysis; demand discovery time,
+      record-level scope and audit evidence; track unknowns, owners, deadlines,
+      and decision rationale without prematurely declaring a reportable breach.
+
+  - id: INJ-05
+    time_minutes: 110
+    delivery: "Facilitator reads aloud; simulated media email and board request"
+    situation: >-
+      A local reporter asks whether MedDefense's scheduling provider has been
+      hacked and whether patient information is exposed. Social media posts
+      claim appointments are being cancelled. The board is now waiting for
+      the 90-minute status briefing requested at minute 20. Nexus has not
+      approved a joint public statement and the exposure scope is unresolved.
+    capability_tested: [CAP-07, CAP-08]
+    decision_point: >-
+      What can be said publicly now, who approves it, and what concise
+      decision-ready briefing will the board receive immediately?
+    roles_challenged:
+      - "Marcus Webb (Communications Lead)"
+      - "Helena Reyes (Legal counsel)"
+      - "Dr. Patricia Morales (Executive sponsor)"
+    expected_response: >-
+      Route external inquiries through an authorized spokesperson; issue a
+      legally reviewed holding statement separating confirmed facts from
+      unknowns and avoiding patient-identifying details. Deliver the board
+      brief by minute 110 with operational/patient impact, containment status,
+      PHI/HIPAA uncertainty, vendor status, key decisions, named owners and
+      next-update time.
+
+  - id: INJ-06
+    time_minutes: 120
+    delivery: "Facilitator reads aloud; simulated clinical reconciliation finding"
+    situation: >-
+      Clinical staff identify several time-sensitive appointments whose Nexus
+      status differs from the corresponding Epic record. It is not yet known
+      whether the discrepancies are malicious changes, synchronization delays,
+      or ordinary workflow errors. Nexus says it may need another 24 hours to
+      provide a reliable change log. The clinical director asks whether the
+      affected patients should be contacted today and whether Nexus can safely
+      be restored. No verified clean agent build or complete integrity baseline
+      is available before the exercise ends.
+    capability_tested: [CAP-03, CAP-06]
+    decision_point: >-
+      How will you protect patients and reconcile records now, and what
+      conditions must be met before restoration? Which questions remain open,
+      who owns them, and when will they be revisited?
+    roles_challenged:
+      - "Clinical Director representative"
+      - "Sarah Park (IT Director)"
+      - "James Chen (SOC Lead)"
+      - "Dr. Patricia Morales (Executive sponsor)"
+    expected_response: >-
+      Escalate potential patient-safety impact; preserve both systems' audit
+      trails, prioritize critical appointments, establish clinician-led
+      verification and patient outreach criteria, and avoid unverified bulk
+      synchronization. Document restoration gates, accountable owners, next
+      checkpoints, and unresolved questions (intentional open end): which
+      records changed, whether changes were malicious, and when a verified
+      clean agent and trustworthy reconciliation data will be available.
