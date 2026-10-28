@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # MedDefense IR-2026-0420-01 | fail-closed recovery validation
 # Reads independently exported evidence from a trusted validation directory.
 # It does NOT connect to production or change any endpoint. No checks are pre-marked PASS.
