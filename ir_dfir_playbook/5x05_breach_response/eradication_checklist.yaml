@@ -1,0 +1,560 @@
+# MedDefense — IR-2026-0420-01 — ERADICATION PLAN (not execution evidence)
+incident_id: IR-2026-0420-01
+document: Eradication checklist — execution NOT yet evidenced
+evidence_boundary: Only schema samples and preliminary forensic report available. No production action or verification
+  has been performed. All items pending.
+execution_gate: Preserve forensic artifacts and hashes, approve change window, clinical sign-off, maintain isolation
+  until all validation checks pass.
+status_values:
+- pending
+- in_progress
+- blocked
+- verified_complete
+verification_policy: Set verified_complete only after attaching timestamped actual verification output; update executed_at
+  and executed_by; preserve original log.
+items:
+- id: ER-001
+  category: beacon_process
+  target_host: CS-WS-101
+  description: After verified acquisition and containment, eliminate malicious processes through approved reimage/rebuild;
+    do not simply kill a process and declare clean.
+  command_or_action: 'EDR: collect and preserve process tree for CS-WS-101; rebuild from trusted gold image if compromise
+    confirmed; verify before reconnect.'
+  verification_command: 'EDR query CS-WS-101: process creation and process ancestry for svchost32.exe and known
+    Cobalt Strike indicators; include last 24 hours after rebuild'
+  expected_verification_result: No malicious process or related ancestry in 24h; telemetry present; if host offline,
+    verification cannot pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-002
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect service persistence; preserve/export before removal; remove only verified malicious entries,
+    or restore clean image.
+  command_or_action: 'Run on CS-WS-101: Get-CimInstance Win32_Service | Where-Object {$_.Name -eq "WinHealthSvc"
+    -or $_.PathName -match "svchost32[.]exe"}; export evidence; remove confirmed malicious persistence under change
+    control.'
+  verification_command: 'Run on CS-WS-101 after remediation: Get-CimInstance Win32_Service | Where-Object {$_.Name
+    -eq "WinHealthSvc" -or $_.PathName -match "svchost32[.]exe"}; inspect suspicious names/paths and compare approved
+    baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-003
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect registry run key persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-101: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; export evidence; remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-101 after remediation: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-004
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect scheduled task persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-101: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions; export evidence;
+    remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-101 after remediation: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions;
+    inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-005
+  category: staged_payload
+  target_host: CS-WS-101
+  description: Preserve and remove confirmed ransomware staging .bat/.ps1 in System32, ProgramData and Tasks; do
+    not indiscriminately delete legitimate scripts.
+  command_or_action: 'On CS-WS-101: Get-ChildItem C:\Windows\System32,C:\ProgramData,C:\Windows\Tasks -Include *.bat,*.ps1
+    -Recurse -File -ErrorAction SilentlyContinue | Select FullName,Length,LastWriteTime; hash suspicious files;
+    quarantine confirmed malicious payloads or rebuild.'
+  verification_command: Re-run the same inventory on CS-WS-101; compare hashes and approved baseline; inspect EDR
+    execution history.
+  expected_verification_result: No identified malicious staging scripts remain; legitimate scripts not removed;
+    supporting inventory captured.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-006
+  category: beacon_process
+  target_host: CS-WS-104
+  description: After verified acquisition and containment, eliminate malicious processes through approved reimage/rebuild;
+    do not simply kill a process and declare clean.
+  command_or_action: 'EDR: collect and preserve process tree for CS-WS-104; rebuild from trusted gold image if compromise
+    confirmed; verify before reconnect.'
+  verification_command: 'EDR query CS-WS-104: process creation and process ancestry for svchost32.exe and known
+    Cobalt Strike indicators; include last 24 hours after rebuild'
+  expected_verification_result: No malicious process or related ancestry in 24h; telemetry present; if host offline,
+    verification cannot pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-007
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect service persistence; preserve/export before removal; remove only verified malicious entries,
+    or restore clean image.
+  command_or_action: 'Run on CS-WS-104: Get-CimInstance Win32_Service | Where-Object {$_.Name -eq "WinHealthSvc"
+    -or $_.PathName -match "svchost32[.]exe"}; export evidence; remove confirmed malicious persistence under change
+    control.'
+  verification_command: 'Run on CS-WS-104 after remediation: Get-CimInstance Win32_Service | Where-Object {$_.Name
+    -eq "WinHealthSvc" -or $_.PathName -match "svchost32[.]exe"}; inspect suspicious names/paths and compare approved
+    baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-008
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect registry run key persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-104: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; export evidence; remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-104 after remediation: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-009
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect scheduled task persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-104: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions; export evidence;
+    remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-104 after remediation: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions;
+    inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-010
+  category: staged_payload
+  target_host: CS-WS-104
+  description: Preserve and remove confirmed ransomware staging .bat/.ps1 in System32, ProgramData and Tasks; do
+    not indiscriminately delete legitimate scripts.
+  command_or_action: 'On CS-WS-104: Get-ChildItem C:\Windows\System32,C:\ProgramData,C:\Windows\Tasks -Include *.bat,*.ps1
+    -Recurse -File -ErrorAction SilentlyContinue | Select FullName,Length,LastWriteTime; hash suspicious files;
+    quarantine confirmed malicious payloads or rebuild.'
+  verification_command: Re-run the same inventory on CS-WS-104; compare hashes and approved baseline; inspect EDR
+    execution history.
+  expected_verification_result: No identified malicious staging scripts remain; legitimate scripts not removed;
+    supporting inventory captured.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-011
+  category: beacon_process
+  target_host: CS-WS-107
+  description: After verified acquisition and containment, eliminate malicious processes through approved reimage/rebuild;
+    do not simply kill a process and declare clean.
+  command_or_action: 'EDR: collect and preserve process tree for CS-WS-107; rebuild from trusted gold image if compromise
+    confirmed; verify before reconnect.'
+  verification_command: 'EDR query CS-WS-107: process creation and process ancestry for svchost32.exe and known
+    Cobalt Strike indicators; include last 24 hours after rebuild'
+  expected_verification_result: No malicious process or related ancestry in 24h; telemetry present; if host offline,
+    verification cannot pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-012
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect service persistence; preserve/export before removal; remove only verified malicious entries,
+    or restore clean image.
+  command_or_action: 'Run on CS-WS-107: Get-CimInstance Win32_Service | Where-Object {$_.Name -eq "WinHealthSvc"
+    -or $_.PathName -match "svchost32[.]exe"}; export evidence; remove confirmed malicious persistence under change
+    control.'
+  verification_command: 'Run on CS-WS-107 after remediation: Get-CimInstance Win32_Service | Where-Object {$_.Name
+    -eq "WinHealthSvc" -or $_.PathName -match "svchost32[.]exe"}; inspect suspicious names/paths and compare approved
+    baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-013
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect registry run key persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-107: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; export evidence; remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-107 after remediation: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-014
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect scheduled task persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-107: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions; export evidence;
+    remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-107 after remediation: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions;
+    inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-015
+  category: staged_payload
+  target_host: CS-WS-107
+  description: Preserve and remove confirmed ransomware staging .bat/.ps1 in System32, ProgramData and Tasks; do
+    not indiscriminately delete legitimate scripts.
+  command_or_action: 'On CS-WS-107: Get-ChildItem C:\Windows\System32,C:\ProgramData,C:\Windows\Tasks -Include *.bat,*.ps1
+    -Recurse -File -ErrorAction SilentlyContinue | Select FullName,Length,LastWriteTime; hash suspicious files;
+    quarantine confirmed malicious payloads or rebuild.'
+  verification_command: Re-run the same inventory on CS-WS-107; compare hashes and approved baseline; inspect EDR
+    execution history.
+  expected_verification_result: No identified malicious staging scripts remain; legitimate scripts not removed;
+    supporting inventory captured.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-016
+  category: beacon_process
+  target_host: CS-WS-112
+  description: After verified acquisition and containment, eliminate malicious processes through approved reimage/rebuild;
+    do not simply kill a process and declare clean.
+  command_or_action: 'EDR: collect and preserve process tree for CS-WS-112; rebuild from trusted gold image if compromise
+    confirmed; verify before reconnect.'
+  verification_command: 'EDR query CS-WS-112: process creation and process ancestry for svchost32.exe and known
+    Cobalt Strike indicators; include last 24 hours after rebuild'
+  expected_verification_result: No malicious process or related ancestry in 24h; telemetry present; if host offline,
+    verification cannot pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-017
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect service persistence; preserve/export before removal; remove only verified malicious entries,
+    or restore clean image.
+  command_or_action: 'Run on CS-WS-112: Get-CimInstance Win32_Service | Where-Object {$_.Name -eq "WinHealthSvc"
+    -or $_.PathName -match "svchost32[.]exe"}; export evidence; remove confirmed malicious persistence under change
+    control.'
+  verification_command: 'Run on CS-WS-112 after remediation: Get-CimInstance Win32_Service | Where-Object {$_.Name
+    -eq "WinHealthSvc" -or $_.PathName -match "svchost32[.]exe"}; inspect suspicious names/paths and compare approved
+    baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-018
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect registry run key persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-112: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; export evidence; remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-112 after remediation: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-019
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect scheduled task persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on CS-WS-112: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions; export evidence;
+    remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on CS-WS-112 after remediation: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions;
+    inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-020
+  category: staged_payload
+  target_host: CS-WS-112
+  description: Preserve and remove confirmed ransomware staging .bat/.ps1 in System32, ProgramData and Tasks; do
+    not indiscriminately delete legitimate scripts.
+  command_or_action: 'On CS-WS-112: Get-ChildItem C:\Windows\System32,C:\ProgramData,C:\Windows\Tasks -Include *.bat,*.ps1
+    -Recurse -File -ErrorAction SilentlyContinue | Select FullName,Length,LastWriteTime; hash suspicious files;
+    quarantine confirmed malicious payloads or rebuild.'
+  verification_command: Re-run the same inventory on CS-WS-112; compare hashes and approved baseline; inspect EDR
+    execution history.
+  expected_verification_result: No identified malicious staging scripts remain; legitimate scripts not removed;
+    supporting inventory captured.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-021
+  category: beacon_process
+  target_host: FILE-SVR-01
+  description: After verified acquisition and containment, eliminate malicious processes through approved reimage/rebuild;
+    do not simply kill a process and declare clean.
+  command_or_action: 'EDR: collect and preserve process tree for FILE-SVR-01; rebuild from trusted gold image if
+    compromise confirmed; verify before reconnect.'
+  verification_command: 'EDR query FILE-SVR-01: process creation and process ancestry for svchost32.exe and known
+    Cobalt Strike indicators; include last 24 hours after rebuild'
+  expected_verification_result: No malicious process or related ancestry in 24h; telemetry present; if host offline,
+    verification cannot pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-022
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect service persistence; preserve/export before removal; remove only verified malicious entries,
+    or restore clean image.
+  command_or_action: 'Run on FILE-SVR-01: Get-CimInstance Win32_Service | Where-Object {$_.Name -eq "WinHealthSvc"
+    -or $_.PathName -match "svchost32[.]exe"}; export evidence; remove confirmed malicious persistence under change
+    control.'
+  verification_command: 'Run on FILE-SVR-01 after remediation: Get-CimInstance Win32_Service | Where-Object {$_.Name
+    -eq "WinHealthSvc" -or $_.PathName -match "svchost32[.]exe"}; inspect suspicious names/paths and compare approved
+    baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-023
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect registry run key persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on FILE-SVR-01: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; export evidence; remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on FILE-SVR-01 after remediation: Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run","HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    -ErrorAction SilentlyContinue; inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-024
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect scheduled task persistence; preserve/export before removal; remove only verified malicious
+    entries, or restore clean image.
+  command_or_action: 'Run on FILE-SVR-01: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions; export evidence;
+    remove confirmed malicious persistence under change control.'
+  verification_command: 'Run on FILE-SVR-01 after remediation: Get-ScheduledTask | Select-Object TaskName,TaskPath,Actions;
+    inspect suspicious names/paths and compare approved baseline.'
+  expected_verification_result: No WinHealthSvc, svchost32.exe path, or unapproved autoruns/tasks; complete inspection
+    output attached.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-025
+  category: staged_payload
+  target_host: FILE-SVR-01
+  description: Preserve and remove confirmed ransomware staging .bat/.ps1 in System32, ProgramData and Tasks; do
+    not indiscriminately delete legitimate scripts.
+  command_or_action: 'On FILE-SVR-01: Get-ChildItem C:\Windows\System32,C:\ProgramData,C:\Windows\Tasks -Include
+    *.bat,*.ps1 -Recurse -File -ErrorAction SilentlyContinue | Select FullName,Length,LastWriteTime; hash suspicious
+    files; quarantine confirmed malicious payloads or rebuild.'
+  verification_command: Re-run the same inventory on FILE-SVR-01; compare hashes and approved baseline; inspect
+    EDR execution history.
+  expected_verification_result: No identified malicious staging scripts remain; legitimate scripts not removed;
+    supporting inventory captured.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-026
+  category: credential
+  target_host: DOMAIN
+  description: Enumerate all identities used during 72h dwell (interactive, service, privileged, machine) from 4624/4648/4768/4769/4776
+    and EDR; scope must not be assumed limited to jdoe.
+  command_or_action: 'IR+IAM: build account-to-host authentication matrix; revoke sessions/tokens and rotate/reset
+    every exposed account in dependency-aware order; start with privileged and known-compromised accounts; coordinate
+    service identities.'
+  verification_command: Query AD/IdP for reset timestamps, token revocation, sign-in logs and failed attempts with
+    prior credentials; verify affected clinical services.
+  expected_verification_result: All identified dwell-period accounts enumerated and remediated; no successful use
+    of prior credentials; clinical service checks pass.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-027
+  category: credential
+  target_host: MEDDEFENSE\jdoe
+  description: Specific known account associated with file-server access; verify scope and reset/revoke without
+    destroying access logs.
+  command_or_action: 'IAM: disable or restrict account as approved, reset password, revoke active sessions; preserve
+    DC and file-server authentication records.'
+  verification_command: Check account passwordLastSet, active sessions, DC logon events and test authentication
+    with prior credentials in controlled environment.
+  expected_verification_result: Old credentials rejected; approved new access only; evidence recorded.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-028
+  category: kerberos
+  target_host: DOMAIN
+  description: Invalidate stolen Kerberos tickets and assess TGT/service ticket persistence, recognizing that password
+    reset alone may not terminate existing tickets.
+  command_or_action: 'IAM: revoke sessions, purge tickets on managed endpoints (klist purge under relevant session),
+    rotate relevant service credentials; evaluate krbtgt reset only with AD specialists if golden-ticket compromise
+    evidenced.'
+  verification_command: Correlate 4768/4769/4624 events and session inventories; verify no unauthorized ticket reuse
+    after cutoff and critical services authenticate.
+  expected_verification_result: No unauthorized ticket use; service health maintained; krbtgt not reset without
+    justified approval.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-029
+  category: network
+  target_host: EDGE FIREWALL
+  description: Block outbound C2 domain and IP while preserving firewall logs and clinical egress allowances.
+  command_or_action: 'Network team: deny egress staging.office365-cdn.net and 45.152.66.114 TCP/443 and other validated
+    C2 indicators; enable logging; do not treat IP-only block as sufficient.'
+  verification_command: Query firewall deny logs and proxy for all five hosts, 24h after change; verify rule precedence
+    and zero successful C2 sessions.
+  expected_verification_result: Rule enabled, expected denies recorded, zero successful C2 communications; exceptions
+    documented.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-030
+  category: network
+  target_host: DNS RESOLVERS
+  description: Sinkhole known squatted C2 domain in enterprise DNS; preserve query history and avoid poisoning unrelated
+    Microsoft domains.
+  command_or_action: 'DNS team: add exact-match sinkhole for staging.office365-cdn.net; test from controlled resolver;
+    retain DNS logs.'
+  verification_command: Resolve domain via corporate DNS and review sinkhole logs; ensure legitimate clinical domains
+    still resolve.
+  expected_verification_result: Known malicious domain resolves to controlled sinkhole; no successful outbound C2;
+    normal clinical DNS unaffected.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-031
+  category: machine_account
+  target_host: CS-WS-101
+  description: Rotate machine account secret only after host compromise and domain trust evaluated; rebuild or rejoin
+    as needed, especially for the file server.
+  command_or_action: 'AD/endpoint team: disable/rebuild/rejoin compromised workstation under approved change; reset
+    computer account password using supported domain procedure; for FILE-SVR-01 coordinate service dependencies
+    and avoid unplanned outage.'
+  verification_command: Verify secure channel (Test-ComputerSecureChannel) and authenticated EDR/clinical service
+    functionality; review machine-account logons.
+  expected_verification_result: Machine account rotated or formally exempted with evidence-based justification;
+    secure channel and services healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-032
+  category: machine_account
+  target_host: CS-WS-104
+  description: Rotate machine account secret only after host compromise and domain trust evaluated; rebuild or rejoin
+    as needed, especially for the file server.
+  command_or_action: 'AD/endpoint team: disable/rebuild/rejoin compromised workstation under approved change; reset
+    computer account password using supported domain procedure; for FILE-SVR-01 coordinate service dependencies
+    and avoid unplanned outage.'
+  verification_command: Verify secure channel (Test-ComputerSecureChannel) and authenticated EDR/clinical service
+    functionality; review machine-account logons.
+  expected_verification_result: Machine account rotated or formally exempted with evidence-based justification;
+    secure channel and services healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-033
+  category: machine_account
+  target_host: CS-WS-107
+  description: Rotate machine account secret only after host compromise and domain trust evaluated; rebuild or rejoin
+    as needed, especially for the file server.
+  command_or_action: 'AD/endpoint team: disable/rebuild/rejoin compromised workstation under approved change; reset
+    computer account password using supported domain procedure; for FILE-SVR-01 coordinate service dependencies
+    and avoid unplanned outage.'
+  verification_command: Verify secure channel (Test-ComputerSecureChannel) and authenticated EDR/clinical service
+    functionality; review machine-account logons.
+  expected_verification_result: Machine account rotated or formally exempted with evidence-based justification;
+    secure channel and services healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-034
+  category: machine_account
+  target_host: CS-WS-112
+  description: Rotate machine account secret only after host compromise and domain trust evaluated; rebuild or rejoin
+    as needed, especially for the file server.
+  command_or_action: 'AD/endpoint team: disable/rebuild/rejoin compromised workstation under approved change; reset
+    computer account password using supported domain procedure; for FILE-SVR-01 coordinate service dependencies
+    and avoid unplanned outage.'
+  verification_command: Verify secure channel (Test-ComputerSecureChannel) and authenticated EDR/clinical service
+    functionality; review machine-account logons.
+  expected_verification_result: Machine account rotated or formally exempted with evidence-based justification;
+    secure channel and services healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
+- id: ER-035
+  category: machine_account
+  target_host: FILE-SVR-01
+  description: Rotate machine account secret only after host compromise and domain trust evaluated; rebuild or rejoin
+    as needed, especially for the file server.
+  command_or_action: 'AD/endpoint team: disable/rebuild/rejoin compromised workstation under approved change; reset
+    computer account password using supported domain procedure; for FILE-SVR-01 coordinate service dependencies
+    and avoid unplanned outage.'
+  verification_command: Verify secure channel (Test-ComputerSecureChannel) and authenticated EDR/clinical service
+    functionality; review machine-account logons.
+  expected_verification_result: Machine account rotated or formally exempted with evidence-based justification;
+    secure channel and services healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+  verification_output: null
