@@ -2,10 +2,10 @@
 
 **Policy number:** MD-SEC-AUP-001  
 **Policy title:** Acceptable Use Policy  
-**Effective date:** Pending CISO approval and formal publication  
-**Review date:** Annually, within 12 months of the effective date  
+**Effective date:** 2026-11-02 (proposed; subject to CISO approval and publication)  
+**Review date:** 2027-11-02 (annual review; adjust if approval date changes)  
 **Owner:** IT Security  
-**Approved by:** CISO — approval pending; no signature on file  
+**Approved by:** CISO (approval required; not yet signed)  
 **Classification:** Internal  
 **Applies to:** All MedDefense employees, contractors, vendors with remote access, and temporary clinical staff who access MedDefense systems, accounts, networks, or data  
 **Document status:** Draft for CISO approval; not yet effective
@@ -35,9 +35,9 @@ The following activities are prohibited without exception unless a stated author
 7. **Unapproved AI or external services:** Entering, uploading, copying, or processing patient information in AI tools, external websites, or third-party platforms without prior IT Security and Privacy/Legal approval, an approved Business Associate Agreement where required, and explicit authorization for that use.
 8. **Security-control interference:** Disabling or bypassing antivirus, EDR, logging, MFA, VPN, device encryption, or other MedDefense security controls without written IT Security authorization.
 
-## 5. Protected Health Information (PHI)
+## 5. PHI Handling Obligations
 
-Users may access, use, or disclose patient information only when needed for their authorized duties and must limit the information used or shared to the minimum necessary for the task, except where HIPAA permits a different standard, such as disclosures for treatment. Before viewing, sending, printing, or discussing patient information, users must verify the recipient, purpose, and approved channel; if unsure, they must stop and contact their supervisor or the Privacy/IT Security team.
+Only open or share patient information when it is needed for your assigned work; use or share the smallest amount needed, except when a different HIPAA rule applies, such as for treatment. Before you view, send, print, or discuss patient information, check that the person receiving it is authorized and that you are using an approved method; if you are unsure, stop and ask your supervisor or the Privacy team.
 
 ## 6. Remote Access
 
@@ -45,21 +45,21 @@ Remote access is permitted only for users explicitly authorized by IT Security, 
 
 Users must prevent others from viewing their screens or hearing patient discussions, must not leave remote sessions unattended, and must report lost devices or suspected unauthorized access immediately.
 
-## 7. Mandatory Security Reporting
+## 7. Reporting Obligations
 
-Users must report **immediately upon discovery** any suspicious email or phishing attempt, unusual or anomalous system behavior, lost or stolen device, suspected account compromise, or accidental or suspected disclosure of patient information. Users must **both** open an IT Security ticket through the approved MedDefense ticketing system **and** call the IT Security contact number provided during onboarding or in the internal staff directory; if the ticketing system is unavailable, they must call first and file the ticket as soon as service is restored.
+Report **immediately when you notice it**: a suspicious email, unexpected computer behavior, a lost or stolen device, a possibly stolen password, or patient information sent or shown to the wrong person. **Do both:** open a ticket in the MedDefense IT Security ticketing system and phone IT Security using the number in the staff directory or onboarding instructions; if tickets are unavailable, call immediately and submit a ticket when the system is working again.
 
 Reports must include what happened, when it was discovered, the affected device or account if known, and whether patient information may be involved. Users must not delete suspicious messages, alter logs, investigate beyond their authority, or delay reporting while trying to determine whether an incident is serious.
 
-## 8. Monitoring and Enforcement
+## 8. Consequences of Violation and Enforcement
 
 MedDefense may monitor, log, and review activity on its systems and accounts for security, patient safety, investigations, and compliance, subject to applicable law and organizational procedures. Users must cooperate with authorized investigations and must not obstruct evidence collection.
 
-Violations will be referred to IT Security and Human Resources and may result in immediate access suspension, mandatory retraining, and disciplinary action under the HR disciplinary process, **up to and including termination of employment or contract**. Violations may also constitute HIPAA violations and, depending on the facts and applicable law, may lead to regulatory action or personal civil or criminal liability.
+**Every reported or detected violation will be reviewed by IT Security and Human Resources.** MedDefense may suspend system access immediately while it investigates. Confirmed violations are handled through the **HR disciplinary process**, which may include a written warning, mandatory retraining, suspension, and **termination of employment or contract**, depending on severity and applicable procedures. A violation involving patient information may also be a **HIPAA violation** and may expose the individual to **personal civil or criminal liability** where applicable. Managers must refer suspected violations to IT Security and HR; they may not waive this policy informally.
 
-## 9. Acknowledgment, Distribution, and Annual Review
+## 9. Acknowledgment and Annual Review
 
-All new employees and other in-scope users must receive this policy and sign the acknowledgment **before** MedDefense system access is granted. Existing employees must acknowledge the policy annually; contractors, temporary clinical staff, and remote-access vendors must acknowledge it at onboarding and on annual renewal while access continues.
+**Before any system access is granted**, every new employee, contractor, temporary clinical staff member, and vendor user with remote access must receive this policy and sign the acknowledgment below. **Every 12 months**, all users with continued access must read the current version and sign again; IT Security must withhold or suspend access when a required acknowledgment is missing.
 
 IT Security will retain version-controlled policy copies, distribution records, and dated acknowledgments, and will review the policy at least annually and after material regulatory, technology, or incident changes. Revisions require CISO approval before publication; failure to acknowledge may result in access being withheld or suspended.
 
