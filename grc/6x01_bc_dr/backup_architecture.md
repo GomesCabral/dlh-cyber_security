@@ -1,6 +1,6 @@
 # MedDefense Backup Architecture
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Classification:** Confidential  
 **Prepared by:** Pedro Cabral  
 **Date:** 2026-11-03  
@@ -19,20 +19,45 @@ RTO feasibility depends on staffed incident activation, warm infrastructure, tes
 
 ## RPO Compliance Verification
 
-The existing schedule is sourced from `current_backup_schedule.csv`; proposed cadence is a design commitment to be implemented and measured. **Worst-case point age** assumes a completed verified point every interval with negligible extra lag; production monitoring must include transfer/verification lag and tighten cadence if needed. "Gap" means the current evidence cannot establish the BIA target.
+The existing schedule is sourced from `current_backup_schedule.csv`; proposed cadence is a design commitment to be implemented and measured. **Worst-case point age** equals backup interval plus completion, replication and verification lag. The design is compliant only when that sum is no greater than the BIA RPO. The schedules below are proposed and must be implemented and measured; current compliance is not established. "Gap" means the current evidence cannot establish the BIA target.
 
 | System | Tier | BIA RPO | Current schedule / verified evidence | Current gap | Proposed maximum point interval | Design check | Deployment status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Network Core | Tier 1 | 24 hours (configuration state) | 6-hour configs; diff only | Not a demonstrated restore | After every change and <= 6 h | 6 h <= 24 h | **Not yet verified** |
 | Active Directory | Tier 1 | 1 hour | 8-hour snapshots; daily system state; job completion only | 8 h > 1 h | 30 min | 30 min <= 60 min | **Not yet verified** |
-| Epic EHR | Tier 1 | 15 minutes | 15-minute replication; vendor monthly certificate | Needs per-point verification and vendor proof | 15 min | 15 min <= 15 min | **Not yet verified** |
+| Epic EHR | Tier 1 | 15 minutes | 15-minute replication; vendor monthly certificate | 15-minute cadence leaves no margin for verification/replication lag | 5 min | 5 min + <= 10 min lag <= 15 min | **Not yet verified** |
 | Laboratory Information System | Tier 1 | 1 hour | 24-hour nightly dump; hash only | 24 h > 1 h | 30 min | 30 min <= 60 min | **Not yet verified** |
 | PACS/RIS | Tier 2 | 1 hour | 4-hour snapshot; daily metadata; missed restore test | 4 h > 1 h | 30 min | 30 min <= 60 min | **Not yet verified** |
 | Pharmacy Dispensing System | Tier 1 | 15 minutes | Hourly database; daily cabinet config | 1 h > 15 min | 10 min | 10 min <= 15 min | **Not yet verified** |
 | Medical Device Integration Gateway | Tier 1 | 15 minutes | Daily config export; no off-site copy | 24 h > 15 min | 5 min state / 10 min config | 10 min <= 15 min | **Not yet verified** |
 | Backup and DR Infrastructure | Tier 2 | 1 hour (backup catalog/metadata) | 4-hour catalog; daily config | 4 h > 1 h | 30 min | 30 min <= 60 min | **Not yet verified** |
 
-**Example calculation:** LIS current nightly 23:30 backup means a failure just before the next backup can lose nearly **24 hours** of changes: 24 h > 1 h RPO. Under the proposed 30-minute verified cadence, the theoretical maximum point age is 30 minutes plus completion/replication/verification lag; maintain that total at **60 minutes or less**. For pharmacy, hourly database backups cannot meet a 15-minute RPO; 10-minute verified points leave five minutes for lag. Network Core's 24-hour RPO applies **only to configuration state**; configuration must also be captured immediately after each approved change.
+**Example calculation:** LIS current nightly 23:30 backup means a failure just before the next backup can lose nearly **24 hours** of changes: 24 h > 1 h RPO. Under the proposed 30-minute verified cadence, the theoretical maximum point age is 30 minutes plus completion/replication/verification lag; maintain that total at **60 minutes or less**. For Epic, a 15-minute replication cadence alone cannot guarantee a 15-minute verified RPO when replication or verification is delayed; 5-minute recovery points leave up to 10 minutes for lag. For pharmacy, hourly database backups cannot meet a 15-minute RPO; 10-minute verified points leave five minutes for lag. Network Core's 24-hour RPO applies **only to configuration state**; configuration must also be captured immediately after each approved change.
+
+**Verification beyond completion logs:** For each recovery point, capture source and destination SHA-256, completion timestamp, replication lag, and application consistency status. Perform isolated test restores (not just successful backup-job checks), verify database row counts and critical clinical records for LIS, user login and orders for Epic, image/order associations for PACS, and domain authentication for AD. Record test operator, independent reviewer, elapsed recovery time, and PASS/FAIL. A backup marked completed without these checks is not proof of recoverability.
+
+### Backup Schedule Versus Declared RPO: Explicit Arithmetic
+
+The table below verifies **proposed** recovery-point cadence, not production compliance. Lag budgets are upper limits, not observed measurements. Monitoring must calculate the age of the latest **successfully verified and accessible** recovery point. A failed job does not reset the age.
+
+| Tier 1 system | Declared RPO | Scheduled recovery-point interval | Maximum allowed completion/replication/verification lag | Worst-case age | Meets RPO by design? |
+| --- | --- | --- | --- | --- | --- |
+| Network Core | 24 hours | 6 hours and immediately after each change | 1 hour | 7 hours | Yes, if verified |
+| Active Directory | 60 minutes | 30 minutes | 15 minutes | 45 minutes | Yes, if verified |
+| Epic EHR | 15 minutes | 5 minutes | 10 minutes | 15 minutes | Yes, if verified |
+| Laboratory Information System | 60 minutes | 30 minutes | 15 minutes | 45 minutes | Yes, if verified |
+| Pharmacy Dispensing System | 15 minutes | 10 minutes | 5 minutes | 15 minutes | Yes, if verified |
+| Medical Device Integration Gateway | 15 minutes | 5 minutes for state; 10 minutes for config | 5 minutes | 15 minutes for config | Yes, if verified |
+
+Tier 2 systems: PACS/RIS uses 30-minute snapshots with a maximum 15-minute verification lag, giving a 45-minute point age against a 60-minute RPO. Backup and DR Infrastructure uses 30-minute catalog recovery points with a maximum 15-minute lag, giving 45 minutes against a 60-minute RPO. A new recovery point must not be declared usable until its manifest, access path and consistency checks succeed. Configuration change-triggered exports are additionally required for Network Core and the gateway.
+
+### Backup Verification Beyond Job Completion
+
+1. **Per backup:** record UTC start/completion time, recovery-point timestamp, operator, destination, backup ID and exit status. Calculate SHA-256 on the source artifact and compare with the downloaded off-site artifact. Confirm encryption and independent read access.
+2. **Daily:** verify repository manifests and backup-chain continuity, application/database consistency and age of the most recent usable recovery point. Alert if the observed age approaches the RPO.
+3. **Monthly:** restore representative full and incremental chains into an isolated environment, including required keys and catalog. Run integrity checks, row counts, sample critical records and authentication tests; retain the actual command output and test evidence.
+4. **Quarterly:** conduct a dependency-aware end-to-end failover/restore test with clinical owners. Record disaster declaration time, usable-service time, actual RTO, actual recovery-point age, exceptions, clinical acceptance and independent reviewer signature.
+5. **On failure:** mark the recovery point unverified, escalate, retain immutable logs and rerun a non-destructive restore test. A green backup-job completion status alone is **not** sufficient evidence.
 
 **Exception handling:** Missing, failed or stale backups automatically create an RPO exception and trigger the DR coordinator; do not declare compliant until an independently successful restore demonstrates usable data. Vendor certificates are supporting evidence, not substitutes for application-level verification.
 
@@ -78,7 +103,7 @@ The following retention periods are proposed unless explicitly identified as cur
 | --- | --- |
 | BIA recovery objectives | RTO **1 hour**; RPO **15 minutes** |
 | Backup type | Full plus incremental/snapshot/replication as specified below |
-| Schedule | Vendor-managed continuous/15-minute recovery points (maximum 15-minute verified gap); nightly application-consistent export; daily full snapshot for rollback. |
+| Schedule | Continuous vendor-managed replication with application-consistent recovery points every 5 minutes; nightly full export and daily full snapshot. Verify completed points within 15 minutes including transfer lag. |
 | Retention | 35 days recent; 12 monthly snapshots; 7-year archive as specified by current schedule, subject to records policy. |
 | Primary destination | Vendor hosted DR site with encrypted replicated block/object storage |
 | Secondary destination | Geographically separate vendor cold archive with independent immutable copies |
@@ -170,6 +195,8 @@ The following retention periods are proposed unless explicitly identified as cur
 
 ## Full Data Center Loss: Restoration Sequence
 
+**Dependency order (mandatory):** Network Core -> Active Directory -> Backup and DR Infrastructure -> Epic EHR / LIS / Pharmacy Dispensing System / Medical Device Integration Gateway -> PACS/RIS -> Email and Secure Messaging -> Security Operations Platform. Independent clinical recoveries can run in parallel only after their prerequisites are met.
+
 **Trigger:** Primary data center power/cooling or physical loss makes production infrastructure unusable. Incident Commander declares disaster, confirms patient-safety escalation and starts a single event clock. Clinical downtime operations begin immediately and continue until clinical leadership accepts restored services.
 
 1. **Safety and command (parallel):** activate incident command, downtime forms, manual medication/allergy checks and clinical escalation; record the incident start, available staff, decisions and evidence.
@@ -219,5 +246,7 @@ Alternate site / power / out-of-band incident communications
 | Upgrade AD snapshots, PACS metadata and DR catalog cadence | Infrastructure Manager | Completed-point monitoring and documented restore tests |
 | Verify Epic vendor 15-minute RPO and 1-hour clinical RTO | Clinical Applications Manager | Vendor recovery-point proof and timed user acceptance |
 | Exercise full-site recovery and record honest RTO/RPO outcomes | DR Coordinator | Signed drill report with failures, actual times and corrective actions |
+
+**Compliance conclusion:** Current backup schedules do NOT meet the BIA RPO for Active Directory, LIS, PACS/RIS, Pharmacy Dispensing System, Medical Device Integration Gateway, and Backup and DR Infrastructure. Epic EHR is not proven compliant until the provider demonstrates verified point age including lag. Network Core configuration backups are frequent enough on paper, but an actual restore is not demonstrated. The proposed schedule is mathematically capable of meeting each RPO only when verified point age (interval + lag) remains within its target; until then, report noncompliance or unverified status.
 
 **Evidence status:** No recovery test was executed for this design; no production backup settings were changed. Source observations come from the provided CSV, log review and dependency seed; frequencies, retention changes, controls and restore timings above are **proposals** until deployed and tested.
