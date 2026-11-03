@@ -1,0 +1,2 @@
+# Pending real laboratory execution.
+# This file will be overwritten by recovery_timer.sh on the first START.
