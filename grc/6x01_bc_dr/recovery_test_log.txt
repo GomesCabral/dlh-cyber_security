@@ -1,10 +1,10 @@
-[STEP 01] Identify recovery target       | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 02] Verify backup integrity        | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 03] Create recovery workspace      | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 04] Decompress backup              | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 05] Restore SQLite database        | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 06] Validate row count             | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 07] Validate critical results      | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 08] Inspect application config     | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 09] Validate local recovery        | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
-[STEP 10] Complete recovery validation   | Start: 14:56:43 | End: 14:56:43 | Duration: 0m 00s | PASS
+[STEP 01] Identify recovery target       | Start: 15:01:03 | End: 15:01:03 | Duration: 0m 00s | PASS
+[STEP 02] Verify backup integrity        | Start: 15:01:03 | End: 15:01:03 | Duration: 0m 00s | PASS
+[STEP 03] Create recovery workspace      | Start: 15:01:03 | End: 15:01:03 | Duration: 0m 00s | PASS
+[STEP 04] Decompress backup and resolve path mismatch | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 01s | PASS
+[STEP 05] Restore SQLite database        | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
+[STEP 06] Validate row count             | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
+[STEP 07] Validate critical results      | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
+[STEP 08] Inspect and override application config | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
+[STEP 09] Validate local recovery        | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
+[STEP 10] Complete recovery validation   | Start: 15:01:04 | End: 15:01:04 | Duration: 0m 00s | PASS
